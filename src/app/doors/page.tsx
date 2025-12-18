@@ -43,7 +43,7 @@ export default function DoorsPage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 bg-ocean-900">
+        <section className="pt-32 pb-20 bg-primary-900">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -51,7 +51,7 @@ export default function DoorsPage() {
               transition={{ duration: 0.6 }}
               className="max-w-3xl"
             >
-              <span className="text-wood-400 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Our Collections
               </span>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
@@ -67,7 +67,7 @@ export default function DoorsPage() {
         </section>
 
         {/* Collections */}
-        <section className="py-24 bg-cream">
+        <section className="py-24 bg-white">
           <div className="section-container">
             <div className="space-y-24">
               {collections.map((collection, index) => (
@@ -95,7 +95,7 @@ export default function DoorsPage() {
                   </div>
 
                   <div className={index % 2 === 1 ? "lg:order-1" : ""}>
-                    <span className="font-heading text-6xl text-wood-300">
+                    <span className="font-heading text-6xl text-primary-300">
                       {collection.number}
                     </span>
                     <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mt-4 mb-4">
@@ -106,7 +106,7 @@ export default function DoorsPage() {
                     </p>
                     <Link
                       href={collection.href}
-                      className="inline-flex items-center gap-2 text-ocean-900 font-medium hover:text-wood-600 transition-colors group"
+                      className="inline-flex items-center gap-2 text-ocean-900 font-medium hover:text-primary-600 transition-colors group"
                     >
                       Explore Collection
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

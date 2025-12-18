@@ -102,7 +102,7 @@ export default function GalleryPage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 bg-ocean-900">
+        <section className="pt-32 pb-20 bg-primary-900">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -110,7 +110,7 @@ export default function GalleryPage() {
               transition={{ duration: 0.6 }}
               className="max-w-3xl"
             >
-              <span className="text-wood-400 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Our Portfolio
               </span>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
@@ -126,7 +126,7 @@ export default function GalleryPage() {
         </section>
 
         {/* Filter */}
-        <section className="py-8 bg-cream border-b border-ocean-200">
+        <section className="py-8 bg-white border-b border-ocean-200">
           <div className="section-container">
             <div className="flex flex-wrap gap-4">
               {categories.map((category) => (
@@ -135,8 +135,8 @@ export default function GalleryPage() {
                   onClick={() => setActiveCategory(category.id)}
                   className={`px-6 py-2 font-medium text-sm transition-colors ${
                     activeCategory === category.id
-                      ? "bg-ocean-900 text-white"
-                      : "bg-white text-ocean-700 hover:bg-ocean-100"
+                      ? "bg-primary-600 text-white"
+                      : "bg-primary-50 text-ocean-700 hover:bg-primary-100"
                   }`}
                 >
                   {category.label}
@@ -147,7 +147,7 @@ export default function GalleryPage() {
         </section>
 
         {/* Gallery Grid */}
-        <section className="py-16 bg-cream">
+        <section className="py-16 bg-white">
           <div className="section-container">
             <motion.div
               layout
@@ -179,7 +179,7 @@ export default function GalleryPage() {
                       />
                       <div className="absolute inset-0 bg-ocean-900/0 group-hover:bg-ocean-900/60 transition-colors duration-300 flex items-end p-6">
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <span className="text-wood-400 text-xs font-medium tracking-wide uppercase">
+                          <span className="text-primary-300 text-xs font-medium tracking-wide uppercase">
                             {project.type}
                           </span>
                           <h3 className="font-heading text-xl text-white">
@@ -213,7 +213,7 @@ export default function GalleryPage() {
             onClick={() => setSelectedProject(null)}
           >
             <button
-              className="absolute top-6 right-6 text-white hover:text-wood-400 transition-colors"
+              className="absolute top-6 right-6 text-white hover:text-primary-400 transition-colors"
               onClick={() => setSelectedProject(null)}
             >
               <X className="w-8 h-8" />
@@ -231,7 +231,7 @@ export default function GalleryPage() {
                 className="w-full h-auto max-h-[70vh] object-contain"
               />
               <div className="mt-6 text-center">
-                <span className="text-wood-400 text-sm font-medium tracking-wide uppercase">
+                <span className="text-primary-300 text-sm font-medium tracking-wide uppercase">
                   {selectedProject.type}
                 </span>
                 <h3 className="font-heading text-2xl text-white mt-1">

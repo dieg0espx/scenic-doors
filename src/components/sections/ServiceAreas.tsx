@@ -15,7 +15,7 @@ const areas = [
 
 export default function ServiceAreas() {
   return (
-    <section className="py-24 md:py-32 bg-cream relative overflow-hidden">
+    <section className="py-24 md:py-32 bg-white relative overflow-hidden">
       <div className="section-container">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left - Content */}
@@ -25,12 +25,12 @@ export default function ServiceAreas() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <span className="text-wood-600 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+            <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
               Service Areas
             </span>
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900 mb-6">
               Proudly Serving
-              <span className="text-wood-600 block">Southern California</span>
+              <span className="text-primary-500 block">Southern California</span>
             </h2>
             <p className="text-ocean-600 leading-relaxed mb-10 max-w-lg">
               From coastal estates in Malibu to hillside retreats in the Inland
@@ -49,10 +49,10 @@ export default function ServiceAreas() {
                   transition={{ duration: 0.4, delay: index * 0.08 }}
                   className="group"
                 >
-                  <div className="flex items-start gap-3 p-4 bg-white hover:bg-sand-100 transition-colors">
-                    <MapPin className="w-5 h-5 text-wood-500 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-4 bg-primary-50 hover:bg-primary-100 transition-colors">
+                    <MapPin className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-ocean-900 group-hover:text-wood-600 transition-colors">
+                      <p className="font-medium text-ocean-900 group-hover:text-primary-600 transition-colors">
                         {area.name}
                       </p>
                       <p className="text-xs text-ocean-500 mt-0.5">{area.highlight}</p>
@@ -82,16 +82,16 @@ export default function ServiceAreas() {
               </div>
 
               {/* Overlay card */}
-              <div className="absolute -bottom-8 -left-8 bg-ocean-900 p-8 max-w-xs">
-                <p className="text-wood-400 font-heading text-5xl mb-2">6</p>
+              <div className="absolute -bottom-8 -left-8 bg-primary-600 p-8 max-w-xs">
+                <p className="text-white font-heading text-5xl mb-2">6</p>
                 <p className="text-white font-medium">Counties Served</p>
-                <p className="text-ocean-400 text-sm mt-2">
+                <p className="text-primary-100 text-sm mt-2">
                   Comprehensive coverage across Southern California
                 </p>
               </div>
 
               {/* Decorative frame */}
-              <div className="absolute -top-4 -right-4 w-full h-full border-2 border-wood-400/30 -z-10" />
+              <div className="absolute -top-4 -right-4 w-full h-full border-2 border-primary-400/30 -z-10" />
             </div>
           </motion.div>
         </div>

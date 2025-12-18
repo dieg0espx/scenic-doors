@@ -28,7 +28,7 @@ export default function MultiSlideDoorsPage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 bg-ocean-900 relative overflow-hidden">
+        <section className="pt-32 pb-20 bg-primary-800 relative overflow-hidden">
           <div className="absolute inset-0">
             <div
               className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -47,7 +47,7 @@ export default function MultiSlideDoorsPage() {
             >
               <Link
                 href="/doors"
-                className="text-wood-400 text-sm mb-4 inline-block hover:text-wood-300 transition-colors"
+                className="text-primary-300 text-sm mb-4 inline-block hover:text-primary-200 transition-colors"
               >
                 ← Back to Collections
               </Link>
@@ -60,8 +60,8 @@ export default function MultiSlideDoorsPage() {
                 maintaining clean architectural lines.
               </p>
               <Link
-                href="/quote"
-                className="inline-flex items-center gap-2 bg-wood-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-wood-400 transition-colors"
+                href="https://app.scenicdoors.co/quote/start" target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-primary-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-400 transition-colors"
               >
                 Request a Quote
                 <ArrowRight className="w-4 h-4" />
@@ -71,7 +71,7 @@ export default function MultiSlideDoorsPage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-24 bg-cream">
+        <section className="py-24 bg-white">
           <div className="section-container">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <motion.div
@@ -80,7 +80,7 @@ export default function MultiSlideDoorsPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
               >
-                <span className="text-wood-600 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                   Features
                 </span>
                 <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
@@ -95,7 +95,7 @@ export default function MultiSlideDoorsPage() {
                 <ul className="space-y-4">
                   {features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-wood-500 mt-0.5 shrink-0" />
+                      <Check className="w-5 h-5 text-primary-500 mt-0.5 shrink-0" />
                       <span className="text-ocean-700">{feature}</span>
                     </li>
                   ))}
@@ -136,7 +136,7 @@ export default function MultiSlideDoorsPage() {
         </section>
 
         {/* Operation Types */}
-        <section className="py-24 bg-ocean-900">
+        <section className="py-24 bg-primary-800">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -145,7 +145,7 @@ export default function MultiSlideDoorsPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <span className="text-wood-400 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Operation Types
               </span>
               <h2 className="font-heading text-3xl md:text-4xl text-white">
@@ -182,16 +182,16 @@ export default function MultiSlideDoorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-ocean-800/50 p-8"
+                  className="bg-primary-900/50 p-8"
                 >
                   <h3 className="font-heading text-2xl text-white mb-3">
                     {type.title}
                   </h3>
-                  <p className="text-ocean-400 mb-6">{type.description}</p>
+                  <p className="text-primary-200 mb-6">{type.description}</p>
                   <ul className="space-y-2">
                     {type.features.map((feature) => (
                       <li key={feature} className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-wood-400" />
+                        <Check className="w-4 h-4 text-primary-300" />
                         <span className="text-white/80 text-sm">{feature}</span>
                       </li>
                     ))}
@@ -203,7 +203,7 @@ export default function MultiSlideDoorsPage() {
         </section>
 
         {/* Size Options */}
-        <section className="py-24 bg-cream">
+        <section className="py-24 bg-white">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -233,9 +233,9 @@ export default function MultiSlideDoorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-ocean-900 p-8"
+                  className="bg-primary-800 p-8"
                 >
-                  <p className="font-heading text-5xl text-wood-400 mb-2">
+                  <p className="font-heading text-5xl text-primary-300 mb-2">
                     {stat.value}
                   </p>
                   <p className="text-white">{stat.label}</p>

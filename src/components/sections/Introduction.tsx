@@ -6,9 +6,9 @@ import { ArrowRight } from "lucide-react";
 
 export default function Introduction() {
   return (
-    <section className="py-24 md:py-32 bg-cream relative overflow-hidden">
+    <section className="py-24 md:py-32 bg-white relative overflow-hidden">
       {/* Decorative vertical line */}
-      <div className="absolute left-8 md:left-16 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-wood-300 to-transparent opacity-50" />
+      <div className="absolute left-8 md:left-16 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-primary-300 to-transparent opacity-50" />
 
       <div className="section-container">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-8">
@@ -21,12 +21,12 @@ export default function Introduction() {
             className="lg:col-span-5"
           >
             <div className="sticky top-32">
-              <span className="font-heading text-[120px] md:text-[180px] text-wood-200 leading-none block -ml-4">
+              <span className="font-heading text-[120px] md:text-[180px] text-primary-200 leading-none block -ml-4">
                 "
               </span>
               <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900 leading-tight -mt-16 md:-mt-24">
                 A door is more than a passage—
-                <span className="text-wood-600 block mt-2">it's a statement.</span>
+                <span className="text-primary-500 block mt-2">it's a statement.</span>
               </h2>
             </div>
           </motion.div>
@@ -49,7 +49,7 @@ export default function Introduction() {
                 />
               </div>
               {/* Offset accent */}
-              <div className="absolute -bottom-4 -right-4 w-full h-full border-2 border-wood-400 -z-10" />
+              <div className="absolute -bottom-4 -right-4 w-full h-full border-2 border-primary-400 -z-10" />
             </div>
 
             {/* Text blocks */}
@@ -88,7 +88,7 @@ export default function Introduction() {
               >
                 <span className="relative">
                   Discover Our Story
-                  <span className="absolute bottom-0 left-0 w-full h-[2px] bg-wood-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
+                  <span className="absolute bottom-0 left-0 w-full h-[2px] bg-primary-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left" />
                 </span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>

@@ -9,8 +9,8 @@ const contactInfo = [
   {
     icon: Phone,
     title: "Phone",
-    details: ["(800) 555-1234", "Mon-Fri: 8am-6pm"],
-    action: "tel:8005551234",
+    details: ["818-427-6690", "Mon-Fri: 8am-6pm"],
+    action: "tel:818-427-6690",
   },
   {
     icon: Mail,
@@ -38,7 +38,7 @@ export default function ContactPage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 bg-ocean-900">
+        <section className="pt-32 pb-20 bg-primary-900">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -46,12 +46,12 @@ export default function ContactPage() {
               transition={{ duration: 0.6 }}
               className="max-w-3xl"
             >
-              <span className="text-wood-400 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Contact Us
               </span>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
                 Let's Start a
-                <span className="block text-wood-400">Conversation</span>
+                <span className="block text-primary-300">Conversation</span>
               </h1>
               <p className="text-white/70 text-lg">
                 Have questions about our products or services? Ready to schedule
@@ -62,7 +62,7 @@ export default function ContactPage() {
         </section>
 
         {/* Contact Info Cards */}
-        <section className="py-16 bg-wood-700">
+        <section className="py-16 bg-primary-600">
           <div className="section-container">
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
               {contactInfo.map((item, index) => (
@@ -76,26 +76,26 @@ export default function ContactPage() {
                   {item.action ? (
                     <a
                       href={item.action}
-                      className="block bg-wood-600 p-6 hover:bg-wood-500 transition-colors h-full"
+                      className="block bg-primary-700 p-6 hover:bg-primary-500 transition-colors h-full"
                     >
-                      <item.icon className="w-8 h-8 text-wood-200 mb-4" />
+                      <item.icon className="w-8 h-8 text-primary-200 mb-4" />
                       <h3 className="font-heading text-xl text-white mb-2">
                         {item.title}
                       </h3>
                       {item.details.map((detail, i) => (
-                        <p key={i} className="text-wood-200 text-sm">
+                        <p key={i} className="text-primary-100 text-sm">
                           {detail}
                         </p>
                       ))}
                     </a>
                   ) : (
-                    <div className="bg-wood-600 p-6 h-full">
-                      <item.icon className="w-8 h-8 text-wood-200 mb-4" />
+                    <div className="bg-primary-700 p-6 h-full">
+                      <item.icon className="w-8 h-8 text-primary-200 mb-4" />
                       <h3 className="font-heading text-xl text-white mb-2">
                         {item.title}
                       </h3>
                       {item.details.map((detail, i) => (
-                        <p key={i} className="text-wood-200 text-sm">
+                        <p key={i} className="text-primary-100 text-sm">
                           {detail}
                         </p>
                       ))}
@@ -108,7 +108,7 @@ export default function ContactPage() {
         </section>
 
         {/* Contact Form & Map */}
-        <section className="py-24 bg-cream">
+        <section className="py-24 bg-white">
           <div className="section-container">
             <div className="grid lg:grid-cols-2 gap-16">
               {/* Form */}
@@ -130,7 +130,7 @@ export default function ContactPage() {
                       <input
                         type="text"
                         required
-                        className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         placeholder="John"
                       />
                     </div>
@@ -141,7 +141,7 @@ export default function ContactPage() {
                       <input
                         type="text"
                         required
-                        className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         placeholder="Doe"
                       />
                     </div>
@@ -154,7 +154,7 @@ export default function ContactPage() {
                     <input
                       type="email"
                       required
-                      className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                      className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                       placeholder="john@example.com"
                     />
                   </div>
@@ -165,7 +165,7 @@ export default function ContactPage() {
                     </label>
                     <input
                       type="tel"
-                      className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                      className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                       placeholder="(555) 123-4567"
                     />
                   </div>
@@ -176,7 +176,7 @@ export default function ContactPage() {
                     </label>
                     <select
                       required
-                      className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors bg-white"
+                      className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors bg-white"
                     >
                       <option value="">Select a topic</option>
                       <option value="quote">Request a Quote</option>
@@ -196,14 +196,14 @@ export default function ContactPage() {
                     <textarea
                       required
                       rows={5}
-                      className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors resize-none"
+                      className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors resize-none"
                       placeholder="Tell us about your project..."
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="bg-wood-600 text-white px-8 py-4 font-medium tracking-wide hover:bg-wood-500 transition-colors"
+                    className="bg-primary-600 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-500 transition-colors"
                   >
                     Send Message
                   </button>
@@ -227,14 +227,14 @@ export default function ContactPage() {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="bg-ocean-900 p-6">
+                <div className="bg-primary-800 p-6">
                   <h3 className="font-heading text-xl text-white mb-2">
                     Newport Beach Showroom
                   </h3>
-                  <p className="text-ocean-400 mb-4">
+                  <p className="text-primary-200 mb-4">
                     123 Design District, Newport Beach, CA 92660
                   </p>
-                  <p className="text-ocean-400 text-sm">
+                  <p className="text-primary-200 text-sm">
                     Experience our door collections in person. Our design
                     consultants are available to guide you through our products
                     and help you find the perfect solution for your home.

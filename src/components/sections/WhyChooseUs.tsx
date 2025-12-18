@@ -51,7 +51,7 @@ const features = [
 
 export default function WhyChooseUs() {
   return (
-    <section className="py-24 md:py-32 bg-sand-50 relative overflow-hidden">
+    <section className="py-24 md:py-32 bg-white relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute inset-0" style={{
@@ -70,12 +70,12 @@ export default function WhyChooseUs() {
             className="lg:col-span-4"
           >
             <div className="lg:sticky lg:top-32">
-              <span className="text-wood-600 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Why Choose Us
               </span>
               <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900 mb-6">
                 The Scenic Doors
-                <span className="text-wood-600 block">Difference</span>
+                <span className="text-primary-500 block">Difference</span>
               </h2>
               <p className="text-ocean-600 leading-relaxed">
                 Experience the craftsmanship and dedication that has made us
@@ -84,7 +84,7 @@ export default function WhyChooseUs() {
               </p>
               {/* Decorative element */}
               <div className="mt-8 flex items-center gap-4">
-                <div className="w-16 h-[2px] bg-wood-500" />
+                <div className="w-16 h-[2px] bg-primary-500" />
                 <span className="text-ocean-400 text-sm">Est. 1998</span>
               </div>
             </div>
@@ -103,9 +103,9 @@ export default function WhyChooseUs() {
                   className="bg-white p-8 group hover:shadow-xl transition-shadow duration-500 relative overflow-hidden"
                 >
                   {/* Hover accent */}
-                  <div className="absolute top-0 left-0 w-1 h-0 bg-wood-500 group-hover:h-full transition-all duration-500" />
+                  <div className="absolute top-0 left-0 w-1 h-0 bg-primary-500 group-hover:h-full transition-all duration-500" />
 
-                  <feature.icon className="w-8 h-8 text-wood-500 mb-5" strokeWidth={1.5} />
+                  <feature.icon className="w-8 h-8 text-primary-500 mb-5" strokeWidth={1.5} />
                   <h3 className="font-heading text-xl text-ocean-900 mb-3">
                     {feature.title}
                   </h3>

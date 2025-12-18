@@ -46,7 +46,7 @@ export default function PivotDoorsPage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 bg-ocean-900 relative overflow-hidden">
+        <section className="pt-32 pb-20 bg-primary-800 relative overflow-hidden">
           <div className="absolute inset-0">
             <div
               className="absolute inset-0 bg-cover bg-center opacity-30"
@@ -65,7 +65,7 @@ export default function PivotDoorsPage() {
             >
               <Link
                 href="/doors"
-                className="text-wood-400 text-sm mb-4 inline-block hover:text-wood-300 transition-colors"
+                className="text-primary-300 text-sm mb-4 inline-block hover:text-primary-200 transition-colors"
               >
                 ← Back to Collections
               </Link>
@@ -78,8 +78,8 @@ export default function PivotDoorsPage() {
                 creating an unforgettable first impression.
               </p>
               <Link
-                href="/quote"
-                className="inline-flex items-center gap-2 bg-wood-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-wood-400 transition-colors"
+                href="https://app.scenicdoors.co/quote/start" target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-primary-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-400 transition-colors"
               >
                 Request a Quote
                 <ArrowRight className="w-4 h-4" />
@@ -89,7 +89,7 @@ export default function PivotDoorsPage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-24 bg-cream">
+        <section className="py-24 bg-white">
           <div className="section-container">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <motion.div
@@ -98,7 +98,7 @@ export default function PivotDoorsPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
               >
-                <span className="text-wood-600 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                   Features
                 </span>
                 <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
@@ -113,7 +113,7 @@ export default function PivotDoorsPage() {
                 <ul className="space-y-4">
                   {features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-wood-500 mt-0.5 shrink-0" />
+                      <Check className="w-5 h-5 text-primary-500 mt-0.5 shrink-0" />
                       <span className="text-ocean-700">{feature}</span>
                     </li>
                   ))}
@@ -154,7 +154,7 @@ export default function PivotDoorsPage() {
         </section>
 
         {/* Materials Section */}
-        <section className="py-24 bg-ocean-900">
+        <section className="py-24 bg-primary-800">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -163,7 +163,7 @@ export default function PivotDoorsPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <span className="text-wood-400 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Materials
               </span>
               <h2 className="font-heading text-3xl md:text-4xl text-white">
@@ -179,12 +179,12 @@ export default function PivotDoorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-ocean-800/50 p-8 border-t-2 border-wood-500"
+                  className="bg-primary-900/50 p-8 border-t-2 border-primary-400"
                 >
                   <h3 className="font-heading text-xl text-white mb-3">
                     {material.name}
                   </h3>
-                  <p className="text-ocean-400">{material.description}</p>
+                  <p className="text-primary-200">{material.description}</p>
                 </motion.div>
               ))}
             </div>
@@ -192,7 +192,7 @@ export default function PivotDoorsPage() {
         </section>
 
         {/* Custom Design */}
-        <section className="py-24 bg-cream">
+        <section className="py-24 bg-white">
           <div className="section-container">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <motion.div
@@ -214,7 +214,7 @@ export default function PivotDoorsPage() {
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
               >
-                <span className="text-wood-600 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                   Custom Design
                 </span>
                 <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
@@ -232,8 +232,8 @@ export default function PivotDoorsPage() {
                   satisfaction before production begins.
                 </p>
                 <Link
-                  href="/quote"
-                  className="inline-flex items-center gap-2 bg-ocean-900 text-white px-8 py-4 font-medium tracking-wide hover:bg-ocean-800 transition-colors"
+                  href="https://app.scenicdoors.co/quote/start" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-primary-800 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-700 transition-colors"
                 >
                   Start Your Design
                   <ArrowRight className="w-4 h-4" />

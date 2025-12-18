@@ -39,7 +39,7 @@ const doors = [
 
 export default function DoorCollections() {
   return (
-    <section className="py-24 md:py-32 bg-ocean-900 relative">
+    <section className="py-24 md:py-32 bg-primary-900 relative">
       {/* Section Header */}
       <div className="section-container mb-16">
         <motion.div
@@ -50,12 +50,12 @@ export default function DoorCollections() {
           className="flex flex-col md:flex-row md:items-end md:justify-between gap-6"
         >
           <div>
-            <span className="text-wood-400 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+            <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
               Our Collections
             </span>
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-white">
               Three Ways to<br />
-              <span className="text-wood-400">Transform Your Space</span>
+              <span className="text-primary-300">Transform Your Space</span>
             </h2>
           </div>
           <Link
@@ -82,8 +82,8 @@ export default function DoorCollections() {
               <Link href={door.href} className="block group">
                 {/* Number */}
                 <div className="flex items-center gap-4 mb-4">
-                  <span className="text-wood-500 font-heading text-5xl">{door.number}</span>
-                  <div className="flex-1 h-[1px] bg-ocean-700 group-hover:bg-wood-500 transition-colors" />
+                  <span className="text-primary-400 font-heading text-5xl">{door.number}</span>
+                  <div className="flex-1 h-[1px] bg-primary-700 group-hover:bg-primary-400 transition-colors" />
                 </div>
 
                 {/* Image */}
@@ -94,7 +94,7 @@ export default function DoorCollections() {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-wood-600/0 group-hover:bg-wood-600/20 transition-colors duration-500" />
+                  <div className="absolute inset-0 bg-primary-500/0 group-hover:bg-primary-500/20 transition-colors duration-500" />
                   {/* Arrow */}
                   <div className="absolute bottom-4 right-4 w-12 h-12 bg-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <ArrowUpRight className="w-5 h-5 text-ocean-900" />
@@ -105,7 +105,7 @@ export default function DoorCollections() {
                 <h3 className="font-heading text-2xl text-white mb-3">
                   {door.title}
                 </h3>
-                <p className="text-ocean-400 text-sm leading-relaxed">
+                <p className="text-primary-200 text-sm leading-relaxed">
                   {door.description}
                 </p>
               </Link>
@@ -115,7 +115,7 @@ export default function DoorCollections() {
       </div>
 
       {/* Bottom accent */}
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-wood-500/50 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary-400/50 to-transparent" />
     </section>
   );
 }

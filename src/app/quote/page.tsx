@@ -19,7 +19,7 @@ export default function QuotePage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 bg-ocean-900 relative overflow-hidden">
+        <section className="pt-32 pb-20 bg-primary-900 relative overflow-hidden">
           <div className="absolute inset-0 opacity-20">
             <div
               className="absolute inset-0 bg-cover bg-center"
@@ -35,12 +35,12 @@ export default function QuotePage() {
               transition={{ duration: 0.6 }}
               className="max-w-3xl"
             >
-              <span className="text-wood-400 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Free Consultation
               </span>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
                 Request Your
-                <span className="block text-wood-400">Free Quote</span>
+                <span className="block text-primary-300">Free Quote</span>
               </h1>
               <p className="text-white/70 text-lg">
                 Take the first step toward transforming your space. Our design
@@ -52,7 +52,7 @@ export default function QuotePage() {
         </section>
 
         {/* Form Section */}
-        <section className="py-24 bg-cream">
+        <section className="py-24 bg-white">
           <div className="section-container">
             <div className="grid lg:grid-cols-3 gap-16">
               {/* Benefits Sidebar */}
@@ -63,28 +63,28 @@ export default function QuotePage() {
                 transition={{ duration: 0.6 }}
                 className="lg:col-span-1"
               >
-                <div className="bg-ocean-900 p-8 sticky top-32">
+                <div className="bg-primary-800 p-8 sticky top-32">
                   <h3 className="font-heading text-2xl text-white mb-6">
                     What's Included
                   </h3>
                   <ul className="space-y-4 mb-8">
                     {benefits.map((benefit) => (
                       <li key={benefit} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-wood-400 mt-0.5 shrink-0" />
+                        <Check className="w-5 h-5 text-primary-300 mt-0.5 shrink-0" />
                         <span className="text-white/80">{benefit}</span>
                       </li>
                     ))}
                   </ul>
-                  <div className="border-t border-ocean-700 pt-6">
-                    <p className="text-ocean-400 text-sm mb-4">
+                  <div className="border-t border-primary-700 pt-6">
+                    <p className="text-primary-200 text-sm mb-4">
                       Prefer to talk to someone?
                     </p>
                     <a
-                      href="tel:8005551234"
-                      className="flex items-center gap-2 text-white hover:text-wood-400 transition-colors"
+                      href="tel:818-427-6690"
+                      className="flex items-center gap-2 text-white hover:text-primary-300 transition-colors"
                     >
                       <Phone className="w-5 h-5" />
-                      (800) 555-1234
+                      818-427-6690
                     </a>
                   </div>
                 </div>
@@ -115,7 +115,7 @@ export default function QuotePage() {
                         <input
                           type="text"
                           required
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         />
                       </div>
                       <div>
@@ -125,7 +125,7 @@ export default function QuotePage() {
                         <input
                           type="text"
                           required
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         />
                       </div>
                       <div>
@@ -135,7 +135,7 @@ export default function QuotePage() {
                         <input
                           type="email"
                           required
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         />
                       </div>
                       <div>
@@ -145,7 +145,7 @@ export default function QuotePage() {
                         <input
                           type="tel"
                           required
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
@@ -164,7 +164,7 @@ export default function QuotePage() {
                         <input
                           type="text"
                           required
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         />
                       </div>
                       <div>
@@ -174,7 +174,7 @@ export default function QuotePage() {
                         <input
                           type="text"
                           required
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         />
                       </div>
                       <div>
@@ -184,7 +184,7 @@ export default function QuotePage() {
                         <input
                           type="text"
                           required
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
@@ -208,11 +208,11 @@ export default function QuotePage() {
                           ].map((product) => (
                             <label
                               key={product}
-                              className="flex items-center gap-3 p-4 border border-ocean-200 cursor-pointer hover:border-wood-500 transition-colors"
+                              className="flex items-center gap-3 p-4 border border-ocean-200 cursor-pointer hover:border-primary-500 transition-colors"
                             >
                               <input
                                 type="checkbox"
-                                className="w-5 h-5 accent-wood-500"
+                                className="w-5 h-5 accent-primary-500"
                               />
                               <span className="text-ocean-700 text-sm">
                                 {product}
@@ -228,7 +228,7 @@ export default function QuotePage() {
                         </label>
                         <select
                           required
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors bg-white"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors bg-white"
                         >
                           <option value="">Select project type</option>
                           <option value="new-construction">
@@ -246,7 +246,7 @@ export default function QuotePage() {
                         <label className="block text-ocean-700 text-sm mb-2">
                           Estimated Budget
                         </label>
-                        <select className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors bg-white">
+                        <select className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors bg-white">
                           <option value="">Select budget range</option>
                           <option value="10-25k">$10,000 - $25,000</option>
                           <option value="25-50k">$25,000 - $50,000</option>
@@ -259,7 +259,7 @@ export default function QuotePage() {
                         <label className="block text-ocean-700 text-sm mb-2">
                           Preferred Timeline
                         </label>
-                        <select className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors bg-white">
+                        <select className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors bg-white">
                           <option value="">Select timeline</option>
                           <option value="asap">As soon as possible</option>
                           <option value="1-3months">1-3 months</option>
@@ -275,7 +275,7 @@ export default function QuotePage() {
                         </label>
                         <textarea
                           rows={5}
-                          className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors resize-none"
+                          className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors resize-none"
                           placeholder="Describe your vision, any specific requirements, or questions you have..."
                         />
                       </div>
@@ -284,7 +284,7 @@ export default function QuotePage() {
                         <label className="block text-ocean-700 text-sm mb-2">
                           How Did You Hear About Us?
                         </label>
-                        <select className="w-full px-4 py-3 border border-ocean-200 focus:border-wood-500 focus:outline-none transition-colors bg-white">
+                        <select className="w-full px-4 py-3 border border-ocean-200 focus:border-primary-500 focus:outline-none transition-colors bg-white">
                           <option value="">Select option</option>
                           <option value="google">Google Search</option>
                           <option value="referral">
@@ -302,7 +302,7 @@ export default function QuotePage() {
 
                   <button
                     type="submit"
-                    className="w-full bg-wood-600 text-white px-8 py-4 font-medium tracking-wide hover:bg-wood-500 transition-colors"
+                    className="w-full bg-primary-600 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-500 transition-colors"
                   >
                     Request Free Consultation
                   </button>

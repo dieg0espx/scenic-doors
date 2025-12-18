@@ -33,7 +33,7 @@ const projects = [
 
 export default function FeaturedProjects() {
   return (
-    <section className="py-24 md:py-32 bg-cream">
+    <section className="py-24 md:py-32 bg-primary-50">
       <div className="section-container">
         {/* Header */}
         <motion.div
@@ -44,7 +44,7 @@ export default function FeaturedProjects() {
           className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
         >
           <div>
-            <span className="text-wood-600 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+            <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
               Our Portfolio
             </span>
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900">
@@ -53,7 +53,7 @@ export default function FeaturedProjects() {
           </div>
           <Link
             href="/gallery"
-            className="inline-flex items-center gap-2 text-ocean-700 font-medium hover:text-wood-600 transition-colors group"
+            className="inline-flex items-center gap-2 text-ocean-700 font-medium hover:text-primary-500 transition-colors group"
           >
             View All Projects
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -127,7 +127,7 @@ function ProjectCard({
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 p-6">
-        <span className="inline-block bg-wood-500 text-white text-xs font-medium px-3 py-1 mb-3">
+        <span className="inline-block bg-primary-500 text-white text-xs font-medium px-3 py-1 mb-3">
           {project.type}
         </span>
         <h3 className="font-heading text-xl md:text-2xl text-white drop-shadow-lg">{project.title}</h3>

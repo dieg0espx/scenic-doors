@@ -10,7 +10,7 @@ const brands = [
 
 export default function TrustBar() {
   return (
-    <section className="bg-wood-800 py-10 md:py-12">
+    <section className="bg-primary-600 py-10 md:py-12">
       <div className="section-container">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           {/* Left - Tagline */}
@@ -18,7 +18,7 @@ export default function TrustBar() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="text-wood-300 text-sm tracking-wide"
+            className="text-white/80 text-sm tracking-wide"
           >
             Factory-certified installers for premium brands
           </motion.p>
@@ -35,7 +35,7 @@ export default function TrustBar() {
                 className="text-center"
               >
                 <p className="font-heading text-lg md:text-xl text-white">{brand.name}</p>
-                <p className="text-xs text-wood-400">{brand.subtitle}</p>
+                <p className="text-xs text-white/70">{brand.subtitle}</p>
               </motion.div>
             ))}
           </div>

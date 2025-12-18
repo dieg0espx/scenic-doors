@@ -94,7 +94,7 @@ export default function ServiceAreasPage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 bg-ocean-900">
+        <section className="pt-32 pb-20 bg-primary-800">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -102,7 +102,7 @@ export default function ServiceAreasPage() {
               transition={{ duration: 0.6 }}
               className="max-w-3xl"
             >
-              <span className="text-wood-400 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Where We Work
               </span>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
@@ -119,27 +119,27 @@ export default function ServiceAreasPage() {
         </section>
 
         {/* Stats Bar */}
-        <section className="py-12 bg-wood-700">
+        <section className="py-12 bg-primary-600">
           <div className="section-container">
             <div className="grid grid-cols-3 gap-8 text-center">
               <div>
                 <p className="font-heading text-4xl text-white mb-1">6</p>
-                <p className="text-wood-300 text-sm">Counties Served</p>
+                <p className="text-primary-100 text-sm">Counties Served</p>
               </div>
               <div>
                 <p className="font-heading text-4xl text-white mb-1">50+</p>
-                <p className="text-wood-300 text-sm">Cities Covered</p>
+                <p className="text-primary-100 text-sm">Cities Covered</p>
               </div>
               <div>
                 <p className="font-heading text-4xl text-white mb-1">1000+</p>
-                <p className="text-wood-300 text-sm">Installations</p>
+                <p className="text-primary-100 text-sm">Installations</p>
               </div>
             </div>
           </div>
         </section>
 
         {/* Counties Grid */}
-        <section className="py-24 bg-cream">
+        <section className="py-24 bg-white">
           <div className="section-container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -168,7 +168,7 @@ export default function ServiceAreasPage() {
                   className="bg-white p-8 shadow-sm"
                 >
                   <div className="flex items-center gap-3 mb-6">
-                    <MapPin className="w-6 h-6 text-wood-500" />
+                    <MapPin className="w-6 h-6 text-primary-500" />
                     <h3 className="font-heading text-xl text-ocean-900">
                       {county.name}
                     </h3>
@@ -190,7 +190,7 @@ export default function ServiceAreasPage() {
         </section>
 
         {/* Not in Our Area? */}
-        <section className="py-24 bg-ocean-900">
+        <section className="py-24 bg-primary-800">
           <div className="section-container">
             <div className="max-w-3xl mx-auto text-center">
               <motion.div
@@ -202,14 +202,14 @@ export default function ServiceAreasPage() {
                 <h2 className="font-heading text-3xl md:text-4xl text-white mb-6">
                   Don't See Your City?
                 </h2>
-                <p className="text-ocean-400 mb-8">
+                <p className="text-primary-200 mb-8">
                   We frequently work on projects throughout Southern California
                   and beyond. If you don't see your location listed, please
                   reach out—we may still be able to help with your project.
                 </p>
                 <Link
-                  href="/contact"
-                  className="inline-flex items-center gap-2 bg-wood-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-wood-400 transition-colors"
+                  href="https://app.scenicdoors.co/quote/start" target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-primary-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-400 transition-colors"
                 >
                   Contact Us
                   <ArrowRight className="w-4 h-4" />

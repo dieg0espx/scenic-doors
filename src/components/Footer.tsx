@@ -15,7 +15,7 @@ const companyLinks = [
   { name: "About Us", href: "/about" },
   { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
-  { name: "Free Quote", href: "/quote" },
+  { name: "Instant Quote", href: "https://app.scenicdoors.co/quote/start" },
 ];
 
 const serviceAreas = [
@@ -29,7 +29,7 @@ export default function Footer() {
   return (
     <footer className="bg-ocean-900 relative overflow-hidden">
       {/* Top Accent */}
-      <div className="h-1 bg-gradient-to-r from-transparent via-wood-500 to-transparent" />
+      <div className="h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent" />
 
       {/* Main Footer */}
       <div className="section-container">
@@ -39,26 +39,28 @@ export default function Footer() {
             <div>
               <h3 className="font-heading text-3xl md:text-4xl text-white mb-4">
                 Ready to transform<br />
-                <span className="text-wood-400">your space?</span>
+                <span className="text-primary-300">your space?</span>
               </h3>
               <p className="text-ocean-400 max-w-md">
                 Schedule a complimentary consultation with our design specialists.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 lg:justify-end">
-              <Link
-                href="/quote"
-                className="group bg-wood-500 text-white px-8 py-4 font-medium tracking-wide inline-flex items-center justify-center gap-2 hover:bg-wood-400 transition-colors"
-              >
-                Get Free Quote
-                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </Link>
               <a
-                href="tel:8005551234"
-                className="border-2 border-ocean-700 text-white px-8 py-4 font-medium tracking-wide inline-flex items-center justify-center gap-2 hover:border-ocean-500 transition-colors"
+                href="https://app.scenicdoors.co/quote/start"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group bg-primary-500 text-white px-8 py-4 font-medium tracking-wide inline-flex items-center justify-center gap-2 hover:bg-primary-400 transition-colors"
+              >
+                Get Instant Quote
+                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+              </a>
+              <a
+                href="tel:818-427-6690"
+                className="border-2 border-primary-600 text-white px-8 py-4 font-medium tracking-wide inline-flex items-center justify-center gap-2 hover:border-primary-400 transition-colors"
               >
                 <Phone className="w-4 h-4" />
-                (800) 555-1234
+                818-427-6690
               </a>
             </div>
           </div>
@@ -70,7 +72,7 @@ export default function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="inline-block mb-6">
               <span className="font-heading text-2xl font-semibold tracking-wide text-white">
-                SCENIC<span className="text-wood-400">.</span>
+                SCENIC<span className="text-primary-300">.</span>
               </span>
             </Link>
             <p className="text-ocean-400 text-sm leading-relaxed mb-6 max-w-xs">
@@ -79,7 +81,7 @@ export default function Footer() {
             <div className="space-y-3">
               <a
                 href="mailto:info@scenicdoors.com"
-                className="flex items-center gap-3 text-ocean-400 hover:text-wood-400 transition-colors text-sm"
+                className="flex items-center gap-3 text-ocean-400 hover:text-primary-400 transition-colors text-sm"
               >
                 <Mail className="w-4 h-4 flex-shrink-0" />
                 info@scenicdoors.com
@@ -119,13 +121,25 @@ export default function Footer() {
             <ul className="space-y-4">
               {companyLinks.map((link) => (
                 <li key={link.name}>
-                  <Link
-                    href={link.href}
-                    className="text-ocean-400 hover:text-white transition-colors text-sm inline-flex items-center gap-1 group"
-                  >
-                    {link.name}
-                    <ArrowUpRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                  </Link>
+                  {link.href.startsWith("http") ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-ocean-400 hover:text-white transition-colors text-sm inline-flex items-center gap-1 group"
+                    >
+                      {link.name}
+                      <ArrowUpRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className="text-ocean-400 hover:text-white transition-colors text-sm inline-flex items-center gap-1 group"
+                    >
+                      {link.name}
+                      <ArrowUpRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
@@ -170,8 +184,8 @@ export default function Footer() {
       </div>
 
       {/* Background decoration */}
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-wood-600/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 left-0 w-64 h-64 bg-ocean-700/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary-600/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-0 w-64 h-64 bg-primary-700/20 rounded-full blur-3xl pointer-events-none" />
     </footer>
   );
 }

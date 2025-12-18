@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
 
@@ -40,7 +41,7 @@ export default function Header() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? "bg-ocean-900/95 backdrop-blur-md shadow-lg py-3"
+          ? "bg-white backdrop-blur-md shadow-lg py-3"
           : "bg-transparent py-6"
       }`}
     >
@@ -48,13 +49,14 @@ export default function Header() {
         <nav className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="relative z-10">
-            <span
-              className={`font-heading text-2xl md:text-3xl font-semibold tracking-wide transition-colors duration-300 ${
-                isScrolled ? "text-white" : "text-white"
-              }`}
-            >
-              SCENIC <span className="text-wood-400">DOORS</span>
-            </span>
+            <Image
+              src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif"
+              alt="Scenic Doors & Windows"
+              width={180}
+              height={50}
+              className="h-10 md:h-12 w-auto"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -68,8 +70,8 @@ export default function Header() {
               <button
                 className={`flex items-center gap-1 font-medium transition-colors duration-300 ${
                   isScrolled
-                    ? "text-white/90 hover:text-wood-400"
-                    : "text-white/90 hover:text-wood-300"
+                    ? "text-ocean-800 hover:text-primary-500"
+                    : "text-white/90 hover:text-primary-300"
                 }`}
               >
                 Our Doors
@@ -120,15 +122,15 @@ export default function Header() {
           {/* CTA Buttons */}
           <div className="hidden lg:flex items-center gap-4">
             <a
-              href="tel:8005551234"
+              href="tel:818-427-6690"
               className={`flex items-center gap-2 font-medium transition-colors ${
                 isScrolled
-                  ? "text-white/90 hover:text-wood-400"
-                  : "text-white/90 hover:text-wood-300"
+                  ? "text-ocean-800 hover:text-primary-500"
+                  : "text-white/90 hover:text-primary-300"
               }`}
             >
               <Phone className="w-4 h-4" />
-              (800) 555-1234
+              818-427-6690
             </a>
             <Link
               href="/quote"
@@ -140,7 +142,7 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <button
-            className="lg:hidden relative z-10 p-2 text-white"
+            className={`lg:hidden relative z-10 p-2 ${isScrolled ? "text-ocean-800" : "text-white"}`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? (
@@ -234,8 +236,8 @@ function NavLink({
       href={href}
       className={`font-medium transition-colors duration-300 ${
         isScrolled
-          ? "text-white/90 hover:text-wood-400"
-          : "text-white/90 hover:text-wood-300"
+          ? "text-ocean-800 hover:text-primary-500"
+          : "text-white/90 hover:text-primary-300"
       }`}
     >
       {children}

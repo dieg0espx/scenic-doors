@@ -37,6 +37,18 @@
   --color-sand-100: #f5f1eb;
   --color-sand-50: #faf8f5;
 
+  /* Primary Blue */
+  --color-primary-900: #1a4b6e;
+  --color-primary-800: #1e5a84;
+  --color-primary-700: #236a9a;
+  --color-primary-600: #2d7db5;
+  --color-primary-500: #3898ec;
+  --color-primary-400: #5aabf0;
+  --color-primary-300: #7dbef4;
+  --color-primary-200: #a8d4f8;
+  --color-primary-100: #d4eafc;
+  --color-primary-50: #edf6fe;
+
   --color-cream: #f5f1eb;
   --color-cream-dark: #ebe5db;
 
@@ -55,7 +67,7 @@ html {
 }
 
 body {
-  background-color: var(--color-cream);
+  background-color: white;
   color: var(--color-ocean-800);
   line-height: 1.6;
 }
@@ -103,7 +115,7 @@ img[data-loading="true"] {
 
 /* Button styles */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-wood-600) 0%, var(--color-wood-500) 100%);
+  background: linear-gradient(135deg, var(--color-primary-600) 0%, var(--color-primary-500) 100%);
   color: white;
   padding: 1rem 2rem;
   font-weight: 500;
@@ -114,9 +126,9 @@ img[data-loading="true"] {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, var(--color-wood-500) 0%, var(--color-wood-400) 100%);
+  background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-400) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 10px 30px rgba(132, 115, 103, 0.3);
+  box-shadow: 0 10px 30px rgba(56, 152, 236, 0.3);
 }
 
 .btn-secondary {
