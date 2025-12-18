@@ -75,7 +75,7 @@ export default function AboutPage() {
       <Header />
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 bg-ocean-900 relative overflow-hidden">
+        <section className="pt-40 pb-40 md:pt-48 md:pb-48 bg-ocean-900 relative overflow-hidden">
           <div className="absolute inset-0 opacity-20">
             <div
               className="absolute inset-0 bg-cover bg-center"

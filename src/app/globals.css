@@ -41,8 +41,8 @@
   --color-cream-dark: #ebe5db;
 
   /* Typography */
-  --font-heading: "Cormorant Garamond", serif;
-  --font-body: "Inter", sans-serif;
+  --font-family-heading: "Cormorant Garamond", serif;
+  --font-family-body: "Inter", sans-serif;
 
   /* Spacing */
   --section-padding: 6rem;
@@ -55,16 +55,24 @@ html {
 }
 
 body {
-  font-family: var(--font-body);
   background-color: var(--color-cream);
   color: var(--color-ocean-800);
   line-height: 1.6;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
+  font-family: var(--font-heading, "Cormorant Garamond"), serif;
   font-weight: 500;
   line-height: 1.2;
+}
+
+/* Font utility classes */
+.font-heading {
+  font-family: var(--font-heading, "Cormorant Garamond"), serif !important;
+}
+
+.font-body {
+  font-family: var(--font-body, "Inter"), sans-serif;
 }
 
 /* Custom utility classes */

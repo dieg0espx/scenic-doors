@@ -23,15 +23,6 @@ const doorTypes = [
   },
 ];
 
-const serviceAreas = [
-  { name: "Los Angeles County", href: "/service-areas/los-angeles" },
-  { name: "Orange County", href: "/service-areas/orange-county" },
-  { name: "San Diego County", href: "/service-areas/san-diego" },
-  { name: "Riverside County", href: "/service-areas/riverside" },
-  { name: "Ventura County", href: "/service-areas/ventura" },
-  { name: "Santa Barbara County", href: "/service-areas/santa-barbara" },
-];
-
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -68,10 +59,6 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
-            <NavLink href="/" isScrolled={isScrolled}>
-              Home
-            </NavLink>
-
             {/* Our Doors Dropdown */}
             <div
               className="relative"
@@ -109,45 +96,6 @@ export default function Header() {
                         <span className="block text-sm text-ocean-500">
                           {door.description}
                         </span>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Service Areas Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setActiveDropdown("areas")}
-              onMouseLeave={() => setActiveDropdown(null)}
-            >
-              <button
-                className={`flex items-center gap-1 font-medium transition-colors duration-300 ${
-                  isScrolled
-                    ? "text-white/90 hover:text-wood-400"
-                    : "text-white/90 hover:text-wood-300"
-                }`}
-              >
-                Service Areas
-                <ChevronDown className="w-4 h-4" />
-              </button>
-              <AnimatePresence>
-                {activeDropdown === "areas" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl overflow-hidden"
-                  >
-                    {serviceAreas.map((area) => (
-                      <Link
-                        key={area.name}
-                        href={area.href}
-                        className="block px-5 py-3 hover:bg-sand-100 transition-colors text-ocean-800"
-                      >
-                        {area.name}
                       </Link>
                     ))}
                   </motion.div>
@@ -214,13 +162,7 @@ export default function Header() {
               className="lg:hidden bg-ocean-900 mt-4 rounded-lg overflow-hidden"
             >
               <div className="py-6 px-4 space-y-4">
-                <MobileNavLink
-                  href="/"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Home
-                </MobileNavLink>
-                <div className="border-t border-ocean-700 pt-4">
+                <div>
                   <span className="text-wood-400 text-sm font-medium uppercase tracking-wide">
                     Our Doors
                   </span>
