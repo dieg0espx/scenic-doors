@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
+import { useQuoteModal } from "@/context/QuoteModalContext";
 
 const doorTypes = [
   {
@@ -28,6 +29,7 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const { openQuoteModal } = useQuoteModal();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -132,12 +134,12 @@ export default function Header() {
               <Phone className="w-4 h-4" />
               818-427-6690
             </a>
-            <Link
-              href="/quote"
+            <button
+              onClick={openQuoteModal}
               className="btn-primary rounded-sm text-sm px-6 py-3"
             >
               Get a Quote
-            </Link>
+            </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -205,13 +207,15 @@ export default function Header() {
                   Contact
                 </MobileNavLink>
                 <div className="pt-4 border-t border-ocean-700">
-                  <Link
-                    href="/quote"
-                    className="block btn-primary rounded-sm text-center"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                  <button
+                    className="block w-full btn-primary rounded-sm text-center"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      openQuoteModal();
+                    }}
                   >
                     Get a Free Quote
-                  </Link>
+                  </button>
                 </div>
               </div>
             </motion.div>

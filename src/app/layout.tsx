@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
+import { QuoteModalProvider } from "@/context/QuoteModalContext";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -38,7 +39,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${cormorant.variable} ${inter.variable}`}>
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <body className={`${inter.className} antialiased`}>
+        <QuoteModalProvider>{children}</QuoteModalProvider>
+      </body>
     </html>
   );
 }

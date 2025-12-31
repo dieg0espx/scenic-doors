@@ -1,10 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { ArrowRight, Phone } from "lucide-react";
+import { useQuoteModal } from "@/context/QuoteModalContext";
 
 export default function CTABanner() {
+  const { openQuoteModal } = useQuoteModal();
   return (
     <section className="py-24 md:py-32 bg-primary-600 relative overflow-hidden">
       {/* Decorative elements */}
@@ -44,15 +45,13 @@ export default function CTABanner() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            <a
-              href="https://app.scenicdoors.co/quote/start"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={openQuoteModal}
               className="group bg-white text-primary-700 px-8 py-4 font-medium tracking-wide inline-flex items-center gap-2 hover:bg-primary-900 hover:text-white transition-colors duration-300"
             >
-              Get Instant Quote
+              Get Free Quote
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </a>
+            </button>
             <a
               href="tel:818-427-6690"
               className="group border-2 border-white/40 text-white px-8 py-4 font-medium tracking-wide inline-flex items-center gap-2 hover:bg-white hover:text-primary-700 transition-colors duration-300"

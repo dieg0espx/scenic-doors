@@ -6,6 +6,7 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
+import { useQuoteModal } from "@/context/QuoteModalContext";
 import {
   Award,
   Users,
@@ -250,6 +251,8 @@ function FAQItem({
 }
 
 export default function AboutPage() {
+  const { openQuoteModal } = useQuoteModal();
+
   return (
     <>
       <Header />
@@ -501,13 +504,13 @@ export default function AboutPage() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-center mb-16"
             >
-              <Link
-                href="/quote"
+              <button
+                onClick={openQuoteModal}
                 className="inline-flex items-center gap-3 bg-primary-600 hover:bg-primary-700 text-white px-8 py-4 font-medium transition-colors"
               >
                 <span>Schedule Your Free Evaluation</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
             </motion.div>
 
             {/* FAQ */}

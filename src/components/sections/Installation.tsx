@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Award, ClipboardCheck, Sparkles, ArrowRight } from "lucide-react";
+import { useQuoteModal } from "@/context/QuoteModalContext";
 
 const highlights = [
   {
@@ -26,6 +27,8 @@ const highlights = [
 ];
 
 export default function Installation() {
+  const { openQuoteModal } = useQuoteModal();
+
   return (
     <section className="py-16 md:py-24 bg-sand-100 relative overflow-hidden">
       <div className="section-container">
@@ -52,13 +55,13 @@ export default function Installation() {
 
             {/* CTA */}
             <div className="flex flex-col sm:flex-row items-start gap-4">
-              <Link
-                href="/quote"
+              <button
+                onClick={openQuoteModal}
                 className="inline-flex items-center gap-3 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 font-medium transition-colors"
               >
                 <span>Get a Free Quote</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
               <Link
                 href="/about#installation"
                 className="inline-flex items-center gap-3 text-ocean-900 font-medium group py-3"
