@@ -1,10 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useQuoteModal } from "@/context/QuoteModalContext";
 
 export default function Hero() {
+  const { openQuoteModal } = useQuoteModal();
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-ocean-900">
       {/* Video Background */}
@@ -67,23 +69,21 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="flex flex-wrap gap-4"
           >
-            <a
-              href="https://app.scenicdoors.co/quote/start"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={openQuoteModal}
               className="group relative bg-primary-500 text-white px-8 py-4 font-medium tracking-wide overflow-hidden"
             >
               <span className="relative z-10 flex items-center gap-2">
-                Get Your Instant Quote Now!
+                Get Your Instant Quote Now
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
               <div className="absolute inset-0 bg-primary-400 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-            </a>
+            </button>
             <a
               href="tel:818-427-6690"
               className="group border-2 border-white/30 text-white px-8 py-4 font-medium tracking-wide hover:bg-white hover:text-ocean-900 transition-all duration-300"
             >
-              Call Now! 818-427-6690
+              Call Now 818-427-6690
             </a>
           </motion.div>
         </div>
