@@ -57,10 +57,9 @@ export default function Installation() {
             <div className="flex flex-col sm:flex-row items-start gap-4">
               <button
                 onClick={openQuoteModal}
-                className="inline-flex items-center gap-3 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 font-medium transition-colors"
+                className="inline-flex items-center bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 font-medium transition-colors"
               >
-                <span>Get a Free Quote</span>
-                <ArrowRight className="w-4 h-4" />
+                Get a Free Quote
               </button>
               <Link
                 href="/about#installation"

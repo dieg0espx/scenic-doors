@@ -5,7 +5,8 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
-import { Check, ArrowRight } from "lucide-react";
+import { useQuoteModal } from "@/context/QuoteModalContext";
+import { Check } from "lucide-react";
 
 const features = [
   "Expansive glass panels up to 12' tall",
@@ -23,6 +24,8 @@ const gallery = [
 ];
 
 export default function MultiSlideDoorsPage() {
+  const { openQuoteModal } = useQuoteModal();
+
   return (
     <>
       <Header />
@@ -59,13 +62,12 @@ export default function MultiSlideDoorsPage() {
                 systems offer unparalleled flexibility for large openings while
                 maintaining clean architectural lines.
               </p>
-              <Link
-                href="https://app.scenicdoors.co/quote/start" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-primary-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-400 transition-colors"
+              <button
+                onClick={openQuoteModal}
+                className="bg-primary-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-400 transition-colors"
               >
                 Request a Quote
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
             </motion.div>
           </div>
         </section>

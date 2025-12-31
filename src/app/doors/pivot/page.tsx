@@ -5,7 +5,8 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
-import { Check, ArrowRight } from "lucide-react";
+import { useQuoteModal } from "@/context/QuoteModalContext";
+import { Check } from "lucide-react";
 
 const features = [
   "Dramatic architectural statement",
@@ -41,6 +42,8 @@ const gallery = [
 ];
 
 export default function PivotDoorsPage() {
+  const { openQuoteModal } = useQuoteModal();
+
   return (
     <>
       <Header />
@@ -77,13 +80,12 @@ export default function PivotDoorsPage() {
                 combine engineering precision with bold architectural presence,
                 creating an unforgettable first impression.
               </p>
-              <Link
-                href="https://app.scenicdoors.co/quote/start" target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-primary-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-400 transition-colors"
+              <button
+                onClick={openQuoteModal}
+                className="bg-primary-500 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-400 transition-colors"
               >
                 Request a Quote
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+              </button>
             </motion.div>
           </div>
         </section>
@@ -231,13 +233,12 @@ export default function PivotDoorsPage() {
                   renderings, and material samples to ensure your complete
                   satisfaction before production begins.
                 </p>
-                <Link
-                  href="https://app.scenicdoors.co/quote/start" target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-primary-800 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-700 transition-colors"
+                <button
+                  onClick={openQuoteModal}
+                  className="bg-primary-800 text-white px-8 py-4 font-medium tracking-wide hover:bg-primary-700 transition-colors"
                 >
                   Start Your Design
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                </button>
               </motion.div>
             </div>
           </div>

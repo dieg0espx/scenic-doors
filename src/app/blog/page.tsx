@@ -256,45 +256,6 @@ export default function BlogPage() {
           </div>
         </section>
 
-        {/* Newsletter Section */}
-        <section className="py-24 bg-primary-800">
-          <div className="section-container">
-            <div className="max-w-2xl mx-auto text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
-                  Stay Inspired
-                </h2>
-                <p className="text-primary-200 mb-8">
-                  Subscribe to our newsletter for the latest design trends,
-                  product updates, and exclusive insights delivered to your
-                  inbox.
-                </p>
-                <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-                  <input
-                    type="email"
-                    placeholder="Enter your email"
-                    className="flex-1 px-4 py-3 bg-white/10 border border-primary-600 text-white placeholder:text-primary-300 focus:border-primary-400 focus:outline-none"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-white text-primary-700 px-6 py-3 font-medium hover:bg-primary-100 transition-colors"
-                  >
-                    Subscribe
-                  </button>
-                </form>
-                <p className="text-primary-300 text-xs mt-4">
-                  No spam, unsubscribe anytime.
-                </p>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
         <CTABanner />
       </main>
       <Footer />

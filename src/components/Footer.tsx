@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Phone, Mail, MapPin, ArrowUpRight } from "lucide-react";
-import { motion } from "framer-motion";
+import { useQuoteModal } from "@/context/QuoteModalContext";
 
 const doorLinks = [
   { name: "Folding Glass Walls", href: "/doors/folding" },
@@ -15,7 +15,6 @@ const companyLinks = [
   { name: "About Us", href: "/about" },
   { name: "Blog", href: "/blog" },
   { name: "Contact", href: "/contact" },
-  { name: "Instant Quote", href: "https://app.scenicdoors.co/quote/start" },
 ];
 
 const serviceAreas = [
@@ -26,6 +25,8 @@ const serviceAreas = [
 ];
 
 export default function Footer() {
+  const { openQuoteModal } = useQuoteModal();
+
   return (
     <footer className="bg-ocean-900 relative overflow-hidden">
       {/* Top Accent */}
@@ -46,15 +47,12 @@ export default function Footer() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 lg:justify-end">
-              <a
-                href="https://app.scenicdoors.co/quote/start"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group bg-primary-500 text-white px-8 py-4 font-medium tracking-wide inline-flex items-center justify-center gap-2 hover:bg-primary-400 transition-colors"
+              <button
+                onClick={openQuoteModal}
+                className="bg-primary-500 text-white px-8 py-4 font-medium tracking-wide inline-flex items-center justify-center hover:bg-primary-400 transition-colors"
               >
-                Get Instant Quote
-                <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </a>
+                Get Free Quote
+              </button>
               <a
                 href="tel:818-427-6690"
                 className="border-2 border-primary-600 text-white px-8 py-4 font-medium tracking-wide inline-flex items-center justify-center gap-2 hover:border-primary-400 transition-colors"
