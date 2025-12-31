@@ -3,6 +3,7 @@ import Footer from "@/components/Footer";
 import Hero from "@/components/sections/Hero";
 import TrustBar from "@/components/sections/TrustBar";
 import Introduction from "@/components/sections/Introduction";
+import Installation from "@/components/sections/Installation";
 import DoorCollections from "@/components/sections/DoorCollections";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
 import FeaturedProjects from "@/components/sections/FeaturedProjects";
@@ -26,6 +27,9 @@ export default function Home() {
 
         {/* Door Collections - Dark ocean, numbered cards */}
         <DoorCollections />
+
+        {/* Installation - Professional installation services */}
+        <Installation />
 
         {/* Why Choose Us - Light sand, sticky header + cards */}
         <WhyChooseUs />
