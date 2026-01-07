@@ -25,6 +25,34 @@ const doorTypes = [
   },
 ];
 
+const serviceTypes = [
+  {
+    name: "Garage Door Repair",
+    description: "Fast, reliable repair for all issues",
+    href: "/services/garage-door-repair",
+  },
+  {
+    name: "Garage Door Installation",
+    description: "Professional new door installation",
+    href: "/services/garage-door-installation",
+  },
+  {
+    name: "Opener Services",
+    description: "Repair and install door openers",
+    href: "/services/opener-services",
+  },
+  {
+    name: "Spring Replacement",
+    description: "Safe, professional spring service",
+    href: "/services/spring-replacement",
+  },
+  {
+    name: "Emergency Service",
+    description: "24/7 emergency garage door help",
+    href: "/services/emergency-service",
+  },
+];
+
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -107,6 +135,56 @@ export default function Header() {
               </AnimatePresence>
             </div>
 
+            {/* Services Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setActiveDropdown("services")}
+              onMouseLeave={() => setActiveDropdown(null)}
+            >
+              <button
+                className={`flex items-center gap-1 font-medium transition-colors duration-300 ${
+                  isScrolled
+                    ? "text-ocean-800 hover:text-primary-500"
+                    : "text-white/90 hover:text-primary-300"
+                }`}
+              >
+                Services
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              <AnimatePresence>
+                {activeDropdown === "services" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-xl overflow-hidden"
+                  >
+                    {serviceTypes.map((service) => (
+                      <Link
+                        key={service.name}
+                        href={service.href}
+                        className="block px-5 py-4 hover:bg-sand-100 transition-colors"
+                      >
+                        <span className="block font-medium text-ocean-800">
+                          {service.name}
+                        </span>
+                        <span className="block text-sm text-ocean-500">
+                          {service.description}
+                        </span>
+                      </Link>
+                    ))}
+                    <Link
+                      href="/services"
+                      className="block px-5 py-3 bg-sand-50 text-primary-600 font-medium hover:bg-sand-100 transition-colors border-t border-sand-200"
+                    >
+                      View All Services →
+                    </Link>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <NavLink href="/gallery" isScrolled={isScrolled}>
               Gallery
             </NavLink>
@@ -178,6 +256,22 @@ export default function Header() {
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
                         {door.name}
+                      </MobileNavLink>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-wood-400 text-sm font-medium uppercase tracking-wide">
+                    Services
+                  </span>
+                  <div className="mt-2 space-y-2">
+                    {serviceTypes.map((service) => (
+                      <MobileNavLink
+                        key={service.name}
+                        href={service.href}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        {service.name}
                       </MobileNavLink>
                     ))}
                   </div>
