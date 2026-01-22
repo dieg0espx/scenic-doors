@@ -123,12 +123,6 @@ export default function ServiceAreas() {
                   defaultState={{
                     fill: "#e5e7eb",
                   }}
-                  onStateClick={(stateCode) => {
-                    const area = areas.find(a => a.code === stateCode);
-                    if (area) {
-                      setHoveredRegion(area.region);
-                    }
-                  }}
                 />
               </div>
             </div>
