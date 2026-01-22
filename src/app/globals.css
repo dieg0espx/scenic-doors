@@ -157,7 +157,13 @@ img[data-loading="true"] {
 
 @media (min-width: 768px) {
   .section-container {
-    padding: 0 3rem;
+    padding: 0 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-container {
+    padding: 0 2.5rem;
   }
 }
 

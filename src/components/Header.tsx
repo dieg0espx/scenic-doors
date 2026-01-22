@@ -8,14 +8,19 @@ import { Menu, X, ChevronDown, Phone } from "lucide-react";
 
 const doorTypes = [
   {
-    name: "Folding Glass Walls",
+    name: "Multi-Slide Systems",
+    description: "Effortless operation, expansive design",
+    href: "/doors/multi-slide",
+  },
+  {
+    name: "Bifold / Folding Doors",
     description: "Transform walls into seamless transitions",
     href: "/doors/folding",
   },
   {
-    name: "Multi-Slide Systems",
-    description: "Effortless operation, expansive design",
-    href: "/doors/multi-slide",
+    name: "Slide & Stack Systems",
+    description: "Ultimate flexibility for open living",
+    href: "/doors/slide-stack",
   },
   {
     name: "Pivot Entry Doors",
@@ -84,8 +89,16 @@ export default function Header() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-xl overflow-hidden"
+                    className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-xl overflow-hidden z-50"
                   >
+                    <Link
+                      href="/doors"
+                      className="block px-5 py-3 border-b border-sand-200 hover:bg-sand-100 transition-colors"
+                    >
+                      <span className="block font-semibold text-ocean-900">
+                        View All Doors
+                      </span>
+                    </Link>
                     {doorTypes.map((door) => (
                       <Link
                         key={door.name}

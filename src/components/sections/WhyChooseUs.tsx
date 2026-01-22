@@ -51,7 +51,7 @@ const features = [
 
 export default function WhyChooseUs() {
   return (
-    <section className="py-24 md:py-32 bg-white relative overflow-hidden">
+    <section className="py-16 md:py-20 bg-white relative overflow-hidden">
       {/* Background pattern */}
       <div className="absolute inset-0 opacity-[0.03]">
         <div className="absolute inset-0" style={{
@@ -60,7 +60,7 @@ export default function WhyChooseUs() {
       </div>
 
       <div className="section-container relative">
-        <div className="grid lg:grid-cols-12 gap-16">
+        <div className="grid lg:grid-cols-12 gap-8">
           {/* Left - Sticky header */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
@@ -73,7 +73,7 @@ export default function WhyChooseUs() {
               <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Why Choose Us
               </span>
-              <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900 mb-6">
+              <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900 mb-4">
                 The Scenic Doors
                 <span className="text-primary-500 block">Difference</span>
               </h2>
@@ -83,7 +83,7 @@ export default function WhyChooseUs() {
                 for over two decades.
               </p>
               {/* Decorative element */}
-              <div className="mt-8 flex items-center gap-4">
+              <div className="mt-6 flex items-center gap-4">
                 <div className="w-16 h-[2px] bg-primary-500" />
                 <span className="text-ocean-400 text-sm">Est. 1998</span>
               </div>
@@ -92,7 +92,7 @@ export default function WhyChooseUs() {
 
           {/* Right - Features grid */}
           <div className="lg:col-span-8">
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2 gap-4">
               {features.map((feature, index) => (
                 <motion.div
                   key={feature.title}
@@ -100,13 +100,13 @@ export default function WhyChooseUs() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-white p-8 group hover:shadow-xl transition-shadow duration-500 relative overflow-hidden"
+                  className="bg-white p-6 group hover:shadow-xl transition-shadow duration-500 relative overflow-hidden"
                 >
                   {/* Hover accent */}
                   <div className="absolute top-0 left-0 w-1 h-0 bg-primary-500 group-hover:h-full transition-all duration-500" />
 
-                  <feature.icon className="w-8 h-8 text-primary-500 mb-5" strokeWidth={1.5} />
-                  <h3 className="font-heading text-xl text-ocean-900 mb-3">
+                  <feature.icon className="w-8 h-8 text-primary-500 mb-4" strokeWidth={1.5} />
+                  <h3 className="font-heading text-xl text-ocean-900 mb-2">
                     {feature.title}
                   </h3>
                   <p className="text-ocean-600 text-sm leading-relaxed">

@@ -6,7 +6,7 @@ import { ArrowRight, Phone } from "lucide-react";
 
 export default function CTABanner() {
   return (
-    <section className="py-24 md:py-32 bg-primary-600 relative overflow-hidden">
+    <section className="py-16 md:py-20 bg-primary-600 relative overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-32 h-32 bg-primary-500/50 rounded-full blur-3xl" />
       <div className="absolute bottom-0 right-0 w-48 h-48 bg-primary-700/50 rounded-full blur-3xl" />
@@ -19,7 +19,7 @@ export default function CTABanner() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6"
+            className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-4"
           >
             Ready to Transform
             <span className="block">Your Space?</span>
@@ -30,7 +30,7 @@ export default function CTABanner() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-primary-100 text-lg md:text-xl mb-10 max-w-2xl mx-auto"
+            className="text-primary-100 text-lg md:text-xl mb-8 max-w-2xl mx-auto"
           >
             Schedule a complimentary consultation with our design specialists.
             Let's bring your vision to life.

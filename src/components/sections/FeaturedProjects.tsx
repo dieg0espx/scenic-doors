@@ -33,7 +33,7 @@ const projects = [
 
 export default function FeaturedProjects() {
   return (
-    <section className="py-24 md:py-32 bg-primary-50">
+    <section className="py-16 md:py-20 bg-primary-50">
       <div className="section-container">
         {/* Header */}
         <motion.div
@@ -41,7 +41,7 @@ export default function FeaturedProjects() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12"
+          className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8"
         >
           <div>
             <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
@@ -61,7 +61,7 @@ export default function FeaturedProjects() {
         </motion.div>
 
         {/* Bento Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {/* Large item */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -126,8 +126,8 @@ function ProjectCard({
       <div className="absolute inset-0 bg-gradient-to-t from-ocean-900 via-ocean-900/50 to-ocean-900/20" />
 
       {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-6">
-        <span className="inline-block bg-primary-500 text-white text-xs font-medium px-3 py-1 mb-3">
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <span className="inline-block bg-primary-500 text-white text-xs font-medium px-3 py-1 mb-2">
           {project.type}
         </span>
         <h3 className="font-heading text-xl md:text-2xl text-white drop-shadow-lg">{project.title}</h3>

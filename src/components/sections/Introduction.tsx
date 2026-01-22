@@ -6,55 +6,54 @@ import { ArrowRight } from "lucide-react";
 
 export default function Introduction() {
   return (
-    <section className="py-24 md:py-32 bg-white relative overflow-hidden">
-      {/* Decorative vertical line */}
-      <div className="absolute left-8 md:left-16 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-primary-300 to-transparent opacity-50" />
-
+    <section className="py-12 md:py-16 bg-white relative overflow-hidden">
       <div className="section-container">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8">
-          {/* Left - Large Quote */}
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+          {/* Left - Image */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="lg:col-span-5"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="relative"
           >
-            <div className="sticky top-32">
-              <span className="font-heading text-[120px] md:text-[180px] text-primary-200 leading-none block -ml-4">
-                "
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900 leading-tight -mt-16 md:-mt-24">
-                A door is more than a passage—
-                <span className="text-primary-500 block mt-2">it's a statement.</span>
-              </h2>
+            <div className="aspect-[4/3] overflow-hidden w-full max-w-3xl mx-auto lg:mx-0">
+              <img
+                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
+                alt="Luxury home with panoramic doors"
+                className="w-full h-full object-cover"
+              />
             </div>
+            {/* Offset accent */}
+            <div className="absolute -bottom-3 -right-3 w-full h-full border-2 border-primary-400 -z-10" />
           </motion.div>
 
-          {/* Right - Content */}
+          {/* Right - Text Content */}
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="lg:col-span-7 lg:pl-12"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col justify-between"
           >
-            {/* Image with offset */}
-            <div className="relative mb-12">
-              <div className="aspect-[16/10] overflow-hidden">
-                <img
-                  src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
-                  alt="Luxury home with panoramic doors"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              {/* Offset accent */}
-              <div className="absolute -bottom-4 -right-4 w-full h-full border-2 border-primary-400 -z-10" />
-            </div>
+            {/* Quote */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="mb-6"
+            >
+              <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900 leading-tight">
+                <span className="text-primary-500">"</span>A door is more than a passage—
+                <span className="text-primary-500 block">it's a statement.</span>
+              </h2>
+            </motion.div>
 
             {/* Text blocks */}
-            <div className="space-y-6 text-ocean-700 leading-relaxed">
-              <p className="text-lg">
+            <div className="space-y-4 text-ocean-700 leading-relaxed mb-6">
+              <p className="text-base">
                 It's the seamless connection between your interior sanctuary and
                 the world beyond. Since 1998, we've partnered with Southern
                 California's most discerning homeowners, architects, and builders.
@@ -68,7 +67,7 @@ export default function Introduction() {
             </div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-3 gap-8 mt-12 pt-12 border-t border-sand-300">
+            <div className="grid grid-cols-3 gap-4 pt-6 border-t border-sand-300 mb-6">
               <Stat number="25+" label="Years of Excellence" />
               <Stat number="1000+" label="Projects Completed" />
               <Stat number="100%" label="Client Satisfaction" />
@@ -80,7 +79,6 @@ export default function Introduction() {
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="mt-10"
             >
               <Link
                 href="/about"

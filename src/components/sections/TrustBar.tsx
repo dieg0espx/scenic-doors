@@ -12,7 +12,7 @@ export default function TrustBar() {
   return (
     <section className="bg-primary-600 py-10 md:py-12">
       <div className="section-container">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           {/* Left - Tagline */}
           <motion.p
             initial={{ opacity: 0 }}
@@ -24,7 +24,7 @@ export default function TrustBar() {
           </motion.p>
 
           {/* Right - Brand logos (text for now) */}
-          <div className="flex items-center gap-8 md:gap-12">
+          <div className="flex items-center gap-6 md:gap-8">
             {brands.map((brand, index) => (
               <motion.div
                 key={brand.name}
