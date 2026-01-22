@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
+import OurJourney from "@/components/sections/OurJourney";
 import { Award, Users, Clock, Shield } from "lucide-react";
 
 const stats = [
@@ -12,29 +13,6 @@ const stats = [
   { number: "1000+", label: "Projects Completed", icon: Award },
   { number: "6", label: "Counties Served", icon: Users },
   { number: "100%", label: "Certified Installers", icon: Shield },
-];
-
-const values = [
-  {
-    title: "Craftsmanship",
-    description:
-      "Every installation reflects our commitment to precision and quality. We treat each project as a testament to our craft.",
-  },
-  {
-    title: "Integrity",
-    description:
-      "Transparent pricing, honest timelines, and clear communication. We build lasting relationships through trust.",
-  },
-  {
-    title: "Innovation",
-    description:
-      "We stay at the forefront of door technology, bringing the latest solutions to Southern California homes.",
-  },
-  {
-    title: "Excellence",
-    description:
-      "From consultation to completion, we maintain the highest standards in every aspect of our work.",
-  },
 ];
 
 const timeline = [
@@ -136,45 +114,8 @@ export default function AboutPage() {
         {/* Why Choose Us Section */}
         <WhyChooseUs />
 
-        {/* Values Section */}
-        <section className="py-24 bg-primary-800">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Our Values
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-white">
-                What Drives Us
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {values.map((value, index) => (
-                <motion.div
-                  key={value.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-900/50 p-8 border-t-2 border-primary-400"
-                >
-                  <h3 className="font-heading text-xl text-white mb-3">
-                    {value.title}
-                  </h3>
-                  <p className="text-primary-200 text-sm leading-relaxed">
-                    {value.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* Our Journey Section */}
+        <OurJourney />
 
         {/* Timeline Section */}
         <section className="py-24 bg-white">

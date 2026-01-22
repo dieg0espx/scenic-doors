@@ -101,7 +101,7 @@ export default function Introduction() {
 function Stat({ number, label }: { number: string; label: string }) {
   return (
     <div>
-      <p className="font-heading text-3xl md:text-4xl text-ocean-900">{number}</p>
+      <p className="font-heading text-4xl md:text-5xl lg:text-6xl text-ocean-900">{number}</p>
       <p className="text-ocean-500 text-sm mt-1">{label}</p>
     </div>
   );
