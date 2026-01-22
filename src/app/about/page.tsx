@@ -5,7 +5,6 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
 import WhyChooseUs from "@/components/sections/WhyChooseUs";
-import OurJourney from "@/components/sections/OurJourney";
 import { Award, Users, Clock, Shield } from "lucide-react";
 
 const stats = [
@@ -13,39 +12,6 @@ const stats = [
   { number: "1000+", label: "Projects Completed", icon: Award },
   { number: "6", label: "Counties Served", icon: Users },
   { number: "100%", label: "Certified Installers", icon: Shield },
-];
-
-const timeline = [
-  {
-    year: "1998",
-    title: "Founded in Orange County",
-    description:
-      "Started as a small family business with a vision to bring premium door solutions to Southern California.",
-  },
-  {
-    year: "2005",
-    title: "LaCantina Partnership",
-    description:
-      "Became one of the first certified LaCantina installers in the region, establishing our expertise in folding door systems.",
-  },
-  {
-    year: "2012",
-    title: "Expanded Service Area",
-    description:
-      "Grew to serve all six Southern California counties, from San Diego to Santa Barbara.",
-  },
-  {
-    year: "2018",
-    title: "1000th Installation",
-    description:
-      "Celebrated our 1000th successful installation, a milestone that reflects our clients' trust.",
-  },
-  {
-    year: "Today",
-    title: "Industry Leaders",
-    description:
-      "Recognized as the premier door installation company in Southern California, setting the standard for quality and service.",
-  },
 ];
 
 export default function AboutPage() {
@@ -113,57 +79,6 @@ export default function AboutPage() {
 
         {/* Why Choose Us Section */}
         <WhyChooseUs />
-
-        {/* Our Journey Section */}
-        <OurJourney />
-
-        {/* Timeline Section */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Our Journey
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Milestones Along the Way
-              </h2>
-            </motion.div>
-
-            <div className="max-w-3xl mx-auto">
-              {timeline.map((item, index) => (
-                <motion.div
-                  key={item.year}
-                  initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex gap-6 mb-8 last:mb-0"
-                >
-                  <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 bg-primary-600 text-white flex items-center justify-center font-heading text-lg">
-                      {item.year}
-                    </div>
-                    {index < timeline.length - 1 && (
-                      <div className="w-[2px] flex-1 bg-primary-300 mt-2" />
-                    )}
-                  </div>
-                  <div className="flex-1 pb-8">
-                    <h3 className="font-heading text-xl text-ocean-900 mb-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-ocean-600">{item.description}</p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         <CTABanner />
       </main>
