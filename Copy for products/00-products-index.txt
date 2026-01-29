@@ -1,0 +1,63 @@
+SCENIC DOORS - PRODUCTS INDEX
+==============================
+Website: https://www.scenicdoors.co
+Phone: 424-322-6322 | 818-427-6690
+Quote: https://app.scenicdoors.co/quote/start
+
+PRODUCTS LIST
+-------------
+
+1. ULTRA SLIM MULTI-SLIDING DOOR SYSTEM
+   File: 01-ultra-slim-slider.txt
+   URL: https://www.scenicdoors.co/products/ultra-slim-slider
+   Warranty: 15 Years
+   Images: 4
+
+2. MULTI-SLIDE PATIO DOORS
+   File: 02-multi-slide-doors.txt
+   URL: https://www.scenicdoors.co/products/multi-slide-doors
+   Warranty: 10 Years
+   Images: 4
+
+3. BI-FOLD DOORS (ACCORDION DOORS)
+   File: 03-bi-fold-doors.txt
+   URL: https://www.scenicdoors.co/products/bi-fold-doors
+   Warranty: 15 Years
+   Images: 15
+
+4. SLIDE AND STACK PATIO DOORS
+   File: 04-slide-and-stack-patio-doors.txt
+   URL: https://www.scenicdoors.co/products/slide-and-stack-patio-doors
+   Warranty: 10 Years
+   Images: 5
+
+5. POCKET PATIO DOORS
+   File: 05-pocket-doors.txt
+   URL: https://www.scenicdoors.co/products/pocket-doors
+   Images: 5
+
+6. HORIZONTAL FOLD-UP WINDOWS
+   File: 06-horizontal-fold-up-windows.txt
+   URL: https://www.scenicdoors.co/products/horizontal-fold-up-windows
+   Warranty: 15 Years
+   Images: 4
+
+COMMON SPECIFICATIONS (All Products)
+------------------------------------
+- Thermal Insulation: U <= 0.387 BTU/hr·ft²·°F
+- Acoustic Performance: <= 45 dB
+- Air Tightness: <= 0.4 m³/(m²·h)
+- Wind Load Resistance: >= 2.8 KPa
+- Water Penetration: >= 450 Pa
+- Standards: NFRC, CSA, CE
+- Markets: USA, Canada, Europe
+
+COMMON CUSTOMIZATION OPTIONS
+----------------------------
+Frame Colors: Black, White, Dark Brown, Gray, RAL custom palette
+Glazing: Dual, Triple, Quad-glazed configurations
+Glass: Tinted, frosted, decorative patterns
+Screens: Fiberglass mesh, retractable, stainless steel
+
+Total Products: 6
+Total Images: 37

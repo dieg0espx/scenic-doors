@@ -8,12 +8,12 @@ import CTABanner from "@/components/sections/CTABanner";
 import { Check, ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
 
 const features = [
-  "Multiple panels slide smoothly along durable tracks",
-  "Stack in-line or into wall pocket configurations",
-  "Slim aluminum frames with thermal breaks",
+  "Ultra-narrow frames with expansive glass panels",
+  "Advanced aluminum profiles with thermal insulation",
+  "Multi-sliding configurations (1-6+ panels)",
   "Multi-point locking systems for security",
-  "Configurations: XO, OX, OXO, OXXO, XX, XXX, XXXX",
-  "10-year warranty",
+  "Smooth, effortless operation",
+  "15-year warranty",
 ];
 
 const specifications = [
@@ -27,66 +27,53 @@ const engineeringFeatures = [
   {
     icon: Shield,
     title: "Advanced Aluminum Profiles",
-    description: "Precision-engineered, reinforced materials for maximum strength and longevity near the ocean.",
+    description: "Crafted from precision-engineered, reinforced materials for maximum strength and longevity near the ocean.",
   },
   {
     icon: Thermometer,
     title: "Thermal Insulation",
-    description: "Reinforced fiberglass thermal breaks for exceptional energy performance year-round.",
+    description: "Reinforced fiberglass thermal breaks deliver high load capacity and exceptional energy performance.",
   },
   {
     icon: Wind,
     title: "Pressure-Extruded Frames",
-    description: "Built for structural integrity and reliability under heavy use or high wind exposure.",
+    description: "Built for structural integrity and enduring reliability, even under heavy use or high wind exposure.",
   },
   {
     icon: Droplets,
-    title: "EPDM Weather Stripping",
-    description: "Upgraded foam weather stripping for superior air and water tightness.",
+    title: "Moisture-Blocking Technology",
+    description: "Coextruded wire seals create a tight, water-resistant barrier to keep marine air and moisture out.",
   },
 ];
 
 const gallery = [
-  "/images/products/multi-slide/header.avif",
-  "/images/products/multi-slide/partially-open.avif",
-  "/images/products/multi-slide/opening-door.avif",
-  "/images/products/multi-slide/ocean-view.jpg",
-  "/images/products/multi-slide/partially-open-2.avif",
+  "/images/products/ultra-slim/evening-at-beach.avif",
+  "/images/products/ultra-slim/bedroom-ocean-view.avif",
+  "/images/products/ultra-slim/corner-garden.avif",
+  "/images/products/ultra-slim/beach-home.jpg",
   "/images/products/shared/rain-on-glass.avif",
   "/images/products/shared/profile-colors.avif",
   "/images/products/shared/secure-at-home.avif",
   "/images/products/shared/profile-design-review.avif",
+  "/images/products/ultra-slim/mountain-home.avif",
 ];
 
-const configurations = [
+const glazingOptions = [
   {
-    title: "XO / OX",
-    description: "Two-panel system where one panel slides past the fixed panel. Perfect for standard openings.",
+    title: "Dual-Glazed",
+    description: "Two panes with insulating air or gas-filled space. Great for energy efficiency, UV protection, and basic sound reduction.",
   },
   {
-    title: "OXO / OXXO",
-    description: "Three or four panel system with operable center panels. Ideal for medium-sized openings.",
+    title: "Triple-Glazed",
+    description: "Three panes with two insulating chambers for superior thermal performance. Ideal for colder climates or noisy environments.",
   },
   {
-    title: "XXX / XXXX",
-    description: "Multiple sliding panels for expansive openings. All panels are operable for maximum flexibility.",
-  },
-  {
-    title: "XXXXXX / OXXXXO",
-    description: "Large-scale configurations for grand openings. Create dramatic indoor-outdoor transitions.",
+    title: "Quad-Glazed",
+    description: "Four panes with three insulating layers for maximum energy efficiency and sound control. Perfect for extreme climates or luxury builds.",
   },
 ];
 
-const glassOptions = [
-  "Frosted glass for privacy",
-  "Low-E coated for energy efficiency",
-  "Tinted glass for solar control",
-  "Fire-rated glass for safety",
-  "Bullet-resistant options",
-  "Acoustic glass for sound reduction",
-];
-
-export default function MultiSlideDoorsPage() {
+export default function UltraSlimSliderPage() {
   return (
     <>
       <Header />
@@ -116,12 +103,11 @@ export default function MultiSlideDoorsPage() {
                 ← Back to Collections
               </Link>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
-                Multi-Slide Patio Doors
+                Ultra Slim Multi-Sliding Door System
               </h1>
               <p className="text-white/80 text-lg mb-8">
-                Engineered for wide openings and uninterrupted panoramas. Multiple panels slide
-                smoothly along durable tracks and stack in-line or into a wall pocket—effortlessly
-                expanding your living space.
+                Our premier minimalist sliding door system, engineered to maximize your views
+                with ultra-thin sightlines. Step into a space where boundaries disappear.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
@@ -144,7 +130,7 @@ export default function MultiSlideDoorsPage() {
           </div>
         </section>
 
-        {/* Features Section */}
+        {/* Expand Your Horizon Section */}
         <section className="py-24 bg-white">
           <div className="section-container">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -155,19 +141,20 @@ export default function MultiSlideDoorsPage() {
                 transition={{ duration: 0.6 }}
               >
                 <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                  Features
+                  Expand Your Horizon
                 </span>
                 <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
-                  Effortless Transitions to the Outdoors
+                  Wall-to-Wall Glass
                 </h2>
                 <p className="text-ocean-600 mb-6">
-                  Multi-Slide Patio Doors offer a sleek, space-enhancing solution for modern homes
-                  and luxury properties. Designed for expansive openings and panoramic views,
-                  they&apos;re ideal for coastal residences and contemporary architecture.
+                  With ultra-narrow frames and expansive glass panels, the UltraSlim Multi-Slider
+                  door system opens your home to panoramic views and endless natural light.
+                  Transform your living space with clean aesthetics and effortless functionality.
                 </p>
                 <p className="text-ocean-600 mb-8">
-                  Constructed with premium aluminum, our doors are engineered to resist salty air
-                  and coastal elements, ensuring longevity without compromising on style.
+                  Designed for coastal living and luxury residences, these doors eliminate visual
+                  and physical barriers to create a bright, open atmosphere that feels expansive
+                  and refined.
                 </p>
                 <ul className="space-y-4">
                   {features.map((feature) => (
@@ -189,21 +176,21 @@ export default function MultiSlideDoorsPage() {
                 <div className="col-span-2">
                   <img
                     src={gallery[1]}
-                    alt="Multi-slide door partially open"
+                    alt="Ultra slim slider bedroom with ocean view"
                     className="w-full aspect-video object-cover"
                   />
                 </div>
                 <div>
                   <img
                     src={gallery[2]}
-                    alt="Opening a multi-slide door"
+                    alt="Corner looking out to garden"
                     className="w-full aspect-square object-cover"
                   />
                 </div>
                 <div>
                   <img
                     src={gallery[3]}
-                    alt="Multi-slide view of ocean"
+                    alt="Beach home with narrow frame slider"
                     className="w-full aspect-square object-cover"
                   />
                 </div>
@@ -212,7 +199,7 @@ export default function MultiSlideDoorsPage() {
           </div>
         </section>
 
-        {/* Configurations */}
+        {/* Engineering Features */}
         <section className="py-24 bg-primary-800">
           <div className="section-container">
             <motion.div
@@ -223,55 +210,15 @@ export default function MultiSlideDoorsPage() {
               className="text-center mb-16"
             >
               <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Configurations
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
-                Flexible Panel Arrangements
-              </h2>
-              <p className="text-white/70 max-w-2xl mx-auto">
-                Choose from multiple configurations to match your opening size and design preferences.
-                X = sliding panel, O = fixed panel.
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {configurations.map((config, index) => (
-                <motion.div
-                  key={config.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-900/50 p-8"
-                >
-                  <h3 className="font-heading text-2xl text-primary-300 mb-3">
-                    {config.title}
-                  </h3>
-                  <p className="text-white/80 text-sm">
-                    {config.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Engineering Features */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
                 Engineering Excellence
               </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
+              <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
                 Built for Coastal Strength
               </h2>
+              <p className="text-white/70 max-w-2xl mx-auto">
+                At Scenic Doors, performance is as important as beauty. Every system is crafted
+                to withstand coastal conditions while delivering effortless elegance.
+              </p>
             </motion.div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -282,17 +229,87 @@ export default function MultiSlideDoorsPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="text-center p-8 bg-gray-50"
+                  className="bg-primary-900/50 p-8 text-center"
                 >
-                  <feature.icon className="w-12 h-12 text-primary-500 mx-auto mb-4" />
-                  <h3 className="font-heading text-xl text-ocean-900 mb-3">
+                  <feature.icon className="w-12 h-12 text-primary-300 mx-auto mb-4" />
+                  <h3 className="font-heading text-xl text-white mb-3">
                     {feature.title}
                   </h3>
-                  <p className="text-ocean-600 text-sm">
+                  <p className="text-primary-200 text-sm">
                     {feature.description}
                   </p>
                 </motion.div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Specifications */}
+        <section className="py-24 bg-white">
+          <div className="section-container">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                Performance
+              </span>
+              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
+                Technical Specifications
+              </h2>
+            </motion.div>
+
+            <div className="grid md:grid-cols-4 gap-8 text-center mb-16">
+              {specifications.map((spec, index) => (
+                <motion.div
+                  key={spec.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="bg-primary-800 p-8"
+                >
+                  <p className="font-heading text-4xl text-primary-300 mb-1">
+                    {spec.value}
+                  </p>
+                  <p className="text-white/60 text-sm mb-2">{spec.unit}</p>
+                  <p className="text-white font-medium">{spec.label}</p>
+                </motion.div>
+              ))}
+            </div>
+
+            <div className="bg-gray-50 p-8 md:p-12">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div>
+                  <h4 className="font-heading text-lg text-ocean-900 mb-4">Standards & Certifications</h4>
+                  <ul className="space-y-2 text-ocean-600">
+                    <li>NFRC Certified</li>
+                    <li>CSA Certified</li>
+                    <li>CE Marked</li>
+                    <li>IGCC / SGCC Glass Standards</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-heading text-lg text-ocean-900 mb-4">Applications</h4>
+                  <ul className="space-y-2 text-ocean-600">
+                    <li>Residential Homes</li>
+                    <li>Commercial Properties</li>
+                    <li>Coastal Residences</li>
+                    <li>Luxury Developments</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-heading text-lg text-ocean-900 mb-4">Markets Served</h4>
+                  <ul className="space-y-2 text-ocean-600">
+                    <li>USA</li>
+                    <li>Canada</li>
+                    <li>Europe</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -327,7 +344,7 @@ export default function MultiSlideDoorsPage() {
                 >
                   <img
                     src={image}
-                    alt={`Multi-Slide Patio Door ${index + 1}`}
+                    alt={`Ultra Slim Multi-Slide Door ${index + 1}`}
                     className="w-full h-full object-cover aspect-[4/3]"
                   />
                 </motion.div>
@@ -336,7 +353,7 @@ export default function MultiSlideDoorsPage() {
           </div>
         </section>
 
-        {/* Specifications */}
+        {/* Glazing Options */}
         <section className="py-24 bg-white">
           <div className="section-container">
             <motion.div
@@ -346,44 +363,64 @@ export default function MultiSlideDoorsPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Technical Specifications
+              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                Glass Options
+              </span>
+              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-4">
+                Dual, Triple & Quad Glazing
               </h2>
+              <p className="text-ocean-600 max-w-2xl mx-auto">
+                Advanced insulated glass units (IGUs) for the perfect balance of thermal comfort,
+                energy efficiency, and sound reduction.
+              </p>
             </motion.div>
 
-            <div className="grid md:grid-cols-4 gap-8 text-center mb-16">
-              {specifications.map((spec, index) => (
+            <div className="grid md:grid-cols-3 gap-8">
+              {glazingOptions.map((option, index) => (
                 <motion.div
-                  key={spec.label}
-                  initial={{ opacity: 0, y: 20 }}
+                  key={option.title}
+                  initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-800 p-8"
+                  className="bg-white p-8 shadow-sm"
                 >
-                  <p className="font-heading text-4xl text-primary-300 mb-1">
-                    {spec.value}
-                  </p>
-                  <p className="text-white/60 text-sm mb-2">{spec.unit}</p>
-                  <p className="text-white font-medium">{spec.label}</p>
+                  <h3 className="font-heading text-2xl text-ocean-900 mb-4">
+                    {option.title}
+                  </h3>
+                  <p className="text-ocean-600">{option.description}</p>
                 </motion.div>
               ))}
             </div>
 
-            {/* Glass Options */}
-            <div className="bg-white p-8 md:p-12 shadow-sm">
-              <h3 className="font-heading text-2xl text-ocean-900 mb-6 text-center">
-                Specialty Glass Options
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {glassOptions.map((option) => (
-                  <div key={option} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-primary-500 shrink-0" />
-                    <span className="text-ocean-700">{option}</span>
-                  </div>
-                ))}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="mt-12 grid md:grid-cols-2 gap-8"
+            >
+              <div className="bg-white p-8 shadow-sm">
+                <h4 className="font-heading text-xl text-ocean-900 mb-4">Frame Colors</h4>
+                <p className="text-ocean-600 mb-4">
+                  Standard colors include Black, White, Dark Brown, and Gray.
+                  Custom RAL colors available for perfect matching.
+                </p>
+                <p className="text-ocean-500 text-sm">
+                  All frames powder-coated for UV resistance and long-lasting performance.
+                </p>
               </div>
-            </div>
+              <div className="bg-white p-8 shadow-sm">
+                <h4 className="font-heading text-xl text-ocean-900 mb-4">Screen Options</h4>
+                <p className="text-ocean-600 mb-4">
+                  Fiberglass mesh, retractable screens, and stainless steel options available.
+                  All screens color-matched to your frame.
+                </p>
+                <p className="text-ocean-500 text-sm">
+                  Fixed, in-swing, or rolling configurations to suit your needs.
+                </p>
+              </div>
+            </motion.div>
           </div>
         </section>
 
@@ -400,8 +437,8 @@ export default function MultiSlideDoorsPage() {
                 We Custom Build. We Install. You Enjoy.
               </h2>
               <p className="text-white/70 mb-8 max-w-2xl mx-auto">
-                Premium quality doors crafted to perfection. Get your personalized quote
-                and bring your vision to life.
+                Get your personalized quote and bring your vision to life.
+                Premium quality doors crafted to perfection.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link

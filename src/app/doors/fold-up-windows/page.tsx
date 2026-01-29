@@ -8,18 +8,18 @@ import CTABanner from "@/components/sections/CTABanner";
 import { Check, ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
 
 const features = [
-  "Multiple panels slide smoothly along durable tracks",
-  "Stack in-line or into wall pocket configurations",
-  "Slim aluminum frames with thermal breaks",
-  "Multi-point locking systems for security",
-  "Configurations: XO, OX, OXO, OXXO, XX, XXX, XXXX",
-  "10-year warranty",
+  "Two-panel lift-open design with gas-assist hardware",
+  "Thermal-break aluminum frames with argon-filled glass",
+  "German-engineered multi-point locking system",
+  "Top panels tilt outward as protective awning",
+  "Bottom sash functions as counter ledge",
+  "15-year warranty",
 ];
 
 const specifications = [
-  { label: "Thermal Insulation", value: "U ≤ 0.387", unit: "BTU/hr·ft²·°F" },
-  { label: "Acoustic Performance", value: "≤ 45", unit: "dB" },
-  { label: "Wind Load Resistance", value: "≥ 2.8", unit: "KPa" },
+  { label: "Thermal Performance", value: "U ≤ 0.387", unit: "BTU/hr·ft²·°F" },
+  { label: "Sound Reduction", value: "≤ 45", unit: "dB" },
+  { label: "Wind Resistance", value: "≥ 2.8", unit: "KPa" },
   { label: "Water Penetration", value: "≥ 450", unit: "Pa" },
 ];
 
@@ -27,66 +27,52 @@ const engineeringFeatures = [
   {
     icon: Shield,
     title: "Advanced Aluminum Profiles",
-    description: "Precision-engineered, reinforced materials for maximum strength and longevity near the ocean.",
+    description: "Precision-engineered materials for maximum strength and coastal durability.",
   },
   {
     icon: Thermometer,
     title: "Thermal Insulation",
-    description: "Reinforced fiberglass thermal breaks for exceptional energy performance year-round.",
+    description: "Thermal breaks deliver exceptional energy performance in every season.",
   },
   {
     icon: Wind,
     title: "Pressure-Extruded Frames",
-    description: "Built for structural integrity and reliability under heavy use or high wind exposure.",
+    description: "Built for structural integrity and reliability under heavy use.",
   },
   {
     icon: Droplets,
-    title: "EPDM Weather Stripping",
-    description: "Upgraded foam weather stripping for superior air and water tightness.",
+    title: "Moisture-Blocking Seals",
+    description: "Robust seals keep marine air and moisture out.",
   },
 ];
 
 const gallery = [
-  "/images/products/multi-slide/header.avif",
-  "/images/products/multi-slide/partially-open.avif",
-  "/images/products/multi-slide/opening-door.avif",
-  "/images/products/multi-slide/ocean-view.jpg",
-  "/images/products/multi-slide/partially-open-2.avif",
+  "/images/products/fold-up-windows/header.jpg",
+  "/images/products/fold-up-windows/exterior.jpg",
+  "/images/products/fold-up-windows/dual-windows.jpg",
+  "/images/products/fold-up-windows/wall-of-windows.jpg",
   "/images/products/shared/rain-on-glass.avif",
   "/images/products/shared/profile-colors.avif",
   "/images/products/shared/secure-at-home.avif",
   "/images/products/shared/profile-design-review.avif",
 ];
 
-const configurations = [
+const useCases = [
   {
-    title: "XO / OX",
-    description: "Two-panel system where one panel slides past the fixed panel. Perfect for standard openings.",
+    title: "Kitchen Pass-Through",
+    description: "Transform your kitchen into an al fresco gathering spot. The bottom sash becomes a ready-made counter for serving food and drinks.",
   },
   {
-    title: "OXO / OXXO",
-    description: "Three or four panel system with operable center panels. Ideal for medium-sized openings.",
+    title: "Home Bar",
+    description: "Create the perfect indoor-outdoor bar experience. Panels open to provide service access while the awning protects guests.",
   },
   {
-    title: "XXX / XXXX",
-    description: "Multiple sliding panels for expansive openings. All panels are operable for maximum flexibility.",
-  },
-  {
-    title: "XXXXXX / OXXXXO",
-    description: "Large-scale configurations for grand openings. Create dramatic indoor-outdoor transitions.",
+    title: "Living Spaces",
+    description: "Flood your space with natural light and garden views. Stack neatly to transform any wall into a sleek pass-through.",
   },
 ];
 
-const glassOptions = [
-  "Frosted glass for privacy",
-  "Low-E coated for energy efficiency",
-  "Tinted glass for solar control",
-  "Fire-rated glass for safety",
-  "Bullet-resistant options",
-  "Acoustic glass for sound reduction",
-];
-
-export default function MultiSlideDoorsPage() {
+export default function FoldUpWindowsPage() {
   return (
     <>
       <Header />
@@ -116,12 +102,12 @@ export default function MultiSlideDoorsPage() {
                 ← Back to Collections
               </Link>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
-                Multi-Slide Patio Doors
+                Horizontal Fold-Up Windows
               </h1>
               <p className="text-white/80 text-lg mb-8">
-                Engineered for wide openings and uninterrupted panoramas. Multiple panels slide
-                smoothly along durable tracks and stack in-line or into a wall pocket—effortlessly
-                expanding your living space.
+                Open up kitchens, bars, and living spaces with a single effortless push—inviting
+                natural light, fresh air, and panoramic views. Engineered with thermal-break frames
+                and insulated glass for year-round energy efficiency.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
@@ -155,19 +141,20 @@ export default function MultiSlideDoorsPage() {
                 transition={{ duration: 0.6 }}
               >
                 <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                  Features
+                  A Unique View
                 </span>
                 <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
-                  Effortless Transitions to the Outdoors
+                  Fresh Air & Casual Entertaining
                 </h2>
                 <p className="text-ocean-600 mb-6">
-                  Multi-Slide Patio Doors offer a sleek, space-enhancing solution for modern homes
-                  and luxury properties. Designed for expansive openings and panoramic views,
-                  they&apos;re ideal for coastal residences and contemporary architecture.
+                  Push-Up Fold-Up Windows stack neatly to transform any wall into a sleek pass-through,
+                  inviting natural light, fresh air, and that perfect California breeze. The bottom
+                  sash becomes a ready-made counter ledge while the top panels tilt out as a protective awning.
                 </p>
                 <p className="text-ocean-600 mb-8">
-                  Constructed with premium aluminum, our doors are engineered to resist salty air
-                  and coastal elements, ensuring longevity without compromising on style.
+                  Engineered for lasting beauty and performance, our thermal-break aluminum frames and
+                  argon-filled insulated glass lock in year-round comfort. German-made multi-point
+                  hardware secures each panel tightly when closed.
                 </p>
                 <ul className="space-y-4">
                   {features.map((feature) => (
@@ -188,22 +175,22 @@ export default function MultiSlideDoorsPage() {
               >
                 <div className="col-span-2">
                   <img
-                    src={gallery[1]}
-                    alt="Multi-slide door partially open"
+                    src={gallery[2]}
+                    alt="Dual fold-up windows in kitchen"
                     className="w-full aspect-video object-cover"
                   />
                 </div>
                 <div>
                   <img
-                    src={gallery[2]}
-                    alt="Opening a multi-slide door"
+                    src={gallery[1]}
+                    alt="Lift-up window exterior"
                     className="w-full aspect-square object-cover"
                   />
                 </div>
                 <div>
                   <img
                     src={gallery[3]}
-                    alt="Multi-slide view of ocean"
+                    alt="Wall of lift-up windows"
                     className="w-full aspect-square object-cover"
                   />
                 </div>
@@ -212,7 +199,7 @@ export default function MultiSlideDoorsPage() {
           </div>
         </section>
 
-        {/* Configurations */}
+        {/* Use Cases */}
         <section className="py-24 bg-primary-800">
           <div className="section-container">
             <motion.div
@@ -223,32 +210,28 @@ export default function MultiSlideDoorsPage() {
               className="text-center mb-16"
             >
               <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Configurations
+                Applications
               </span>
               <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
-                Flexible Panel Arrangements
+                Perfect For Any Space
               </h2>
-              <p className="text-white/70 max-w-2xl mx-auto">
-                Choose from multiple configurations to match your opening size and design preferences.
-                X = sliding panel, O = fixed panel.
-              </p>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {configurations.map((config, index) => (
+            <div className="grid md:grid-cols-3 gap-8">
+              {useCases.map((useCase, index) => (
                 <motion.div
-                  key={config.title}
+                  key={useCase.title}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="bg-primary-900/50 p-8"
                 >
-                  <h3 className="font-heading text-2xl text-primary-300 mb-3">
-                    {config.title}
+                  <h3 className="font-heading text-xl text-white mb-3">
+                    {useCase.title}
                   </h3>
-                  <p className="text-white/80 text-sm">
-                    {config.description}
+                  <p className="text-primary-200">
+                    {useCase.description}
                   </p>
                 </motion.div>
               ))}
@@ -327,7 +310,7 @@ export default function MultiSlideDoorsPage() {
                 >
                   <img
                     src={image}
-                    alt={`Multi-Slide Patio Door ${index + 1}`}
+                    alt={`Fold-Up Window ${index + 1}`}
                     className="w-full h-full object-cover aspect-[4/3]"
                   />
                 </motion.div>
@@ -370,18 +353,34 @@ export default function MultiSlideDoorsPage() {
               ))}
             </div>
 
-            {/* Glass Options */}
-            <div className="bg-white p-8 md:p-12 shadow-sm">
-              <h3 className="font-heading text-2xl text-ocean-900 mb-6 text-center">
-                Specialty Glass Options
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {glassOptions.map((option) => (
-                  <div key={option} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-primary-500 shrink-0" />
-                    <span className="text-ocean-700">{option}</span>
-                  </div>
-                ))}
+            {/* Options */}
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="bg-white p-8 shadow-sm">
+                <h4 className="font-heading text-xl text-ocean-900 mb-4">Frame Colors</h4>
+                <p className="text-ocean-600 mb-4">
+                  Black, White, Dark Brown, Gray, plus RAL custom palette.
+                </p>
+                <p className="text-ocean-500 text-sm">
+                  Powder-coat finishes resist sun, salt, and spray.
+                </p>
+              </div>
+              <div className="bg-white p-8 shadow-sm">
+                <h4 className="font-heading text-xl text-ocean-900 mb-4">Glazing Options</h4>
+                <p className="text-ocean-600 mb-4">
+                  Dual, Triple, and Quad-glazed configurations.
+                </p>
+                <p className="text-ocean-500 text-sm">
+                  Clear, tinted, frosted, and decorative patterns.
+                </p>
+              </div>
+              <div className="bg-white p-8 shadow-sm">
+                <h4 className="font-heading text-xl text-ocean-900 mb-4">Screen Options</h4>
+                <p className="text-ocean-600 mb-4">
+                  Fiberglass, retractable, and stainless steel screens.
+                </p>
+                <p className="text-ocean-500 text-sm">
+                  Color-matched aluminum alloy frames.
+                </p>
               </div>
             </div>
           </div>
@@ -400,7 +399,7 @@ export default function MultiSlideDoorsPage() {
                 We Custom Build. We Install. You Enjoy.
               </h2>
               <p className="text-white/70 mb-8 max-w-2xl mx-auto">
-                Premium quality doors crafted to perfection. Get your personalized quote
+                Premium quality windows crafted to perfection. Get your personalized quote
                 and bring your vision to life.
               </p>
               <div className="flex flex-wrap justify-center gap-4">

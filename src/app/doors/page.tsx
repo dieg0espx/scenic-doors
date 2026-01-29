@@ -10,30 +10,51 @@ import { ArrowRight } from "lucide-react";
 const collections = [
   {
     number: "01",
-    title: "Folding Glass Walls",
+    title: "Ultra Slim Multi-Slide",
     description:
-      "Transform entire walls into seamless indoor-outdoor transitions. Our folding systems stack effortlessly, maximizing your opening and your view.",
-    image:
-      "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?q=80&w=2070&auto=format&fit=crop",
-    href: "/doors/folding",
+      "Our premier minimalist sliding door system with ultra-thin sightlines. Engineered to maximize your views with ultra-narrow frames and expansive glass panels.",
+    image: "/images/products/ultra-slim/evening-at-beach.avif",
+    href: "/doors/ultra-slim",
   },
   {
     number: "02",
-    title: "Multi-Slide Systems",
+    title: "Multi-Slide Patio Doors",
     description:
-      "Effortless operation meets expansive design. Multi-slide systems offer unparalleled flexibility for large openings while maintaining clean architectural lines.",
-    image:
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2053&auto=format&fit=crop",
+      "Effortless operation meets expansive design. Multiple panels slide smoothly along durable tracks and stack in-line or into a wall pocket for wide openings.",
+    image: "/images/products/multi-slide/header.avif",
     href: "/doors/multi-slide",
   },
   {
     number: "03",
-    title: "Pivot Entry Doors",
+    title: "Bi-Fold Doors",
     description:
-      "Make a statement from the moment guests arrive. Our pivot doors combine engineering precision with bold architectural presence.",
-    image:
-      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=2032&auto=format&fit=crop",
-    href: "/doors/pivot",
+      "Transform your living space with panels that fold and stack neatly, creating maximum opening width. Perfect for kitchen expansions and indoor-outdoor living.",
+    image: "/images/products/folding/steel-home.avif",
+    href: "/doors/folding",
+  },
+  {
+    number: "04",
+    title: "Slide & Stack Patio Doors",
+    description:
+      "Designed for maximum versatility with panels that glide and stack neatly out of the way. Features 90° corner options without mullion for dramatic views.",
+    image: "/images/products/slide-stack/left-right-open.avif",
+    href: "/doors/slide-stack",
+  },
+  {
+    number: "05",
+    title: "Pocket Patio Doors",
+    description:
+      "The ultimate choice for seamless indoor-outdoor living. Panels glide completely into the wall and out of sight, maximizing usable space with minimalist aesthetics.",
+    image: "/images/products/pocket/header.avif",
+    href: "/doors/pocket",
+  },
+  {
+    number: "06",
+    title: "Horizontal Fold-Up Windows",
+    description:
+      "Open up kitchens, bars, and living spaces with a single effortless push. Top panels tilt outward as a protective awning while the bottom sash becomes a counter ledge.",
+    image: "/images/products/fold-up-windows/header.jpg",
+    href: "/doors/fold-up-windows",
   },
 ];
 
@@ -55,12 +76,12 @@ export default function DoorsPage() {
                 Our Collections
               </span>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
-                Door Collections
+                Door & Window Collections
               </h1>
               <p className="text-white/70 text-lg">
-                Discover our curated selection of premium door systems, each
-                designed to transform your living space and elevate your home's
-                architecture.
+                Discover our curated selection of premium door and window systems, each
+                engineered for coastal living and designed to transform your space
+                with seamless indoor-outdoor transitions.
               </p>
             </motion.div>
           </div>

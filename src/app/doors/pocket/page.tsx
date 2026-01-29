@@ -5,88 +5,68 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
-import { Check, ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
+import { Check, ArrowRight, Shield, Thermometer, Droplets, Eye } from "lucide-react";
 
 const features = [
-  "Multiple panels slide smoothly along durable tracks",
-  "Stack in-line or into wall pocket configurations",
-  "Slim aluminum frames with thermal breaks",
-  "Multi-point locking systems for security",
-  "Configurations: XO, OX, OXO, OXXO, XX, XXX, XXXX",
-  "10-year warranty",
-];
-
-const specifications = [
-  { label: "Thermal Insulation", value: "U ≤ 0.387", unit: "BTU/hr·ft²·°F" },
-  { label: "Acoustic Performance", value: "≤ 45", unit: "dB" },
-  { label: "Wind Load Resistance", value: "≥ 2.8", unit: "KPa" },
-  { label: "Water Penetration", value: "≥ 450", unit: "Pa" },
+  "Panels slide completely into wall pockets",
+  "Ultra-thin sightlines for unobstructed views",
+  "Multi-point locking security systems",
+  "Dual, triple, and quad glazing options",
+  "Customizable frame colors and finishes",
+  "Multiple screen options available",
 ];
 
 const engineeringFeatures = [
   {
+    icon: Eye,
+    title: "Invisible Design",
+    description: "Panels disappear completely into walls, creating dramatic uninterrupted openings.",
+  },
+  {
     icon: Shield,
     title: "Advanced Aluminum Profiles",
-    description: "Precision-engineered, reinforced materials for maximum strength and longevity near the ocean.",
+    description: "Precision-engineered materials for maximum strength and longevity near the ocean.",
   },
   {
     icon: Thermometer,
     title: "Thermal Insulation",
-    description: "Reinforced fiberglass thermal breaks for exceptional energy performance year-round.",
-  },
-  {
-    icon: Wind,
-    title: "Pressure-Extruded Frames",
-    description: "Built for structural integrity and reliability under heavy use or high wind exposure.",
+    description: "Fiberglass thermal breaks for exceptional energy performance year-round.",
   },
   {
     icon: Droplets,
-    title: "EPDM Weather Stripping",
-    description: "Upgraded foam weather stripping for superior air and water tightness.",
+    title: "Moisture-Blocking Seals",
+    description: "Coextruded wire seals create a water-resistant barrier against marine air.",
   },
 ];
 
 const gallery = [
-  "/images/products/multi-slide/header.avif",
-  "/images/products/multi-slide/partially-open.avif",
-  "/images/products/multi-slide/opening-door.avif",
-  "/images/products/multi-slide/ocean-view.jpg",
-  "/images/products/multi-slide/partially-open-2.avif",
-  "/images/products/shared/rain-on-glass.avif",
+  "/images/products/pocket/header.avif",
+  "/images/products/pocket/door-open.jpg",
+  "/images/products/pocket/corner.jpg",
+  "/images/products/pocket/door-open-2.jpg",
+  "/images/products/pocket/luxury-home.jpg",
   "/images/products/shared/profile-colors.avif",
+  "/images/products/shared/rain-on-glass.avif",
   "/images/products/shared/secure-at-home.avif",
   "/images/products/shared/profile-design-review.avif",
 ];
 
-const configurations = [
+const benefits = [
   {
-    title: "XO / OX",
-    description: "Two-panel system where one panel slides past the fixed panel. Perfect for standard openings.",
+    title: "Seamless Indoor-Outdoor Living",
+    description: "Panels slide completely out of view, creating a clean, modern look that transforms kitchens and living spaces into breezy retreats.",
   },
   {
-    title: "OXO / OXXO",
-    description: "Three or four panel system with operable center panels. Ideal for medium-sized openings.",
+    title: "Maximize Usable Space",
+    description: "Unlike traditional sliding doors, pocket doors don't take up wall space when open. Every inch of your opening is usable.",
   },
   {
-    title: "XXX / XXXX",
-    description: "Multiple sliding panels for expansive openings. All panels are operable for maximum flexibility.",
-  },
-  {
-    title: "XXXXXX / OXXXXO",
-    description: "Large-scale configurations for grand openings. Create dramatic indoor-outdoor transitions.",
+    title: "Dramatic Uninterrupted Openings",
+    description: "Create the ultimate connection between indoor and outdoor spaces with no visible panels when fully open.",
   },
 ];
 
-const glassOptions = [
-  "Frosted glass for privacy",
-  "Low-E coated for energy efficiency",
-  "Tinted glass for solar control",
-  "Fire-rated glass for safety",
-  "Bullet-resistant options",
-  "Acoustic glass for sound reduction",
-];
-
-export default function MultiSlideDoorsPage() {
+export default function PocketDoorsPage() {
   return (
     <>
       <Header />
@@ -116,12 +96,11 @@ export default function MultiSlideDoorsPage() {
                 ← Back to Collections
               </Link>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
-                Multi-Slide Patio Doors
+                Pocket Patio Doors
               </h1>
               <p className="text-white/80 text-lg mb-8">
-                Engineered for wide openings and uninterrupted panoramas. Multiple panels slide
-                smoothly along durable tracks and stack in-line or into a wall pocket—effortlessly
-                expanding your living space.
+                The ultimate choice for seamless indoor-outdoor living. Panels glide completely
+                into the wall and out of sight, maximizing usable space with minimalist aesthetics.
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link
@@ -155,15 +134,15 @@ export default function MultiSlideDoorsPage() {
                 transition={{ duration: 0.6 }}
               >
                 <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                  Features
+                  Invisible Design
                 </span>
                 <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
-                  Effortless Transitions to the Outdoors
+                  Expand Your Living Space with Disappearing Boundaries
                 </h2>
                 <p className="text-ocean-600 mb-6">
-                  Multi-Slide Patio Doors offer a sleek, space-enhancing solution for modern homes
-                  and luxury properties. Designed for expansive openings and panoramic views,
-                  they&apos;re ideal for coastal residences and contemporary architecture.
+                  Pocket Patio Doors are the ultimate solution for those seeking truly seamless
+                  indoor-outdoor transitions. Panels completely disappear into wall pockets,
+                  creating unobstructed openings that transform your living experience.
                 </p>
                 <p className="text-ocean-600 mb-8">
                   Constructed with premium aluminum, our doors are engineered to resist salty air
@@ -189,21 +168,21 @@ export default function MultiSlideDoorsPage() {
                 <div className="col-span-2">
                   <img
                     src={gallery[1]}
-                    alt="Multi-slide door partially open"
+                    alt="Pocket door open"
                     className="w-full aspect-video object-cover"
                   />
                 </div>
                 <div>
                   <img
                     src={gallery[2]}
-                    alt="Opening a multi-slide door"
+                    alt="Corner pocket door"
                     className="w-full aspect-square object-cover"
                   />
                 </div>
                 <div>
                   <img
                     src={gallery[3]}
-                    alt="Multi-slide view of ocean"
+                    alt="Pocket door luxury home"
                     className="w-full aspect-square object-cover"
                   />
                 </div>
@@ -212,7 +191,7 @@ export default function MultiSlideDoorsPage() {
           </div>
         </section>
 
-        {/* Configurations */}
+        {/* Benefits */}
         <section className="py-24 bg-primary-800">
           <div className="section-container">
             <motion.div
@@ -223,32 +202,28 @@ export default function MultiSlideDoorsPage() {
               className="text-center mb-16"
             >
               <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Configurations
+                Benefits
               </span>
               <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
-                Flexible Panel Arrangements
+                Unmatched Connection
               </h2>
-              <p className="text-white/70 max-w-2xl mx-auto">
-                Choose from multiple configurations to match your opening size and design preferences.
-                X = sliding panel, O = fixed panel.
-              </p>
             </motion.div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {configurations.map((config, index) => (
+            <div className="grid md:grid-cols-3 gap-8">
+              {benefits.map((benefit, index) => (
                 <motion.div
-                  key={config.title}
+                  key={benefit.title}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="bg-primary-900/50 p-8"
                 >
-                  <h3 className="font-heading text-2xl text-primary-300 mb-3">
-                    {config.title}
+                  <h3 className="font-heading text-xl text-white mb-3">
+                    {benefit.title}
                   </h3>
-                  <p className="text-white/80 text-sm">
-                    {config.description}
+                  <p className="text-primary-200">
+                    {benefit.description}
                   </p>
                 </motion.div>
               ))}
@@ -327,7 +302,7 @@ export default function MultiSlideDoorsPage() {
                 >
                   <img
                     src={image}
-                    alt={`Multi-Slide Patio Door ${index + 1}`}
+                    alt={`Pocket Patio Door ${index + 1}`}
                     className="w-full h-full object-cover aspect-[4/3]"
                   />
                 </motion.div>
@@ -336,7 +311,7 @@ export default function MultiSlideDoorsPage() {
           </div>
         </section>
 
-        {/* Specifications */}
+        {/* Options Section */}
         <section className="py-24 bg-white">
           <div className="section-container">
             <motion.div
@@ -347,41 +322,37 @@ export default function MultiSlideDoorsPage() {
               className="text-center mb-16"
             >
               <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Technical Specifications
+                Customization Options
               </h2>
             </motion.div>
 
-            <div className="grid md:grid-cols-4 gap-8 text-center mb-16">
-              {specifications.map((spec, index) => (
-                <motion.div
-                  key={spec.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-800 p-8"
-                >
-                  <p className="font-heading text-4xl text-primary-300 mb-1">
-                    {spec.value}
-                  </p>
-                  <p className="text-white/60 text-sm mb-2">{spec.unit}</p>
-                  <p className="text-white font-medium">{spec.label}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Glass Options */}
-            <div className="bg-white p-8 md:p-12 shadow-sm">
-              <h3 className="font-heading text-2xl text-ocean-900 mb-6 text-center">
-                Specialty Glass Options
-              </h3>
-              <div className="grid md:grid-cols-3 gap-4">
-                {glassOptions.map((option) => (
-                  <div key={option} className="flex items-center gap-3">
-                    <Check className="w-5 h-5 text-primary-500 shrink-0" />
-                    <span className="text-ocean-700">{option}</span>
-                  </div>
-                ))}
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="bg-white p-8 shadow-sm">
+                <h4 className="font-heading text-xl text-ocean-900 mb-4">Frame Colors</h4>
+                <p className="text-ocean-600 mb-4">
+                  Standard: Black, White, Dark Brown, Gray
+                </p>
+                <p className="text-ocean-500 text-sm">
+                  Custom RAL colors available. All frames powder-coated for UV resistance.
+                </p>
+              </div>
+              <div className="bg-white p-8 shadow-sm">
+                <h4 className="font-heading text-xl text-ocean-900 mb-4">Glazing Options</h4>
+                <p className="text-ocean-600 mb-4">
+                  Dual, Triple, and Quad-glazed configurations available.
+                </p>
+                <p className="text-ocean-500 text-sm">
+                  Decorative patterns, frosted, and tinted glass options.
+                </p>
+              </div>
+              <div className="bg-white p-8 shadow-sm">
+                <h4 className="font-heading text-xl text-ocean-900 mb-4">Screen Options</h4>
+                <p className="text-ocean-600 mb-4">
+                  Fiberglass mesh, retractable, and stainless steel options.
+                </p>
+                <p className="text-ocean-500 text-sm">
+                  All screens color-matched to your frame finish.
+                </p>
               </div>
             </div>
           </div>
