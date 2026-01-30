@@ -122,6 +122,11 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* Why Choose Us Section */}
+        <WhyChooseUs />
+
+        <CTABanner />
+
         {/* Our Journey Timeline */}
         <section className="py-20 md:py-28 bg-white">
           <div className="section-container">
@@ -198,11 +203,6 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
-
-        {/* Why Choose Us Section */}
-        <WhyChooseUs />
-
-        <CTABanner />
       </main>
       <Footer />
     </>
