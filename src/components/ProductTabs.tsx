@@ -1,0 +1,575 @@
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, LucideIcon } from "lucide-react";
+
+interface Tab {
+  id: string;
+  label: string;
+}
+
+interface Specification {
+  label: string;
+  value: string;
+  unit: string;
+}
+
+interface EngineeringFeature {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
+
+interface Configuration {
+  title: string;
+  description: string;
+  features?: string[];
+}
+
+interface Option {
+  title: string;
+  description: string;
+  note?: string;
+}
+
+interface GlazingOption {
+  title: string;
+  description: string;
+}
+
+export interface ProductTabsProps {
+  // Overview tab
+  overviewLabel?: string;
+  overviewTitle: string;
+  overviewDescription: string;
+  overviewDescriptionExtra?: string;
+  features: string[];
+  featuredImages: {
+    main: string;
+    mainAlt: string;
+    secondary: string;
+    secondaryAlt: string;
+    tertiary: string;
+    tertiaryAlt: string;
+  };
+
+  // Specifications tab
+  specifications?: Specification[];
+  engineeringFeatures?: EngineeringFeature[];
+  certifications?: {
+    title: string;
+    items: string[];
+  }[];
+
+  // Gallery tab
+  gallery: string[];
+  galleryAltPrefix: string;
+
+  // Options tab
+  configurations?: Configuration[];
+  configurationsTitle?: string;
+  configurationsSubtitle?: string;
+  glazingOptions?: GlazingOption[];
+  glassOptions?: string[];
+  frameColorOptions?: Option;
+  screenOptions?: Option;
+  customOptions?: Option[];
+}
+
+const tabs: Tab[] = [
+  { id: "overview", label: "Overview" },
+  { id: "specifications", label: "Specifications" },
+  { id: "gallery", label: "Gallery" },
+  { id: "options", label: "Options" },
+];
+
+export default function ProductTabs({
+  overviewLabel = "Features",
+  overviewTitle,
+  overviewDescription,
+  overviewDescriptionExtra,
+  features,
+  featuredImages,
+  specifications,
+  engineeringFeatures,
+  certifications,
+  gallery,
+  galleryAltPrefix,
+  configurations,
+  configurationsTitle = "Configurations",
+  configurationsSubtitle,
+  glazingOptions,
+  glassOptions,
+  frameColorOptions,
+  screenOptions,
+  customOptions,
+}: ProductTabsProps) {
+  const [activeTab, setActiveTab] = useState("overview");
+
+  return (
+    <div className="bg-white">
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200 sticky top-[72px] bg-white z-30">
+        <div className="section-container">
+          <nav className="flex gap-8 overflow-x-auto scrollbar-hide" aria-label="Product tabs">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
+                  activeTab === tab.id
+                    ? "border-primary-500 text-primary-500"
+                    : "border-transparent text-ocean-500 hover:text-ocean-700 hover:border-gray-300"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      <AnimatePresence mode="wait">
+        {/* Overview Tab */}
+        {activeTab === "overview" && (
+          <motion.div
+            key="overview"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <section className="py-24">
+              <div className="section-container">
+                <div className="grid lg:grid-cols-2 gap-16 items-center">
+                  <motion.div
+                    initial={{ opacity: 0, x: -30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                      {overviewLabel}
+                    </span>
+                    <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
+                      {overviewTitle}
+                    </h2>
+                    <p className="text-ocean-600 mb-6">{overviewDescription}</p>
+                    {overviewDescriptionExtra && (
+                      <p className="text-ocean-600 mb-8">{overviewDescriptionExtra}</p>
+                    )}
+                    <ul className="space-y-4">
+                      {features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-3">
+                          <Check className="w-5 h-5 text-primary-500 mt-0.5 shrink-0" />
+                          <span className="text-ocean-700">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: 30 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="grid grid-cols-2 gap-4"
+                  >
+                    <div className="col-span-2">
+                      <img
+                        src={featuredImages.main}
+                        alt={featuredImages.mainAlt}
+                        className="w-full aspect-video object-cover"
+                      />
+                    </div>
+                    <div>
+                      <img
+                        src={featuredImages.secondary}
+                        alt={featuredImages.secondaryAlt}
+                        className="w-full aspect-square object-cover"
+                      />
+                    </div>
+                    <div>
+                      <img
+                        src={featuredImages.tertiary}
+                        alt={featuredImages.tertiaryAlt}
+                        className="w-full aspect-square object-cover"
+                      />
+                    </div>
+                  </motion.div>
+                </div>
+              </div>
+            </section>
+          </motion.div>
+        )}
+
+        {/* Specifications Tab */}
+        {activeTab === "specifications" && (
+          <motion.div
+            key="specifications"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Engineering Features */}
+            {engineeringFeatures && engineeringFeatures.length > 0 && (
+              <section className="py-24 bg-primary-800">
+                <div className="section-container">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="text-center mb-16"
+                  >
+                    <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                      Engineering Excellence
+                    </span>
+                    <h2 className="font-heading text-3xl md:text-4xl text-white">
+                      Built for Coastal Strength
+                    </h2>
+                  </motion.div>
+
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {engineeringFeatures.map((feature, index) => (
+                      <motion.div
+                        key={feature.title}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="bg-primary-900/50 p-8 text-center"
+                      >
+                        <feature.icon className="w-12 h-12 text-primary-300 mx-auto mb-4" />
+                        <h3 className="font-heading text-xl text-white mb-3">
+                          {feature.title}
+                        </h3>
+                        <p className="text-primary-200 text-sm">{feature.description}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Technical Specifications */}
+            {specifications && specifications.length > 0 && (
+              <section className="py-24 bg-white">
+                <div className="section-container">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="text-center mb-16"
+                  >
+                    <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                      Performance
+                    </span>
+                    <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
+                      Technical Specifications
+                    </h2>
+                  </motion.div>
+
+                  <div className="grid md:grid-cols-4 gap-8 text-center mb-16">
+                    {specifications.map((spec, index) => (
+                      <motion.div
+                        key={spec.label}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="bg-primary-800 p-8"
+                      >
+                        <p className="font-heading text-4xl text-primary-300 mb-1">
+                          {spec.value}
+                        </p>
+                        <p className="text-white/60 text-sm mb-2">{spec.unit}</p>
+                        <p className="text-white font-medium">{spec.label}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Certifications */}
+                  {certifications && certifications.length > 0 && (
+                    <div className="bg-gray-50 p-8 md:p-12">
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {certifications.map((cert) => (
+                          <div key={cert.title}>
+                            <h4 className="font-heading text-lg text-ocean-900 mb-4">
+                              {cert.title}
+                            </h4>
+                            <ul className="space-y-2 text-ocean-600">
+                              {cert.items.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+          </motion.div>
+        )}
+
+        {/* Gallery Tab */}
+        {activeTab === "gallery" && (
+          <motion.div
+            key="gallery"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <section className="py-24 bg-gray-50">
+              <div className="section-container">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                  className="text-center mb-16"
+                >
+                  <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                    Gallery
+                  </span>
+                  <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
+                    See It In Action
+                  </h2>
+                </motion.div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {gallery.map((image, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: index * 0.05 }}
+                      className={index === 0 ? "col-span-2 md:col-span-2 row-span-2" : ""}
+                    >
+                      <img
+                        src={image}
+                        alt={`${galleryAltPrefix} ${index + 1}`}
+                        className="w-full h-full object-cover aspect-[4/3]"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          </motion.div>
+        )}
+
+        {/* Options Tab */}
+        {activeTab === "options" && (
+          <motion.div
+            key="options"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            {/* Configurations */}
+            {configurations && configurations.length > 0 && (
+              <section className="py-24 bg-primary-800">
+                <div className="section-container">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="text-center mb-16"
+                  >
+                    <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                      {configurationsTitle}
+                    </span>
+                    <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
+                      Flexible Design Options
+                    </h2>
+                    {configurationsSubtitle && (
+                      <p className="text-white/70 max-w-2xl mx-auto">{configurationsSubtitle}</p>
+                    )}
+                  </motion.div>
+
+                  <div className={`grid gap-8 ${configurations.length === 4 ? 'md:grid-cols-2 lg:grid-cols-4' : 'md:grid-cols-3'}`}>
+                    {configurations.map((config, index) => (
+                      <motion.div
+                        key={config.title}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="bg-primary-900/50 p-8"
+                      >
+                        <h3 className="font-heading text-2xl text-white mb-3">
+                          {config.title}
+                        </h3>
+                        <p className="text-primary-200 mb-6">{config.description}</p>
+                        {config.features && (
+                          <ul className="space-y-2">
+                            {config.features.map((feature) => (
+                              <li key={feature} className="flex items-center gap-2">
+                                <Check className="w-4 h-4 text-primary-300" />
+                                <span className="text-white/80 text-sm">{feature}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Glazing Options */}
+            {glazingOptions && glazingOptions.length > 0 && (
+              <section className="py-24 bg-white">
+                <div className="section-container">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="text-center mb-16"
+                  >
+                    <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                      Glass Options
+                    </span>
+                    <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-4">
+                      Dual, Triple & Quad Glazing
+                    </h2>
+                    <p className="text-ocean-600 max-w-2xl mx-auto">
+                      Advanced insulated glass units (IGUs) for the perfect balance of thermal comfort,
+                      energy efficiency, and sound reduction.
+                    </p>
+                  </motion.div>
+
+                  <div className="grid md:grid-cols-3 gap-8">
+                    {glazingOptions.map((option, index) => (
+                      <motion.div
+                        key={option.title}
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="bg-white p-8 shadow-sm"
+                      >
+                        <h3 className="font-heading text-2xl text-ocean-900 mb-4">
+                          {option.title}
+                        </h3>
+                        <p className="text-ocean-600">{option.description}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Glass Options List */}
+            {glassOptions && glassOptions.length > 0 && (
+              <section className="py-24 bg-white">
+                <div className="section-container">
+                  <div className="bg-white p-8 md:p-12 shadow-sm">
+                    <h3 className="font-heading text-2xl text-ocean-900 mb-6 text-center">
+                      Specialty Glass Options
+                    </h3>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      {glassOptions.map((option) => (
+                        <div key={option} className="flex items-center gap-3">
+                          <Check className="w-5 h-5 text-primary-500 shrink-0" />
+                          <span className="text-ocean-700">{option}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {/* Frame & Screen Options */}
+            {(frameColorOptions || screenOptions || customOptions) && (
+              <section className={`py-24 ${glazingOptions ? 'bg-gray-50' : 'bg-white'}`}>
+                <div className="section-container">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="text-center mb-16"
+                  >
+                    <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
+                      Customization Options
+                    </h2>
+                  </motion.div>
+
+                  <div className={`grid gap-8 ${customOptions ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                    {frameColorOptions && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                        className="bg-white p-8 shadow-sm"
+                      >
+                        <h4 className="font-heading text-xl text-ocean-900 mb-4">
+                          {frameColorOptions.title}
+                        </h4>
+                        <p className="text-ocean-600 mb-4">{frameColorOptions.description}</p>
+                        {frameColorOptions.note && (
+                          <p className="text-ocean-500 text-sm">{frameColorOptions.note}</p>
+                        )}
+                      </motion.div>
+                    )}
+                    {screenOptions && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="bg-white p-8 shadow-sm"
+                      >
+                        <h4 className="font-heading text-xl text-ocean-900 mb-4">
+                          {screenOptions.title}
+                        </h4>
+                        <p className="text-ocean-600 mb-4">{screenOptions.description}</p>
+                        {screenOptions.note && (
+                          <p className="text-ocean-500 text-sm">{screenOptions.note}</p>
+                        )}
+                      </motion.div>
+                    )}
+                    {customOptions?.map((option, index) => (
+                      <motion.div
+                        key={option.title}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: (index + 2) * 0.1 }}
+                        className="bg-white p-8 shadow-sm"
+                      >
+                        <h4 className="font-heading text-xl text-ocean-900 mb-4">
+                          {option.title}
+                        </h4>
+                        <p className="text-ocean-600 mb-4">{option.description}</p>
+                        {option.note && (
+                          <p className="text-ocean-500 text-sm">{option.note}</p>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

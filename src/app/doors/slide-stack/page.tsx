@@ -5,7 +5,8 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
-import { Check, ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
+import ProductTabs from "@/components/ProductTabs";
+import { ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
 
 const features = [
   "Panels glide and stack neatly to one or both sides",
@@ -134,235 +135,28 @@ export default function SlideStackDoorsPage() {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                  Embrace the Coastal Lifestyle
-                </span>
-                <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
-                  Effortless Transition, Uninterrupted Views
-                </h2>
-                <p className="text-ocean-600 mb-6">
-                  Slide & Stack doors offer exceptional versatility for large openings.
-                  Multiple panels glide along precision tracks and stack neatly, creating
-                  expansive openings that blur the line between indoor and outdoor spaces.
-                </p>
-                <p className="text-ocean-600 mb-8">
-                  Constructed with premium aluminum, our doors are engineered to resist
-                  salty air and coastal elements, ensuring longevity without compromising style.
-                </p>
-                <ul className="space-y-4">
-                  {features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-primary-500 mt-0.5 shrink-0" />
-                      <span className="text-ocean-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="col-span-2">
-                  <img
-                    src={gallery[1]}
-                    alt="Slide and stack doors vented"
-                    className="w-full aspect-video object-cover"
-                  />
-                </div>
-                <div>
-                  <img
-                    src={gallery[2]}
-                    alt="Sunset slide and fold door"
-                    className="w-full aspect-square object-cover"
-                  />
-                </div>
-                <div>
-                  <img
-                    src={gallery[3]}
-                    alt="Beach home slide and fold door"
-                    className="w-full aspect-square object-cover"
-                  />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Stacking Options */}
-        <section className="py-24 bg-primary-800">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Stacking Options
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
-                Configure Your Opening
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {stackingOptions.map((type, index) => (
-                <motion.div
-                  key={type.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-900/50 p-8"
-                >
-                  <h3 className="font-heading text-2xl text-white mb-3">
-                    {type.title}
-                  </h3>
-                  <p className="text-primary-200 mb-6">{type.description}</p>
-                  <ul className="space-y-2">
-                    {type.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-primary-300" />
-                        <span className="text-white/80 text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Engineering Features */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Engineering Excellence
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Built for Coastal Strength
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {engineeringFeatures.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="text-center p-8 bg-gray-50"
-                >
-                  <feature.icon className="w-12 h-12 text-primary-500 mx-auto mb-4" />
-                  <h3 className="font-heading text-xl text-ocean-900 mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-ocean-600 text-sm">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Gallery Section */}
-        <section className="py-24 bg-gray-50">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Gallery
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                See It In Action
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {gallery.map((image, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
-                  className={index === 0 ? "col-span-2 md:col-span-2 row-span-2" : ""}
-                >
-                  <img
-                    src={image}
-                    alt={`Slide & Stack Patio Door ${index + 1}`}
-                    className="w-full h-full object-cover aspect-[4/3]"
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Specifications */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Technical Specifications
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-4 gap-8 text-center">
-              {specifications.map((spec, index) => (
-                <motion.div
-                  key={spec.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-800 p-8"
-                >
-                  <p className="font-heading text-4xl text-primary-300 mb-1">
-                    {spec.value}
-                  </p>
-                  <p className="text-white/60 text-sm mb-2">{spec.unit}</p>
-                  <p className="text-white font-medium">{spec.label}</p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
+        {/* Product Tabs */}
+        <ProductTabs
+          overviewLabel="Embrace the Coastal Lifestyle"
+          overviewTitle="Effortless Transition, Uninterrupted Views"
+          overviewDescription="Slide & Stack doors offer exceptional versatility for large openings. Multiple panels glide along precision tracks and stack neatly, creating expansive openings that blur the line between indoor and outdoor spaces."
+          overviewDescriptionExtra="Constructed with premium aluminum, our doors are engineered to resist salty air and coastal elements, ensuring longevity without compromising style."
+          features={features}
+          featuredImages={{
+            main: gallery[1],
+            mainAlt: "Slide and stack doors vented",
+            secondary: gallery[2],
+            secondaryAlt: "Sunset slide and fold door",
+            tertiary: gallery[3],
+            tertiaryAlt: "Beach home slide and fold door",
+          }}
+          specifications={specifications}
+          engineeringFeatures={engineeringFeatures}
+          gallery={gallery}
+          galleryAltPrefix="Slide & Stack Patio Door"
+          configurations={stackingOptions}
+          configurationsTitle="Stacking Options"
+        />
 
         {/* CTA Section */}
         <section className="py-24 bg-primary-800">

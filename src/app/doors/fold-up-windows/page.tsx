@@ -5,7 +5,8 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
-import { Check, ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
+import ProductTabs from "@/components/ProductTabs";
+import { ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
 
 const features = [
   "Two-panel lift-open design with gas-assist hardware",
@@ -130,261 +131,45 @@ export default function FoldUpWindowsPage() {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                  A Unique View
-                </span>
-                <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
-                  Fresh Air & Casual Entertaining
-                </h2>
-                <p className="text-ocean-600 mb-6">
-                  Push-Up Fold-Up Windows stack neatly to transform any wall into a sleek pass-through,
-                  inviting natural light, fresh air, and that perfect California breeze. The bottom
-                  sash becomes a ready-made counter ledge while the top panels tilt out as a protective awning.
-                </p>
-                <p className="text-ocean-600 mb-8">
-                  Engineered for lasting beauty and performance, our thermal-break aluminum frames and
-                  argon-filled insulated glass lock in year-round comfort. German-made multi-point
-                  hardware secures each panel tightly when closed.
-                </p>
-                <ul className="space-y-4">
-                  {features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-primary-500 mt-0.5 shrink-0" />
-                      <span className="text-ocean-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="col-span-2">
-                  <img
-                    src={gallery[2]}
-                    alt="Dual fold-up windows in kitchen"
-                    className="w-full aspect-video object-cover"
-                  />
-                </div>
-                <div>
-                  <img
-                    src={gallery[1]}
-                    alt="Lift-up window exterior"
-                    className="w-full aspect-square object-cover"
-                  />
-                </div>
-                <div>
-                  <img
-                    src={gallery[3]}
-                    alt="Wall of lift-up windows"
-                    className="w-full aspect-square object-cover"
-                  />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Use Cases */}
-        <section className="py-24 bg-primary-800">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Applications
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
-                Perfect For Any Space
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {useCases.map((useCase, index) => (
-                <motion.div
-                  key={useCase.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-900/50 p-8"
-                >
-                  <h3 className="font-heading text-xl text-white mb-3">
-                    {useCase.title}
-                  </h3>
-                  <p className="text-primary-200">
-                    {useCase.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Engineering Features */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Engineering Excellence
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Built for Coastal Strength
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {engineeringFeatures.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="text-center p-8 bg-gray-50"
-                >
-                  <feature.icon className="w-12 h-12 text-primary-500 mx-auto mb-4" />
-                  <h3 className="font-heading text-xl text-ocean-900 mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-ocean-600 text-sm">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Gallery Section */}
-        <section className="py-24 bg-gray-50">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Gallery
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                See It In Action
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {gallery.map((image, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
-                  className={index === 0 ? "col-span-2 md:col-span-2 row-span-2" : ""}
-                >
-                  <img
-                    src={image}
-                    alt={`Fold-Up Window ${index + 1}`}
-                    className="w-full h-full object-cover aspect-[4/3]"
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Specifications */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Technical Specifications
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-4 gap-8 text-center mb-16">
-              {specifications.map((spec, index) => (
-                <motion.div
-                  key={spec.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-800 p-8"
-                >
-                  <p className="font-heading text-4xl text-primary-300 mb-1">
-                    {spec.value}
-                  </p>
-                  <p className="text-white/60 text-sm mb-2">{spec.unit}</p>
-                  <p className="text-white font-medium">{spec.label}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            {/* Options */}
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-white p-8 shadow-sm">
-                <h4 className="font-heading text-xl text-ocean-900 mb-4">Frame Colors</h4>
-                <p className="text-ocean-600 mb-4">
-                  Black, White, Dark Brown, Gray, plus RAL custom palette.
-                </p>
-                <p className="text-ocean-500 text-sm">
-                  Powder-coat finishes resist sun, salt, and spray.
-                </p>
-              </div>
-              <div className="bg-white p-8 shadow-sm">
-                <h4 className="font-heading text-xl text-ocean-900 mb-4">Glazing Options</h4>
-                <p className="text-ocean-600 mb-4">
-                  Dual, Triple, and Quad-glazed configurations.
-                </p>
-                <p className="text-ocean-500 text-sm">
-                  Clear, tinted, frosted, and decorative patterns.
-                </p>
-              </div>
-              <div className="bg-white p-8 shadow-sm">
-                <h4 className="font-heading text-xl text-ocean-900 mb-4">Screen Options</h4>
-                <p className="text-ocean-600 mb-4">
-                  Fiberglass, retractable, and stainless steel screens.
-                </p>
-                <p className="text-ocean-500 text-sm">
-                  Color-matched aluminum alloy frames.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Product Tabs */}
+        <ProductTabs
+          overviewLabel="A Unique View"
+          overviewTitle="Fresh Air & Casual Entertaining"
+          overviewDescription="Push-Up Fold-Up Windows stack neatly to transform any wall into a sleek pass-through, inviting natural light, fresh air, and that perfect California breeze. The bottom sash becomes a ready-made counter ledge while the top panels tilt out as a protective awning."
+          overviewDescriptionExtra="Engineered for lasting beauty and performance, our thermal-break aluminum frames and argon-filled insulated glass lock in year-round comfort. German-made multi-point hardware secures each panel tightly when closed."
+          features={features}
+          featuredImages={{
+            main: gallery[2],
+            mainAlt: "Dual fold-up windows in kitchen",
+            secondary: gallery[1],
+            secondaryAlt: "Lift-up window exterior",
+            tertiary: gallery[3],
+            tertiaryAlt: "Wall of lift-up windows",
+          }}
+          specifications={specifications}
+          engineeringFeatures={engineeringFeatures}
+          gallery={gallery}
+          galleryAltPrefix="Fold-Up Window"
+          configurations={useCases}
+          configurationsTitle="Applications"
+          frameColorOptions={{
+            title: "Frame Colors",
+            description: "Black, White, Dark Brown, Gray, plus RAL custom palette.",
+            note: "Powder-coat finishes resist sun, salt, and spray.",
+          }}
+          screenOptions={{
+            title: "Screen Options",
+            description: "Fiberglass, retractable, and stainless steel screens.",
+            note: "Color-matched aluminum alloy frames.",
+          }}
+          customOptions={[
+            {
+              title: "Glazing Options",
+              description: "Dual, Triple, and Quad-glazed configurations.",
+              note: "Clear, tinted, frosted, and decorative patterns.",
+            },
+          ]}
+        />
 
         {/* CTA Section */}
         <section className="py-24 bg-primary-800">

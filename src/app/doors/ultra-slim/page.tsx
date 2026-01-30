@@ -5,7 +5,8 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
-import { Check, ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
+import ProductTabs from "@/components/ProductTabs";
+import { ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
 
 const features = [
   "Ultra-narrow frames with expansive glass panels",
@@ -73,6 +74,21 @@ const glazingOptions = [
   },
 ];
 
+const certifications = [
+  {
+    title: "Standards & Certifications",
+    items: ["NFRC Certified", "CSA Certified", "CE Marked", "IGCC / SGCC Glass Standards"],
+  },
+  {
+    title: "Applications",
+    items: ["Residential Homes", "Commercial Properties", "Coastal Residences", "Luxury Developments"],
+  },
+  {
+    title: "Markets Served",
+    items: ["USA", "Canada", "Europe"],
+  },
+];
+
 export default function UltraSlimSliderPage() {
   return (
     <>
@@ -130,299 +146,38 @@ export default function UltraSlimSliderPage() {
           </div>
         </section>
 
-        {/* Expand Your Horizon Section */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                  Expand Your Horizon
-                </span>
-                <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
-                  Wall-to-Wall Glass
-                </h2>
-                <p className="text-ocean-600 mb-6">
-                  With ultra-narrow frames and expansive glass panels, the UltraSlim Multi-Slider
-                  door system opens your home to panoramic views and endless natural light.
-                  Transform your living space with clean aesthetics and effortless functionality.
-                </p>
-                <p className="text-ocean-600 mb-8">
-                  Designed for coastal living and luxury residences, these doors eliminate visual
-                  and physical barriers to create a bright, open atmosphere that feels expansive
-                  and refined.
-                </p>
-                <ul className="space-y-4">
-                  {features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-primary-500 mt-0.5 shrink-0" />
-                      <span className="text-ocean-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="col-span-2">
-                  <img
-                    src={gallery[1]}
-                    alt="Ultra slim slider bedroom with ocean view"
-                    className="w-full aspect-video object-cover"
-                  />
-                </div>
-                <div>
-                  <img
-                    src={gallery[2]}
-                    alt="Corner looking out to garden"
-                    className="w-full aspect-square object-cover"
-                  />
-                </div>
-                <div>
-                  <img
-                    src={gallery[3]}
-                    alt="Beach home with narrow frame slider"
-                    className="w-full aspect-square object-cover"
-                  />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Engineering Features */}
-        <section className="py-24 bg-primary-800">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Engineering Excellence
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
-                Built for Coastal Strength
-              </h2>
-              <p className="text-white/70 max-w-2xl mx-auto">
-                At Scenic Doors, performance is as important as beauty. Every system is crafted
-                to withstand coastal conditions while delivering effortless elegance.
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {engineeringFeatures.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-900/50 p-8 text-center"
-                >
-                  <feature.icon className="w-12 h-12 text-primary-300 mx-auto mb-4" />
-                  <h3 className="font-heading text-xl text-white mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-primary-200 text-sm">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Specifications */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Performance
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Technical Specifications
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-4 gap-8 text-center mb-16">
-              {specifications.map((spec, index) => (
-                <motion.div
-                  key={spec.label}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-800 p-8"
-                >
-                  <p className="font-heading text-4xl text-primary-300 mb-1">
-                    {spec.value}
-                  </p>
-                  <p className="text-white/60 text-sm mb-2">{spec.unit}</p>
-                  <p className="text-white font-medium">{spec.label}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            <div className="bg-gray-50 p-8 md:p-12">
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div>
-                  <h4 className="font-heading text-lg text-ocean-900 mb-4">Standards & Certifications</h4>
-                  <ul className="space-y-2 text-ocean-600">
-                    <li>NFRC Certified</li>
-                    <li>CSA Certified</li>
-                    <li>CE Marked</li>
-                    <li>IGCC / SGCC Glass Standards</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-heading text-lg text-ocean-900 mb-4">Applications</h4>
-                  <ul className="space-y-2 text-ocean-600">
-                    <li>Residential Homes</li>
-                    <li>Commercial Properties</li>
-                    <li>Coastal Residences</li>
-                    <li>Luxury Developments</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-heading text-lg text-ocean-900 mb-4">Markets Served</h4>
-                  <ul className="space-y-2 text-ocean-600">
-                    <li>USA</li>
-                    <li>Canada</li>
-                    <li>Europe</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Gallery Section */}
-        <section className="py-24 bg-gray-50">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Gallery
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                See It In Action
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {gallery.map((image, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
-                  className={index === 0 ? "col-span-2 md:col-span-2 row-span-2" : ""}
-                >
-                  <img
-                    src={image}
-                    alt={`Ultra Slim Multi-Slide Door ${index + 1}`}
-                    className="w-full h-full object-cover aspect-[4/3]"
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Glazing Options */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Glass Options
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-4">
-                Dual, Triple & Quad Glazing
-              </h2>
-              <p className="text-ocean-600 max-w-2xl mx-auto">
-                Advanced insulated glass units (IGUs) for the perfect balance of thermal comfort,
-                energy efficiency, and sound reduction.
-              </p>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {glazingOptions.map((option, index) => (
-                <motion.div
-                  key={option.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-white p-8 shadow-sm"
-                >
-                  <h3 className="font-heading text-2xl text-ocean-900 mb-4">
-                    {option.title}
-                  </h3>
-                  <p className="text-ocean-600">{option.description}</p>
-                </motion.div>
-              ))}
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="mt-12 grid md:grid-cols-2 gap-8"
-            >
-              <div className="bg-white p-8 shadow-sm">
-                <h4 className="font-heading text-xl text-ocean-900 mb-4">Frame Colors</h4>
-                <p className="text-ocean-600 mb-4">
-                  Standard colors include Black, White, Dark Brown, and Gray.
-                  Custom RAL colors available for perfect matching.
-                </p>
-                <p className="text-ocean-500 text-sm">
-                  All frames powder-coated for UV resistance and long-lasting performance.
-                </p>
-              </div>
-              <div className="bg-white p-8 shadow-sm">
-                <h4 className="font-heading text-xl text-ocean-900 mb-4">Screen Options</h4>
-                <p className="text-ocean-600 mb-4">
-                  Fiberglass mesh, retractable screens, and stainless steel options available.
-                  All screens color-matched to your frame.
-                </p>
-                <p className="text-ocean-500 text-sm">
-                  Fixed, in-swing, or rolling configurations to suit your needs.
-                </p>
-              </div>
-            </motion.div>
-          </div>
-        </section>
+        {/* Product Tabs */}
+        <ProductTabs
+          overviewLabel="Expand Your Horizon"
+          overviewTitle="Wall-to-Wall Glass"
+          overviewDescription="With ultra-narrow frames and expansive glass panels, the UltraSlim Multi-Slider door system opens your home to panoramic views and endless natural light. Transform your living space with clean aesthetics and effortless functionality."
+          overviewDescriptionExtra="Designed for coastal living and luxury residences, these doors eliminate visual and physical barriers to create a bright, open atmosphere that feels expansive and refined."
+          features={features}
+          featuredImages={{
+            main: gallery[1],
+            mainAlt: "Ultra slim slider bedroom with ocean view",
+            secondary: gallery[2],
+            secondaryAlt: "Corner looking out to garden",
+            tertiary: gallery[3],
+            tertiaryAlt: "Beach home with narrow frame slider",
+          }}
+          specifications={specifications}
+          engineeringFeatures={engineeringFeatures}
+          certifications={certifications}
+          gallery={gallery}
+          galleryAltPrefix="Ultra Slim Multi-Slide Door"
+          glazingOptions={glazingOptions}
+          frameColorOptions={{
+            title: "Frame Colors",
+            description: "Standard colors include Black, White, Dark Brown, and Gray. Custom RAL colors available for perfect matching.",
+            note: "All frames powder-coated for UV resistance and long-lasting performance.",
+          }}
+          screenOptions={{
+            title: "Screen Options",
+            description: "Fiberglass mesh, retractable screens, and stainless steel options available. All screens color-matched to your frame.",
+            note: "Fixed, in-swing, or rolling configurations to suit your needs.",
+          }}
+        />
 
         {/* CTA Section */}
         <section className="py-24 bg-primary-800">

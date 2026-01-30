@@ -5,7 +5,8 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
-import { Check, ArrowRight, Shield, Thermometer, Droplets, Eye } from "lucide-react";
+import ProductTabs from "@/components/ProductTabs";
+import { ArrowRight, Shield, Thermometer, Droplets, Eye } from "lucide-react";
 
 const features = [
   "Panels slide completely into wall pockets",
@@ -123,240 +124,44 @@ export default function PocketDoorsPage() {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                  Invisible Design
-                </span>
-                <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
-                  Expand Your Living Space with Disappearing Boundaries
-                </h2>
-                <p className="text-ocean-600 mb-6">
-                  Pocket Patio Doors are the ultimate solution for those seeking truly seamless
-                  indoor-outdoor transitions. Panels completely disappear into wall pockets,
-                  creating unobstructed openings that transform your living experience.
-                </p>
-                <p className="text-ocean-600 mb-8">
-                  Constructed with premium aluminum, our doors are engineered to resist salty air
-                  and coastal elements, ensuring longevity without compromising on style.
-                </p>
-                <ul className="space-y-4">
-                  {features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <Check className="w-5 h-5 text-primary-500 mt-0.5 shrink-0" />
-                      <span className="text-ocean-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="grid grid-cols-2 gap-4"
-              >
-                <div className="col-span-2">
-                  <img
-                    src={gallery[1]}
-                    alt="Pocket door open"
-                    className="w-full aspect-video object-cover"
-                  />
-                </div>
-                <div>
-                  <img
-                    src={gallery[2]}
-                    alt="Corner pocket door"
-                    className="w-full aspect-square object-cover"
-                  />
-                </div>
-                <div>
-                  <img
-                    src={gallery[3]}
-                    alt="Pocket door luxury home"
-                    className="w-full aspect-square object-cover"
-                  />
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-
-        {/* Benefits */}
-        <section className="py-24 bg-primary-800">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Benefits
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-white mb-4">
-                Unmatched Connection
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {benefits.map((benefit, index) => (
-                <motion.div
-                  key={benefit.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-primary-900/50 p-8"
-                >
-                  <h3 className="font-heading text-xl text-white mb-3">
-                    {benefit.title}
-                  </h3>
-                  <p className="text-primary-200">
-                    {benefit.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Engineering Features */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Engineering Excellence
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Built for Coastal Strength
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {engineeringFeatures.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="text-center p-8 bg-gray-50"
-                >
-                  <feature.icon className="w-12 h-12 text-primary-500 mx-auto mb-4" />
-                  <h3 className="font-heading text-xl text-ocean-900 mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-ocean-600 text-sm">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Gallery Section */}
-        <section className="py-24 bg-gray-50">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Gallery
-              </span>
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                See It In Action
-              </h2>
-            </motion.div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {gallery.map((image, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.05 }}
-                  className={index === 0 ? "col-span-2 md:col-span-2 row-span-2" : ""}
-                >
-                  <img
-                    src={image}
-                    alt={`Pocket Patio Door ${index + 1}`}
-                    className="w-full h-full object-cover aspect-[4/3]"
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Options Section */}
-        <section className="py-24 bg-white">
-          <div className="section-container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900">
-                Customization Options
-              </h2>
-            </motion.div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              <div className="bg-white p-8 shadow-sm">
-                <h4 className="font-heading text-xl text-ocean-900 mb-4">Frame Colors</h4>
-                <p className="text-ocean-600 mb-4">
-                  Standard: Black, White, Dark Brown, Gray
-                </p>
-                <p className="text-ocean-500 text-sm">
-                  Custom RAL colors available. All frames powder-coated for UV resistance.
-                </p>
-              </div>
-              <div className="bg-white p-8 shadow-sm">
-                <h4 className="font-heading text-xl text-ocean-900 mb-4">Glazing Options</h4>
-                <p className="text-ocean-600 mb-4">
-                  Dual, Triple, and Quad-glazed configurations available.
-                </p>
-                <p className="text-ocean-500 text-sm">
-                  Decorative patterns, frosted, and tinted glass options.
-                </p>
-              </div>
-              <div className="bg-white p-8 shadow-sm">
-                <h4 className="font-heading text-xl text-ocean-900 mb-4">Screen Options</h4>
-                <p className="text-ocean-600 mb-4">
-                  Fiberglass mesh, retractable, and stainless steel options.
-                </p>
-                <p className="text-ocean-500 text-sm">
-                  All screens color-matched to your frame finish.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Product Tabs */}
+        <ProductTabs
+          overviewLabel="Invisible Design"
+          overviewTitle="Expand Your Living Space with Disappearing Boundaries"
+          overviewDescription="Pocket Patio Doors are the ultimate solution for those seeking truly seamless indoor-outdoor transitions. Panels completely disappear into wall pockets, creating unobstructed openings that transform your living experience."
+          overviewDescriptionExtra="Constructed with premium aluminum, our doors are engineered to resist salty air and coastal elements, ensuring longevity without compromising on style."
+          features={features}
+          featuredImages={{
+            main: gallery[1],
+            mainAlt: "Pocket door open",
+            secondary: gallery[2],
+            secondaryAlt: "Corner pocket door",
+            tertiary: gallery[3],
+            tertiaryAlt: "Pocket door luxury home",
+          }}
+          engineeringFeatures={engineeringFeatures}
+          gallery={gallery}
+          galleryAltPrefix="Pocket Patio Door"
+          configurations={benefits}
+          configurationsTitle="Benefits"
+          frameColorOptions={{
+            title: "Frame Colors",
+            description: "Standard: Black, White, Dark Brown, Gray",
+            note: "Custom RAL colors available. All frames powder-coated for UV resistance.",
+          }}
+          screenOptions={{
+            title: "Screen Options",
+            description: "Fiberglass mesh, retractable, and stainless steel options.",
+            note: "All screens color-matched to your frame finish.",
+          }}
+          customOptions={[
+            {
+              title: "Glazing Options",
+              description: "Dual, Triple, and Quad-glazed configurations available.",
+              note: "Decorative patterns, frosted, and tinted glass options.",
+            },
+          ]}
+        />
 
         {/* CTA Section */}
         <section className="py-24 bg-primary-800">
