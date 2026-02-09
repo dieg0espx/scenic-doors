@@ -75,9 +75,12 @@ export interface ProductTabsProps {
   frameColorOptions?: Option;
   screenOptions?: Option;
   customOptions?: Option[];
+
+  // Preview tab (optional)
+  previewComponent?: React.ReactNode;
 }
 
-const tabs: Tab[] = [
+const defaultTabs: Tab[] = [
   { id: "overview", label: "Overview" },
   { id: "specifications", label: "Specifications" },
   { id: "gallery", label: "Gallery" },
@@ -104,8 +107,14 @@ export default function ProductTabs({
   frameColorOptions,
   screenOptions,
   customOptions,
+  previewComponent,
 }: ProductTabsProps) {
   const [activeTab, setActiveTab] = useState("overview");
+
+  // Add preview tab if component is provided
+  const tabs = previewComponent
+    ? [...defaultTabs, { id: "preview", label: "Preview" }]
+    : defaultTabs;
 
   return (
     <div className="bg-white">
@@ -567,6 +576,21 @@ export default function ProductTabs({
                 </div>
               </section>
             )}
+          </motion.div>
+        )}
+
+        {/* Preview Tab */}
+        {activeTab === "preview" && previewComponent && (
+          <motion.div
+            key="preview"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            <section className="py-0 bg-gray-50">
+              {previewComponent}
+            </section>
           </motion.div>
         )}
       </AnimatePresence>

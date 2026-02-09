@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
 import ProductTabs from "@/components/ProductTabs";
+import SlidingDoorAnimation from "@/components/SlidingDoorAnimation";
 import { ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
 
 const features = [
@@ -168,6 +169,7 @@ export default function MultiSlideDoorsPage() {
           configurationsTitle="Configurations"
           configurationsSubtitle="Choose from multiple configurations to match your opening size and design preferences. X = sliding panel, O = fixed panel."
           glassOptions={glassOptions}
+          previewComponent={<SlidingDoorAnimation />}
         />
 
         {/* CTA Section */}
