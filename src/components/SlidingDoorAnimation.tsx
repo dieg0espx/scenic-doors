@@ -7,6 +7,76 @@ const SlidingDoorAnimation = () => {
   const [openAmount, setOpenAmount] = useState(0);
   const [showWallPocket, setShowWallPocket] = useState(false);
 
+  useEffect(() => {
+    // Add custom slider styles
+    const style = document.createElement('style');
+    style.textContent = `
+      .sliding-door-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        opacity: 0;
+      }
+      .sliding-door-slider::-moz-range-thumb {
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        opacity: 0;
+        border: none;
+        background: transparent;
+      }
+      .sliding-door-slider::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 40px;
+        cursor: pointer;
+      }
+      .sliding-door-slider::-moz-range-track {
+        width: 100%;
+        height: 40px;
+        cursor: pointer;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  const animateDoor = () => {
+    if (isAnimating) return;
+
+    setIsAnimating(true);
+    const targetValue = openAmount > 50 ? 0 : 100;
+    const duration = 2000; // 2 seconds
+    const startTime = Date.now();
+    const startValue = openAmount;
+    const difference = targetValue - startValue;
+
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Ease in-out function for smooth animation
+      const easeProgress = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+      const newValue = startValue + (difference * easeProgress);
+      setOpenAmount(newValue);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setIsAnimating(false);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  };
+
   const configurations: Record<string, { panels: number; fixed: number[]; sliding: number[]; directions: number[] }> = {
     'XO': { panels: 2, fixed: [1], sliding: [0], directions: [-1] },
     'OX': { panels: 2, fixed: [0], sliding: [1], directions: [1] },
@@ -32,7 +102,7 @@ const SlidingDoorAnimation = () => {
     if (config.sliding.includes(index)) {
       const slidingIndex = config.sliding.indexOf(index);
       const direction = config.directions[slidingIndex];
-      const slideAmount = panelWidth * 0.85 * (openAmount / 100);
+      const slideAmount = panelWidth * 0.95 * (openAmount / 100);
       return basePosition + (direction * slideAmount);
     }
 
@@ -390,7 +460,35 @@ const SlidingDoorAnimation = () => {
         </div>
 
         {/* Custom Slider */}
-        <div style={{ position: 'relative', height: '40px' }}>
+        <div style={{ position: 'relative', height: '40px', userSelect: 'none', touchAction: 'none' }}>
+          {/* Slider input - MUST BE FIRST */}
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={openAmount}
+            onChange={(e) => setOpenAmount(Number(e.target.value))}
+            onInput={(e) => setOpenAmount(Number((e.target as HTMLInputElement).value))}
+            className="sliding-door-slider"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              margin: 0,
+              padding: 0,
+              cursor: 'pointer',
+              zIndex: 20,
+              WebkitAppearance: 'none',
+              MozAppearance: 'none',
+              appearance: 'none',
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+            } as React.CSSProperties}
+          />
+
           {/* Track background */}
           <div style={{
             position: 'absolute',
@@ -401,6 +499,8 @@ const SlidingDoorAnimation = () => {
             height: '8px',
             background: '#E5E7EB',
             borderRadius: '4px',
+            pointerEvents: 'none',
+            zIndex: 1,
           }} />
 
           {/* Filled track */}
@@ -414,26 +514,9 @@ const SlidingDoorAnimation = () => {
             background: 'linear-gradient(90deg, #3898EC 0%, #1D4ED8 100%)',
             borderRadius: '4px',
             transition: 'width 0.05s linear',
+            pointerEvents: 'none',
+            zIndex: 2,
           }} />
-
-          {/* Slider input */}
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={openAmount}
-            onChange={(e) => setOpenAmount(Number(e.target.value))}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              opacity: 0,
-              cursor: 'pointer',
-              zIndex: 10,
-            }}
-          />
 
           {/* Custom thumb */}
           <div style={{
@@ -448,6 +531,7 @@ const SlidingDoorAnimation = () => {
             boxShadow: '0 2px 8px rgba(0,0,0,0.2), 0 0 0 3px #3898EC',
             pointerEvents: 'none',
             transition: 'left 0.05s linear',
+            zIndex: 3,
           }}>
             {/* Grip lines */}
             <div style={{
@@ -457,9 +541,10 @@ const SlidingDoorAnimation = () => {
               transform: 'translate(-50%, -50%)',
               display: 'flex',
               gap: '3px',
+              pointerEvents: 'none',
             }}>
-              <div style={{ width: '2px', height: '10px', background: '#9CA3AF', borderRadius: '1px' }} />
-              <div style={{ width: '2px', height: '10px', background: '#9CA3AF', borderRadius: '1px' }} />
+              <div style={{ width: '2px', height: '10px', background: '#9CA3AF', borderRadius: '1px', pointerEvents: 'none' }} />
+              <div style={{ width: '2px', height: '10px', background: '#9CA3AF', borderRadius: '1px', pointerEvents: 'none' }} />
             </div>
           </div>
         </div>

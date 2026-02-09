@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
 import ProductTabs from "@/components/ProductTabs";
+import PivotDoorAnimation from "@/components/PivotDoorAnimation";
 import { ArrowRight } from "lucide-react";
 
 const features = [
@@ -107,6 +108,7 @@ export default function PivotDoorsPage() {
           configurations={materials}
           configurationsTitle="Materials"
           configurationsSubtitle="Choose from premium material options to match your architectural vision."
+          previewComponent={<PivotDoorAnimation />}
         />
 
         {/* Custom Design */}
