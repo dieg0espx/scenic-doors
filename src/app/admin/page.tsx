@@ -198,7 +198,8 @@ export default async function AdminDashboard() {
             </div>
           ) : (
             latestQuotes.map((q) => {
-              const sc = leadStatusConfig[q.lead_status] || leadStatusConfig.new;
+              const status = q.lead_status || "new";
+              const sc = leadStatusConfig[status] || leadStatusConfig.new;
               return (
                 <Link
                   key={q.id}
@@ -216,7 +217,7 @@ export default async function AdminDashboard() {
                       <span
                         className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${sc.bg} ${sc.text}`}
                       >
-                        {q.lead_status.charAt(0).toUpperCase() + q.lead_status.slice(1)}
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
                       </span>
                       {q.customer_type && q.customer_type !== "residential" && (
                         <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-400/10 text-indigo-300">
