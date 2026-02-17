@@ -129,7 +129,18 @@ export async function getQuotes() {
     .select("*, quote_notes(id), quote_tasks(id), admin_users(name)")
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Fallback: if related tables don't exist yet, query without joins
+    if (error.message.includes("relationship")) {
+      const { data: fallback, error: fbErr } = await supabase
+        .from("quotes")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (fbErr) throw new Error(fbErr.message);
+      return fallback ?? [];
+    }
+    throw new Error(error.message);
+  }
   return data ?? [];
 }
 
@@ -140,34 +151,46 @@ export async function getQuotesWithFilters(filters?: {
   due_today?: boolean;
 }): Promise<Quote[]> {
   const supabase = await createClient();
-  let query = supabase
-    .from("quotes")
-    .select("*, quote_notes(id), quote_tasks(id), admin_users(name)");
 
-  if (filters?.lead_status && filters.lead_status !== "all") {
-    query = query.eq("lead_status", filters.lead_status);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function applyFilters(query: any) {
+    let q = query;
+    if (filters?.lead_status && filters.lead_status !== "all") {
+      q = q.eq("lead_status", filters.lead_status);
+    }
+    if (filters?.search) {
+      const s = `%${filters.search}%`;
+      q = q.or(
+        `client_name.ilike.${s},client_email.ilike.${s},quote_number.ilike.${s}`
+      );
+    }
+    if (filters?.due_today) {
+      const today = new Date().toISOString().split("T")[0];
+      q = q.eq("follow_up_date", today);
+    }
+    if (filters?.sort === "oldest") {
+      q = q.order("created_at", { ascending: true });
+    } else {
+      q = q.order("created_at", { ascending: false });
+    }
+    return q;
   }
 
-  if (filters?.search) {
-    const s = `%${filters.search}%`;
-    query = query.or(
-      `client_name.ilike.${s},client_email.ilike.${s},quote_number.ilike.${s}`
-    );
-  }
+  const { data, error } = await applyFilters(
+    supabase.from("quotes").select("*, quote_notes(id), quote_tasks(id), admin_users(name)")
+  );
 
-  if (filters?.due_today) {
-    const today = new Date().toISOString().split("T")[0];
-    query = query.eq("follow_up_date", today);
+  if (error) {
+    // Fallback: if related tables don't exist yet, query without joins
+    if (error.message.includes("relationship")) {
+      const { data: fallback, error: fbErr } = await applyFilters(
+        supabase.from("quotes").select("*")
+      );
+      if (fbErr) throw new Error(fbErr.message);
+      return (fallback ?? []) as Quote[];
+    }
+    throw new Error(error.message);
   }
-
-  if (filters?.sort === "oldest") {
-    query = query.order("created_at", { ascending: true });
-  } else {
-    query = query.order("created_at", { ascending: false });
-  }
-
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
   return (data ?? []) as Quote[];
 }
 
@@ -191,7 +214,19 @@ export async function getQuoteDetail(id: string) {
     .eq("id", id)
     .single();
 
-  if (error) return null;
+  if (error) {
+    // Fallback if admin_users relationship doesn't exist
+    if (error.message.includes("relationship")) {
+      const { data: fallback, error: fbErr } = await supabase
+        .from("quotes")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (fbErr) return null;
+      return fallback;
+    }
+    return null;
+  }
   return data;
 }
 
@@ -386,44 +421,45 @@ export async function markQuoteViewed(id: string) {
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const supabase = await createClient();
 
+  // Each query is individually safe — missing tables return defaults instead of crashing
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const safe = async (query: PromiseLike<any>, fallbackData: unknown = [], fallbackCount = 0) => {
+    const r = await query;
+    return r.error ? { data: fallbackData, count: fallbackCount } : { data: r.data ?? fallbackData, count: r.count ?? fallbackCount };
+  };
+
   const [leadsRes, quotesRes, quoteTotalsRes, pendingOrdersRes, ordersRes, paymentsRes] =
     await Promise.all([
-      supabase.from("leads").select("id", { count: "exact", head: true }),
-      supabase.from("quotes").select("id", { count: "exact", head: true }),
-      supabase.from("quotes").select("grand_total, cost"),
-      supabase
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "pending"),
-      supabase.from("orders").select("id", { count: "exact", head: true }),
-      supabase
-        .from("payments")
-        .select("amount")
-        .eq("status", "completed"),
+      safe(supabase.from("leads").select("id", { count: "exact", head: true })),
+      safe(supabase.from("quotes").select("id", { count: "exact", head: true })),
+      safe(supabase.from("quotes").select("grand_total, cost")),
+      safe(supabase.from("orders").select("id", { count: "exact", head: true }).eq("status", "pending")),
+      safe(supabase.from("orders").select("id", { count: "exact", head: true })),
+      safe(supabase.from("payments").select("amount").eq("status", "completed")),
     ]);
 
-  const totalQuoteValue = (quoteTotalsRes.data ?? []).reduce(
-    (sum, q) => sum + Number(q.grand_total || q.cost || 0),
+  const totalQuoteValue = (Array.isArray(quoteTotalsRes.data) ? quoteTotalsRes.data : []).reduce(
+    (sum: number, q: { grand_total?: number; cost?: number }) => sum + Number(q.grand_total || q.cost || 0),
     0
   );
 
-  const totalOrders = ordersRes.count ?? 0;
-  const totalQuotes = quotesRes.count ?? 0;
+  const totalOrders = ordersRes.count as number;
+  const totalQuotes = quotesRes.count as number;
   const conversionRate =
     totalQuotes > 0 ? (totalOrders / totalQuotes) * 100 : 0;
 
-  const totalPayments = (paymentsRes.data ?? []).reduce(
-    (sum, p) => sum + Number(p.amount),
+  const totalPayments = (Array.isArray(paymentsRes.data) ? paymentsRes.data : []).reduce(
+    (sum: number, p: { amount?: number }) => sum + Number(p.amount || 0),
     0
   );
   const averageOrderVolume =
     totalOrders > 0 ? totalPayments / totalOrders : 0;
 
   return {
-    totalLeads: leadsRes.count ?? 0,
+    totalLeads: leadsRes.count as number,
     totalQuotes,
     totalQuoteValue,
-    pendingOrders: pendingOrdersRes.count ?? 0,
+    pendingOrders: pendingOrdersRes.count as number,
     totalOrders,
     conversionRate,
     averageOrderVolume,
