@@ -11,7 +11,11 @@ export async function getLeads(): Promise<Lead[]> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    // Table may not exist if migration 008 hasn't been applied
+    if (error.message.includes("schema cache")) return [];
+    throw new Error(error.message);
+  }
   return data ?? [];
 }
 
@@ -118,6 +122,11 @@ export async function getLeadMetrics(): Promise<LeadMetrics> {
           new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
         ),
     ]);
+
+  // Return zeros if table doesn't exist yet
+  if (totalRes.error?.message?.includes("schema cache")) {
+    return { total: 0, withoutQuotes: 0, withQuotes: 0, newThisWeek: 0 };
+  }
 
   return {
     total: totalRes.count ?? 0,

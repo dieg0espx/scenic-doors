@@ -12,7 +12,10 @@ export async function getQuoteNotes(quoteId: string): Promise<QuoteNote[]> {
     .eq("quote_id", quoteId)
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("schema cache")) return [];
+    throw new Error(error.message);
+  }
   return data ?? [];
 }
 

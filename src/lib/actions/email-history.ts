@@ -13,7 +13,10 @@ export async function getEmailHistory(
     .eq("quote_id", quoteId)
     .order("sent_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("schema cache")) return [];
+    throw new Error(error.message);
+  }
   return data ?? [];
 }
 

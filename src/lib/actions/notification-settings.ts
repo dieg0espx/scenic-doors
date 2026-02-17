@@ -11,7 +11,10 @@ export async function getNotificationSettings(): Promise<NotificationSettings[]>
     .select("*")
     .order("type");
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("schema cache")) return [];
+    throw new Error(error.message);
+  }
   return data ?? [];
 }
 

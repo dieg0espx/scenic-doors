@@ -11,7 +11,10 @@ export async function getAdminUsers(): Promise<AdminUser[]> {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("schema cache")) return [];
+    throw new Error(error.message);
+  }
   return data ?? [];
 }
 
@@ -108,7 +111,11 @@ export async function getAdminUserCounts(): Promise<{
   const supabase = await createClient();
   const { data, error } = await supabase.from("admin_users").select("role, status");
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("schema cache"))
+      return { total: 0, active: 0, inactive: 0, byRole: {} };
+    throw new Error(error.message);
+  }
   const users = data ?? [];
 
   const byRole: Record<string, number> = {};
