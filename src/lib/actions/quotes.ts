@@ -153,9 +153,10 @@ export async function getQuotesWithFilters(filters?: {
   const supabase = await createClient();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function applyFilters(query: any) {
+  function applyFilters(query: any, safeOnly = false) {
     let q = query;
-    if (filters?.lead_status && filters.lead_status !== "all") {
+    // lead_status and follow_up_date are from migration 008 — skip if safeOnly
+    if (!safeOnly && filters?.lead_status && filters.lead_status !== "all") {
       q = q.eq("lead_status", filters.lead_status);
     }
     if (filters?.search) {
@@ -164,7 +165,7 @@ export async function getQuotesWithFilters(filters?: {
         `client_name.ilike.${s},client_email.ilike.${s},quote_number.ilike.${s}`
       );
     }
-    if (filters?.due_today) {
+    if (!safeOnly && filters?.due_today) {
       const today = new Date().toISOString().split("T")[0];
       q = q.eq("follow_up_date", today);
     }
@@ -181,15 +182,13 @@ export async function getQuotesWithFilters(filters?: {
   );
 
   if (error) {
-    // Fallback: if related tables don't exist yet, query without joins
-    if (error.message.includes("relationship")) {
-      const { data: fallback, error: fbErr } = await applyFilters(
-        supabase.from("quotes").select("*")
-      );
-      if (fbErr) throw new Error(fbErr.message);
-      return (fallback ?? []) as Quote[];
-    }
-    throw new Error(error.message);
+    // Fallback: query without joins and skip migration-008 column filters
+    const { data: fallback, error: fbErr } = await applyFilters(
+      supabase.from("quotes").select("*"),
+      true
+    );
+    if (fbErr) throw new Error(fbErr.message);
+    return (fallback ?? []) as Quote[];
   }
   return (data ?? []) as Quote[];
 }
