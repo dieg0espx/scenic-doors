@@ -108,11 +108,19 @@ export async function signApprovalDrawing(
 
   const { data: drawing, error: fetchError } = await supabase
     .from("approval_drawings")
-    .select("quote_id")
+    .select("quote_id, status")
     .eq("id", id)
     .single();
 
   if (fetchError || !drawing) throw new Error("Approval drawing not found");
+
+  // Idempotency: already signed
+  if (drawing.status === "signed") return;
+
+  // Only allow signing drawings that have been sent
+  if (drawing.status !== "sent") {
+    throw new Error("Approval drawing must be sent before it can be signed");
+  }
 
   const { error } = await supabase
     .from("approval_drawings")

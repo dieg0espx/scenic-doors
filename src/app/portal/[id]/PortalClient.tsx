@@ -10,7 +10,7 @@ import {
   Loader2,
   XCircle,
 } from "lucide-react";
-import { getQuoteById } from "@/lib/actions/quotes";
+import { getQuoteById, markQuoteViewed } from "@/lib/actions/quotes";
 import { getApprovalDrawing } from "@/lib/actions/approval-drawings";
 import { getOrderTracking } from "@/lib/actions/order-tracking";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
@@ -78,6 +78,11 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
         setDrawing(d);
         setTracking(t);
         setPhotos(p);
+
+        // Track that the client viewed the portal
+        if (q) {
+          markQuoteViewed(quoteId).catch(() => {});
+        }
       } catch {
         // quote not found
       } finally {

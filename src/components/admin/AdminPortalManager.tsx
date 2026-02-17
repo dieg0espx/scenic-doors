@@ -61,6 +61,7 @@ export default function AdminPortalManager({
   const [followUps] = useState(initialFollowUps);
   const [openSection, setOpenSection] = useState<string | null>("portal");
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function toggleSection(s: string) {
     setOpenSection(openSection === s ? null : s);
@@ -141,11 +142,12 @@ export default function AdminPortalManager({
   // ── Order Tracking ──
   async function handleCreateTracking() {
     setLoading("tracking");
+    setError(null);
     try {
       const t = await createOrderTracking(quoteId, grandTotal);
       setTracking(t);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed");
+      setError(err instanceof Error ? err.message : "Failed to initialize tracking");
     } finally {
       setLoading(null);
     }
@@ -354,9 +356,16 @@ export default function AdminPortalManager({
         badge={tracking?.stage || "none"}
       >
         {!tracking ? (
-          <Btn onClick={handleCreateTracking} loading={loading === "tracking"} icon={<Plus className="w-3.5 h-3.5" />}>
-            Initialize Order Tracking
-          </Btn>
+          <div className="space-y-2">
+            {error && (
+              <div className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
+                {error}
+              </div>
+            )}
+            <Btn onClick={handleCreateTracking} loading={loading === "tracking"} icon={<Plus className="w-3.5 h-3.5" />}>
+              Initialize Order Tracking
+            </Btn>
+          </div>
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 text-xs">

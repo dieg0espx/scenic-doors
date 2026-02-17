@@ -23,6 +23,29 @@ export async function scheduleFollowUps(
   count: number = 3
 ): Promise<FollowUpEntry[]> {
   const supabase = await createClient();
+
+  // Validate lead exists
+  const { data: lead, error: leadError } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (leadError) throw new Error(leadError.message);
+  if (!lead) throw new Error("Lead not found — cannot schedule follow-ups without a valid lead");
+
+  // Prevent duplicate scheduling
+  const { data: existing } = await supabase
+    .from("follow_up_schedule")
+    .select("id")
+    .eq("quote_id", quoteId)
+    .eq("status", "pending")
+    .limit(1);
+
+  if (existing && existing.length > 0) {
+    throw new Error("Follow-ups already scheduled for this quote");
+  }
+
   const now = new Date();
 
   const entries = Array.from({ length: count }, (_, i) => {

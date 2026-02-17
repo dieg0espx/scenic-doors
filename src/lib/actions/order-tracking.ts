@@ -4,6 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { OrderTracking } from "@/lib/types";
 
+// Valid stage transitions: current stage → allowed next stages
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  deposit_1_pending: ["manufacturing"],
+  manufacturing: ["deposit_2_pending"],
+  deposit_2_pending: ["shipping"],
+  shipping: ["delivered"],
+  delivered: [],
+};
+
 export async function getOrderTracking(quoteId: string): Promise<OrderTracking | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -19,6 +28,30 @@ export async function getOrderTracking(quoteId: string): Promise<OrderTracking |
 export async function createOrderTracking(quoteId: string, totalAmount: number): Promise<OrderTracking> {
   const supabase = await createClient();
   const halfAmount = Math.round(totalAmount * 50) / 100;
+
+  // Verify approval drawing is signed before allowing order tracking
+  const { data: drawing } = await supabase
+    .from("approval_drawings")
+    .select("status")
+    .eq("quote_id", quoteId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!drawing || drawing.status !== "signed") {
+    throw new Error("Approval drawing must be signed before initializing order tracking");
+  }
+
+  // Prevent duplicate tracking
+  const { data: existing } = await supabase
+    .from("order_tracking")
+    .select("id")
+    .eq("quote_id", quoteId)
+    .maybeSingle();
+
+  if (existing) {
+    throw new Error("Order tracking already exists for this quote");
+  }
 
   const { data, error } = await supabase
     .from("order_tracking")
@@ -57,6 +90,22 @@ export async function updateOrderStage(
   const supabase = await createClient();
   const now = new Date().toISOString();
 
+  // Fetch current stage and validate transition
+  const { data: current, error: fetchError } = await supabase
+    .from("order_tracking")
+    .select("stage")
+    .eq("id", trackingId)
+    .single();
+
+  if (fetchError || !current) throw new Error("Order tracking not found");
+
+  const allowed = VALID_TRANSITIONS[current.stage] || [];
+  if (!allowed.includes(stage)) {
+    throw new Error(
+      `Invalid transition: cannot move from "${current.stage}" to "${stage}". Allowed: ${allowed.join(", ") || "none"}`
+    );
+  }
+
   const stageTimestamps: Record<string, Record<string, string>> = {
     manufacturing: { manufacturing_started_at: now },
     deposit_2_pending: { manufacturing_completed_at: now },
@@ -91,6 +140,27 @@ export async function markDepositPaid(
 ): Promise<void> {
   const supabase = await createClient();
   const now = new Date().toISOString();
+
+  // Fetch current tracking to validate
+  const { data: current, error: fetchError } = await supabase
+    .from("order_tracking")
+    .select("stage, deposit_1_paid, deposit_2_paid")
+    .eq("id", trackingId)
+    .single();
+
+  if (fetchError || !current) throw new Error("Order tracking not found");
+
+  if (depositNumber === 1) {
+    if (current.deposit_1_paid) return; // Idempotent
+    if (current.stage !== "deposit_1_pending") {
+      throw new Error("Deposit 1 can only be marked paid when stage is deposit_1_pending");
+    }
+  } else {
+    if (current.deposit_2_paid) return; // Idempotent
+    if (current.stage !== "deposit_2_pending") {
+      throw new Error("Deposit 2 can only be marked paid when stage is deposit_2_pending");
+    }
+  }
 
   const update = depositNumber === 1
     ? { deposit_1_paid: true, deposit_1_paid_at: now, stage: "manufacturing" }
@@ -127,7 +197,7 @@ export async function addShippingUpdate(
     .eq("id", trackingId)
     .single();
 
-  const updates = [...(current?.shipping_updates || []), update];
+  const updates = [...(Array.isArray(current?.shipping_updates) ? current.shipping_updates : []), update];
 
   const { error } = await supabase
     .from("order_tracking")
