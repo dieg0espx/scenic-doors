@@ -7,6 +7,7 @@ import {
   User, Mail, Phone, Building2, DoorOpen, Ruler, DollarSign,
   StickyNote, ChevronDown, Check, Layers, GlassWater, Paintbrush,
   Plus, X, Save, Truck, MapPin, Users, Search, UserPlus,
+  Calendar, Tag, Thermometer,
 } from "lucide-react";
 
 const DOOR_TYPES = [
@@ -22,6 +23,8 @@ const GLASS_TYPES = [
   "Dual-Glazed", "Triple-Glazed", "Quad-Glazed",
   "Frosted", "Tinted", "Low-E", "Acoustic", "Clear",
 ];
+const CUSTOMER_TYPES = ["residential", "commercial", "contractor"];
+const LEAD_STATUSES = ["new", "hot", "warm", "cold", "hold", "archived"];
 
 /* ── Custom Select Dropdown ─────────────────────────────── */
 function CustomSelect({
@@ -91,7 +94,7 @@ function CustomSelect({
                 `}>
                   {value === opt && <Check className="w-3 h-3 text-white" />}
                 </div>
-                <span className="truncate">{opt}</span>
+                <span className="truncate capitalize">{opt}</span>
               </button>
             ))}
           </div>
@@ -116,7 +119,14 @@ interface ClientOption {
   client_addresses: ClientAddress[];
 }
 
-interface QuoteData {
+interface AdminUserOption {
+  id: string;
+  name: string;
+  email: string | null;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface QuoteData extends Record<string, any> {
   id: string;
   client_name: string;
   client_email: string;
@@ -130,15 +140,28 @@ interface QuoteData {
   notes: string | null;
   delivery_type?: string;
   delivery_address?: string;
+  customer_type?: string;
+  customer_phone?: string;
+  customer_zip?: string;
+  assigned_to?: string | null;
+  lead_status?: string;
+  items?: { id?: string; name: string; quantity: number; unit_price: number; total: number }[];
+  subtotal?: number;
+  installation_cost?: number;
+  delivery_cost?: number;
+  tax?: number;
+  grand_total?: number;
+  follow_up_date?: string;
 }
 
 interface QuoteFormProps {
   initialData?: QuoteData;
   clients?: ClientOption[];
+  adminUsers?: AdminUserOption[];
 }
 
 /* ── Quote Form ──────────────────────────────────────────── */
-export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps) {
+export default function QuoteForm({ initialData, clients = [], adminUsers = [] }: QuoteFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -172,6 +195,20 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
   const [deliveryAddress, setDeliveryAddress] = useState(initialData?.delivery_address || "");
   const [selectedAddressId, setSelectedAddressId] = useState("");
 
+  // New fields
+  const [customerType, setCustomerType] = useState(initialData?.customer_type || "residential");
+  const [customerPhone, setCustomerPhone] = useState(initialData?.customer_phone || "");
+  const [customerZip, setCustomerZip] = useState(initialData?.customer_zip || "");
+  const [assignedTo, setAssignedTo] = useState(initialData?.assigned_to || "");
+  const [leadStatus, setLeadStatus] = useState(initialData?.lead_status || "new");
+  const [followUpDate, setFollowUpDate] = useState(initialData?.follow_up_date || "");
+
+  // Pricing
+  const [subtotal, setSubtotal] = useState(initialData?.subtotal?.toString() || "");
+  const [installationCost, setInstallationCost] = useState(initialData?.installation_cost?.toString() || "");
+  const [deliveryCost, setDeliveryCost] = useState(initialData?.delivery_cost?.toString() || "");
+  const [tax, setTax] = useState(initialData?.tax?.toString() || "");
+
   // Filter clients based on search
   const filteredClients = clients.filter(
     (c) =>
@@ -194,7 +231,6 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
     setSelectedClientId(client.id);
     setClientSearch("");
     setClientDropdownOpen(false);
-    // If client has a default address, select it
     const defaultAddr = client.client_addresses.find((a) => a.is_default);
     if (defaultAddr) {
       setSelectedAddressId(defaultAddr.id);
@@ -215,6 +251,8 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
 
     const clientName = clientMode === "existing" && selectedClient ? selectedClient.name : newClientName;
     const clientEmail = clientMode === "existing" && selectedClient ? selectedClient.email : newClientEmail;
+    const costVal = parseFloat((document.getElementById("cost") as HTMLInputElement)?.value || "0");
+    const grandTotal = (parseFloat(subtotal) || 0) + (parseFloat(installationCost) || 0) + (parseFloat(deliveryCost) || 0) + (parseFloat(tax) || 0);
 
     const data = {
       client_name: clientName,
@@ -224,7 +262,7 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
       color: color,
       glass_type: glassType,
       size: (document.getElementById("size") as HTMLInputElement)?.value || "",
-      cost: parseFloat((document.getElementById("cost") as HTMLInputElement)?.value || "0"),
+      cost: costVal,
       notes: (document.getElementById("notes") as HTMLTextAreaElement)?.value || undefined,
       delivery_type: deliveryType,
       delivery_address: deliveryType === "delivery" ? deliveryAddress : undefined,
@@ -232,14 +270,22 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
       save_as_client: clientMode === "new" ? saveAsClient : undefined,
       client_phone: clientMode === "new" && saveAsClient ? newClientPhone || undefined : undefined,
       client_company: clientMode === "new" && saveAsClient ? newClientCompany || undefined : undefined,
+      customer_type: customerType,
+      customer_phone: customerPhone || undefined,
+      customer_zip: customerZip || undefined,
+      assigned_to: assignedTo || undefined,
+      lead_status: leadStatus,
+      subtotal: parseFloat(subtotal) || undefined,
+      installation_cost: parseFloat(installationCost) || undefined,
+      delivery_cost: parseFloat(deliveryCost) || undefined,
+      tax: parseFloat(tax) || undefined,
+      grand_total: grandTotal > 0 ? grandTotal : costVal,
+      follow_up_date: followUpDate || undefined,
     };
 
     try {
       if (isEdit) {
-        await updateQuote(initialData.id, {
-          ...data,
-          client_id: clientMode === "existing" ? selectedClientId || undefined : undefined,
-        });
+        await updateQuote(initialData.id, data);
       } else {
         await createQuote(data);
       }
@@ -267,7 +313,6 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
           </div>
         </div>
         <div className="p-5 sm:p-6 space-y-4">
-          {/* Client mode toggle */}
           {clients.length > 0 && (
             <div className="flex gap-3 mb-4">
               <button
@@ -295,7 +340,6 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
             </div>
           )}
 
-          {/* Existing client selector */}
           {clientMode === "existing" && clients.length > 0 ? (
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
@@ -360,7 +404,6 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
               </div>
             </div>
           ) : (
-            /* New client inputs */
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -437,21 +480,116 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
                           onChange={(e) => setNewClientCompany(e.target.value)}
                         />
                       </div>
-                      {deliveryType === "delivery" && (
-                        <p className="sm:col-span-2 text-white/25 text-xs">
-                          The delivery address below will be saved as the client&apos;s default address.
-                        </p>
-                      )}
                     </div>
                   )}
                 </>
               )}
             </>
           )}
+
+          {/* New customer fields */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 mt-4 border-t border-white/[0.04]">
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                <Tag className="w-3.5 h-3.5" /> Customer Type
+              </label>
+              <CustomSelect
+                name="customer_type"
+                value={customerType}
+                onChange={setCustomerType}
+                options={CUSTOMER_TYPES}
+                placeholder="Select type..."
+              />
+            </div>
+            <div>
+              <label htmlFor="customer_phone" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                <Phone className="w-3.5 h-3.5" /> Customer Phone
+              </label>
+              <input
+                id="customer_phone"
+                type="tel"
+                className={inputClass}
+                placeholder="+1 (555) 000-0000"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+              />
+            </div>
+            <div>
+              <label htmlFor="customer_zip" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                <MapPin className="w-3.5 h-3.5" /> ZIP Code
+              </label>
+              <input
+                id="customer_zip"
+                type="text"
+                className={inputClass}
+                placeholder="90210"
+                value={customerZip}
+                onChange={(e) => setCustomerZip(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Section 2: Door Specs ── */}
+      {/* ── Section 2: Lead Management ── */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+        <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+          <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
+            <Thermometer className="w-4 h-4 text-rose-400" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Lead Management</h3>
+            <p className="text-sm text-white/35">Assign and track this quote</p>
+          </div>
+        </div>
+        <div className="p-5 sm:p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                <Thermometer className="w-3.5 h-3.5" /> Lead Status
+              </label>
+              <CustomSelect
+                name="lead_status"
+                value={leadStatus}
+                onChange={setLeadStatus}
+                options={LEAD_STATUSES}
+                placeholder="Select status..."
+              />
+            </div>
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                <User className="w-3.5 h-3.5" /> Assigned To
+              </label>
+              <select
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+                className={inputClass + " cursor-pointer"}
+              >
+                <option value="">Unassigned</option>
+                {adminUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="follow_up_date" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                <Calendar className="w-3.5 h-3.5" /> Follow-Up Date
+              </label>
+              <input
+                id="follow_up_date"
+                type="date"
+                className={inputClass}
+                value={followUpDate}
+                onChange={(e) => setFollowUpDate(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 3: Door Specs ── */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
           <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
@@ -516,7 +654,7 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
         </div>
       </div>
 
-      {/* ── Section 3: Pricing ── */}
+      {/* ── Section 4: Pricing ── */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
           <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
@@ -524,11 +662,11 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
           </div>
           <div>
             <h3 className="text-base font-semibold text-white">Pricing & Dimensions</h3>
-            <p className="text-sm text-white/35">Set the size and total cost</p>
+            <p className="text-sm text-white/35">Set the size, costs, and total</p>
           </div>
         </div>
         <div className="p-5 sm:p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label htmlFor="size" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
                 <Ruler className="w-3.5 h-3.5" /> Dimensions
@@ -537,7 +675,7 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
             </div>
             <div>
               <label htmlFor="cost" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                <DollarSign className="w-3.5 h-3.5" /> Total Cost
+                <DollarSign className="w-3.5 h-3.5" /> Base Cost
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25 text-sm font-medium">$</span>
@@ -545,10 +683,40 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
               </div>
             </div>
           </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+              <label className="text-xs font-medium text-white/30 mb-1.5 block uppercase tracking-wider">Subtotal</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs">$</span>
+                <input type="number" step="0.01" min="0" className={inputClass + " pl-7 text-xs"} placeholder="0.00" value={subtotal} onChange={(e) => setSubtotal(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-white/30 mb-1.5 block uppercase tracking-wider">Installation</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs">$</span>
+                <input type="number" step="0.01" min="0" className={inputClass + " pl-7 text-xs"} placeholder="0.00" value={installationCost} onChange={(e) => setInstallationCost(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-white/30 mb-1.5 block uppercase tracking-wider">Delivery</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs">$</span>
+                <input type="number" step="0.01" min="0" className={inputClass + " pl-7 text-xs"} placeholder="0.00" value={deliveryCost} onChange={(e) => setDeliveryCost(e.target.value)} />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-white/30 mb-1.5 block uppercase tracking-wider">Tax</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs">$</span>
+                <input type="number" step="0.01" min="0" className={inputClass + " pl-7 text-xs"} placeholder="0.00" value={tax} onChange={(e) => setTax(e.target.value)} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── Section 4: Delivery ── */}
+      {/* ── Section 5: Delivery ── */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
           <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
@@ -586,7 +754,6 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
           </div>
           {deliveryType === "delivery" && (
             <div className="space-y-3">
-              {/* Address dropdown for existing client */}
               {clientMode === "existing" && selectedClient && selectedClient.client_addresses.length > 0 && (
                 <div>
                   <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
@@ -627,7 +794,6 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
                   </div>
                 </div>
               )}
-              {/* Manual address input */}
               {(clientMode === "new" || !selectedClient || selectedClient.client_addresses.length === 0 || selectedAddressId === "custom") && (
                 <div>
                   <label htmlFor="delivery_address" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
@@ -650,7 +816,7 @@ export default function QuoteForm({ initialData, clients = [] }: QuoteFormProps)
         </div>
       </div>
 
-      {/* ── Section 5: Notes ── */}
+      {/* ── Section 6: Notes ── */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
           <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">

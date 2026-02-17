@@ -16,7 +16,10 @@ export default async function OrdersPage() {
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Orders</h1>
         <p className="text-white/35 text-sm mt-1.5">
-          Track and manage customer orders. {orders.length > 0 && <span className="text-white/50">{orders.length} total</span>}
+          Track and manage customer orders.{" "}
+          {orders.length > 0 && (
+            <span className="text-white/50">{orders.length} total</span>
+          )}
         </p>
       </div>
 

@@ -1,0 +1,125 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import type { AdminUser } from "@/lib/types";
+
+export async function getAdminUsers(): Promise<AdminUser[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function getAdminUserById(id: string): Promise<AdminUser | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+export async function createAdminUser(formData: {
+  name: string;
+  prefix?: string;
+  email?: string;
+  phone?: string;
+  home_zipcode?: string;
+  role?: string;
+  zipcodes?: string[];
+  referral_codes?: string[];
+  start_date?: string;
+  location_code?: string;
+}): Promise<AdminUser> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("admin_users")
+    .insert({
+      name: formData.name,
+      prefix: formData.prefix || null,
+      email: formData.email || null,
+      phone: formData.phone || null,
+      home_zipcode: formData.home_zipcode || null,
+      role: formData.role || "sales",
+      zipcodes: formData.zipcodes || [],
+      referral_codes: formData.referral_codes || [],
+      start_date: formData.start_date || null,
+      location_code: formData.location_code || null,
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/users");
+  return data;
+}
+
+export async function updateAdminUser(
+  id: string,
+  formData: Partial<{
+    name: string;
+    prefix: string;
+    email: string;
+    phone: string;
+    home_zipcode: string;
+    role: string;
+    zipcodes: string[];
+    referral_codes: string[];
+    start_date: string;
+    location_code: string;
+    status: string;
+  }>
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("admin_users")
+    .update(formData)
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/users");
+}
+
+export async function deleteAdminUser(id: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("admin_users")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/users");
+}
+
+export async function getAdminUserCounts(): Promise<{
+  total: number;
+  active: number;
+  inactive: number;
+  byRole: Record<string, number>;
+}> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("admin_users").select("role, status");
+
+  if (error) throw new Error(error.message);
+  const users = data ?? [];
+
+  const byRole: Record<string, number> = {};
+  let active = 0;
+  let inactive = 0;
+
+  for (const u of users) {
+    byRole[u.role] = (byRole[u.role] || 0) + 1;
+    if (u.status === "active") active++;
+    else inactive++;
+  }
+
+  return { total: users.length, active, inactive, byRole };
+}

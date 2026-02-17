@@ -2,16 +2,18 @@ import { redirect } from "next/navigation";
 import { FileText } from "lucide-react";
 import { getQuoteById } from "@/lib/actions/quotes";
 import { getClients } from "@/lib/actions/clients";
+import { getAdminUsers } from "@/lib/actions/admin-users";
 import QuoteForm from "@/components/QuoteForm";
 
 export default async function EditQuotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [quote, clients] = await Promise.all([
+  const [quote, clients, adminUsers] = await Promise.all([
     getQuoteById(id),
     getClients(),
+    getAdminUsers(),
   ]);
 
-  if (!quote || quote.status !== "draft") {
+  if (!quote) {
     redirect("/admin/quotes");
   }
 
@@ -24,11 +26,11 @@ export default async function EditQuotePage({ params }: { params: Promise<{ id: 
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-white">Edit Quote</h1>
         <p className="text-white/35 text-sm mt-1.5">
-          Editing draft quote <span className="font-mono text-white/50">{quote.quote_number}</span>
+          Editing quote <span className="font-mono text-white/50">{quote.quote_number}</span>
         </p>
       </div>
 
-      <QuoteForm initialData={quote} clients={clients} />
+      <QuoteForm initialData={quote} clients={clients} adminUsers={adminUsers} />
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {

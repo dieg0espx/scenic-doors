@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendQuoteEmail } from "@/lib/email";
+import { recordEmailSent } from "@/lib/actions/email-history";
+import type { Quote, DashboardMetrics } from "@/lib/types";
 
 export async function createQuote(formData: {
   client_name: string;
@@ -20,6 +22,20 @@ export async function createQuote(formData: {
   save_as_client?: boolean;
   client_phone?: string;
   client_company?: string;
+  customer_type?: string;
+  customer_phone?: string;
+  customer_zip?: string;
+  assigned_to?: string;
+  lead_status?: string;
+  items?: string; // JSON string
+  subtotal?: number;
+  installation_cost?: number;
+  delivery_cost?: number;
+  tax?: number;
+  grand_total?: number;
+  follow_up_date?: string;
+  lead_id?: string;
+  created_by?: string;
 }) {
   const supabase = await createClient();
 
@@ -80,6 +96,21 @@ export async function createQuote(formData: {
       delivery_type: formData.delivery_type || "delivery",
       delivery_address: formData.delivery_address || null,
       client_id: clientId,
+      customer_type: formData.customer_type || "residential",
+      customer_phone: formData.customer_phone || null,
+      customer_zip: formData.customer_zip || null,
+      assigned_to: formData.assigned_to || null,
+      assigned_date: formData.assigned_to ? new Date().toISOString() : null,
+      lead_status: formData.lead_status || "new",
+      items: formData.items ? JSON.parse(formData.items) : [],
+      subtotal: formData.subtotal || 0,
+      installation_cost: formData.installation_cost || 0,
+      delivery_cost: formData.delivery_cost || 0,
+      tax: formData.tax || 0,
+      grand_total: formData.grand_total || formData.cost || 0,
+      follow_up_date: formData.follow_up_date || null,
+      lead_id: formData.lead_id || null,
+      created_by: formData.created_by || null,
     })
     .select()
     .single();
@@ -94,11 +125,49 @@ export async function getQuotes() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("quotes")
-    .select("*")
+    .select("*, quote_notes(id), quote_tasks(id), admin_users(name)")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data;
+  return data ?? [];
+}
+
+export async function getQuotesWithFilters(filters?: {
+  lead_status?: string;
+  search?: string;
+  sort?: string;
+  due_today?: boolean;
+}): Promise<Quote[]> {
+  const supabase = await createClient();
+  let query = supabase
+    .from("quotes")
+    .select("*, quote_notes(id), quote_tasks(id), admin_users(name)");
+
+  if (filters?.lead_status && filters.lead_status !== "all") {
+    query = query.eq("lead_status", filters.lead_status);
+  }
+
+  if (filters?.search) {
+    const s = `%${filters.search}%`;
+    query = query.or(
+      `client_name.ilike.${s},client_email.ilike.${s},quote_number.ilike.${s}`
+    );
+  }
+
+  if (filters?.due_today) {
+    const today = new Date().toISOString().split("T")[0];
+    query = query.eq("follow_up_date", today);
+  }
+
+  if (filters?.sort === "oldest") {
+    query = query.order("created_at", { ascending: true });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Quote[];
 }
 
 export async function getQuoteById(id: string) {
@@ -106,6 +175,18 @@ export async function getQuoteById(id: string) {
   const { data, error } = await supabase
     .from("quotes")
     .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+export async function getQuoteDetail(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("*, admin_users(name, email)")
     .eq("id", id)
     .single();
 
@@ -126,6 +207,45 @@ export async function updateQuoteStatus(
   if (status === "declined") updates.declined_at = new Date().toISOString();
 
   const { error } = await supabase.from("quotes").update(updates).eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/quotes");
+}
+
+export async function updateQuoteLeadStatus(
+  id: string,
+  lead_status: string
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("quotes")
+    .update({ lead_status })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/quotes");
+}
+
+export async function assignQuote(
+  id: string,
+  assignedTo: string
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("quotes")
+    .update({
+      assigned_to: assignedTo,
+      assigned_date: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/quotes");
+}
+
+export async function deleteQuote(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("quotes").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/quotes");
@@ -159,6 +279,14 @@ export async function sendQuoteToClient(id: string, origin: string) {
     deliveryAddress: quote.delivery_address,
   });
 
+  // Record in email history
+  await recordEmailSent({
+    quote_id: id,
+    recipient_email: quote.client_email,
+    subject: `Quote ${quote.quote_number} from Scenic Doors`,
+    type: "quote",
+  });
+
   // Update status to sent
   const { error } = await supabase
     .from("quotes")
@@ -184,6 +312,18 @@ export async function updateQuote(
     delivery_type?: string;
     delivery_address?: string;
     client_id?: string;
+    customer_type?: string;
+    customer_phone?: string;
+    customer_zip?: string;
+    assigned_to?: string;
+    lead_status?: string;
+    items?: string; // JSON string
+    subtotal?: number;
+    installation_cost?: number;
+    delivery_cost?: number;
+    tax?: number;
+    grand_total?: number;
+    follow_up_date?: string;
   }
 ) {
   const supabase = await createClient();
@@ -202,6 +342,18 @@ export async function updateQuote(
       delivery_type: formData.delivery_type || "delivery",
       delivery_address: formData.delivery_address || null,
       client_id: formData.client_id || null,
+      customer_type: formData.customer_type || "residential",
+      customer_phone: formData.customer_phone || null,
+      customer_zip: formData.customer_zip || null,
+      assigned_to: formData.assigned_to || null,
+      lead_status: formData.lead_status || undefined,
+      items: formData.items ? JSON.parse(formData.items) : undefined,
+      subtotal: formData.subtotal,
+      installation_cost: formData.installation_cost,
+      delivery_cost: formData.delivery_cost,
+      tax: formData.tax,
+      grand_total: formData.grand_total,
+      follow_up_date: formData.follow_up_date || null,
     })
     .eq("id", id);
 
@@ -228,4 +380,51 @@ export async function markQuoteViewed(id: string) {
       })
       .eq("id", id);
   }
+}
+
+export async function getDashboardMetrics(): Promise<DashboardMetrics> {
+  const supabase = await createClient();
+
+  const [leadsRes, quotesRes, quoteTotalsRes, pendingOrdersRes, ordersRes, paymentsRes] =
+    await Promise.all([
+      supabase.from("leads").select("id", { count: "exact", head: true }),
+      supabase.from("quotes").select("id", { count: "exact", head: true }),
+      supabase.from("quotes").select("grand_total, cost"),
+      supabase
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "pending"),
+      supabase.from("orders").select("id", { count: "exact", head: true }),
+      supabase
+        .from("payments")
+        .select("amount")
+        .eq("status", "completed"),
+    ]);
+
+  const totalQuoteValue = (quoteTotalsRes.data ?? []).reduce(
+    (sum, q) => sum + Number(q.grand_total || q.cost || 0),
+    0
+  );
+
+  const totalOrders = ordersRes.count ?? 0;
+  const totalQuotes = quotesRes.count ?? 0;
+  const conversionRate =
+    totalQuotes > 0 ? (totalOrders / totalQuotes) * 100 : 0;
+
+  const totalPayments = (paymentsRes.data ?? []).reduce(
+    (sum, p) => sum + Number(p.amount),
+    0
+  );
+  const averageOrderVolume =
+    totalOrders > 0 ? totalPayments / totalOrders : 0;
+
+  return {
+    totalLeads: leadsRes.count ?? 0,
+    totalQuotes,
+    totalQuoteValue,
+    pendingOrders: pendingOrdersRes.count ?? 0,
+    totalOrders,
+    conversionRate,
+    averageOrderVolume,
+  };
 }

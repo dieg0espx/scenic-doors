@@ -1,12 +1,29 @@
 import Link from "next/link";
 import { Plus, FileText } from "lucide-react";
-import { getQuotes } from "@/lib/actions/quotes";
-import QuotesList from "@/components/QuotesList";
+import { getQuotesWithFilters } from "@/lib/actions/quotes";
+import QuotesPageClient from "./QuotesPageClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function QuotesPage() {
-  const quotes = await getQuotes();
+export default async function QuotesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const params = await searchParams;
+  const quotes = await getQuotesWithFilters({
+    lead_status: params.status || "all",
+    search: params.search,
+    sort: params.sort,
+    due_today: params.due_today === "true",
+  });
+
+  // Count quotes by lead_status
+  const allQuotes = await getQuotesWithFilters();
+  const counts: Record<string, number> = {};
+  for (const q of allQuotes) {
+    counts[q.lead_status] = (counts[q.lead_status] || 0) + 1;
+  }
 
   return (
     <div>
@@ -18,7 +35,10 @@ export default async function QuotesPage() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Quotes</h1>
           <p className="text-white/35 text-sm mt-1.5">
-            Create and manage customer quotes. {quotes.length > 0 && <span className="text-white/50">{quotes.length} total</span>}
+            Manage customer quotes and lead pipeline.{" "}
+            {allQuotes.length > 0 && (
+              <span className="text-white/50">{allQuotes.length} total</span>
+            )}
           </p>
         </div>
         <Link
@@ -30,7 +50,7 @@ export default async function QuotesPage() {
         </Link>
       </div>
 
-      <QuotesList quotes={quotes} />
+      <QuotesPageClient quotes={quotes} counts={counts} />
     </div>
   );
 }

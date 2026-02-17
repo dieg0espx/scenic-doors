@@ -8,18 +8,25 @@ import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   FileText,
+  UserPlus,
   Package,
+  BarChart3,
   Users,
+  Bell,
   LogOut,
   Menu,
   X,
+  Shield,
 } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Clients", href: "/admin/clients", icon: Users },
   { label: "Quotes", href: "/admin/quotes", icon: FileText },
+  { label: "Leads", href: "/admin/leads", icon: UserPlus },
   { label: "Orders", href: "/admin/orders", icon: Package },
+  { label: "Marketing", href: "/admin/marketing", icon: BarChart3 },
+  { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Notifications", href: "/admin/notifications", icon: Bell },
 ];
 
 export default function AdminSidebar() {
@@ -67,11 +74,19 @@ export default function AdminSidebar() {
         </button>
       </div>
 
+      {/* Role badge */}
+      <div className="px-5 mb-3">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/15">
+          <Shield className="w-3.5 h-3.5 text-amber-400/70" />
+          <span className="text-[11px] font-medium text-amber-400/70 uppercase tracking-wider">Role: admin</span>
+        </div>
+      </div>
+
       <div className="px-4 mb-2">
         <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
-      <nav className="flex-1 px-3 py-2 space-y-1">
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         {navItems.map(({ label, href, icon: Icon }) => {
           const isActive =
             href === "/admin"
