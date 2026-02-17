@@ -59,7 +59,8 @@ export default async function QuoteDetailPage({
     archived: { bg: "bg-zinc-500/10", text: "text-zinc-400" },
   };
 
-  const sc = leadStatusConfig[quote.lead_status] || leadStatusConfig.new;
+  const leadStatus = quote.lead_status || "new";
+  const sc = leadStatusConfig[leadStatus] || leadStatusConfig.new;
 
   return (
     <div className="max-w-5xl">
@@ -96,7 +97,7 @@ export default async function QuoteDetailPage({
               {quote.quote_number}
             </h1>
             <span className={`px-2 py-0.5 rounded-lg text-xs font-medium ${sc.bg} ${sc.text}`}>
-              {quote.lead_status?.charAt(0).toUpperCase() + quote.lead_status?.slice(1)}
+              {leadStatus.charAt(0).toUpperCase() + leadStatus.slice(1)}
             </span>
             <span className="px-2 py-0.5 rounded-lg text-xs font-medium bg-white/[0.06] text-white/50">
               {quote.status}

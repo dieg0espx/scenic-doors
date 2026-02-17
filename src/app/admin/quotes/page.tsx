@@ -22,7 +22,8 @@ export default async function QuotesPage({
   const allQuotes = await getQuotesWithFilters();
   const counts: Record<string, number> = {};
   for (const q of allQuotes) {
-    counts[q.lead_status] = (counts[q.lead_status] || 0) + 1;
+    const s = q.lead_status || "new";
+    counts[s] = (counts[s] || 0) + 1;
   }
 
   return (

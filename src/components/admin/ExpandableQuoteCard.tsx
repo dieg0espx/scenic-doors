@@ -48,7 +48,8 @@ export default function ExpandableQuoteCard({
   visibleColumns,
 }: Props) {
   const [deleting, setDeleting] = useState(false);
-  const sc = leadStatusConfig[quote.lead_status] || leadStatusConfig.new;
+  const leadStatus = quote.lead_status || "new";
+  const sc = leadStatusConfig[leadStatus] || leadStatusConfig.new;
   const notesCount = quote.quote_notes?.length ?? 0;
   const tasksCount = quote.quote_tasks?.length ?? 0;
   const assignedName = quote.admin_users?.name;
@@ -97,7 +98,7 @@ export default function ExpandableQuoteCard({
               </span>
             )}
             <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${sc.bg} ${sc.text}`}>
-              {quote.lead_status.charAt(0).toUpperCase() + quote.lead_status.slice(1)}
+              {leadStatus.charAt(0).toUpperCase() + leadStatus.slice(1)}
             </span>
           </div>
 
