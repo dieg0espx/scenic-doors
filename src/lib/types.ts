@@ -163,3 +163,79 @@ export interface ConversionFunnel {
   count: number;
   percentage: number;
 }
+
+// ── Client Portal Types ──
+
+export interface ApprovalDrawing {
+  id: string;
+  quote_id: string;
+  overall_width: number;
+  overall_height: number;
+  panel_count: number;
+  slide_direction: string;
+  in_swing: string;
+  system_type: string;
+  configuration: string;
+  additional_notes: string;
+  status: string;
+  sent_at: string | null;
+  signed_at: string | null;
+  customer_name: string | null;
+  signature_date: string | null;
+  signature_data: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuotePhoto {
+  id: string;
+  quote_id: string | null;
+  lead_id: string | null;
+  photo_url: string;
+  photo_type: string;
+  caption: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+}
+
+export interface OrderTracking {
+  id: string;
+  quote_id: string;
+  stage: string;
+  tracking_number: string | null;
+  shipping_carrier: string | null;
+  shipping_updates: ShippingUpdate[];
+  deposit_1_paid: boolean;
+  deposit_1_amount: number;
+  deposit_1_paid_at: string | null;
+  deposit_2_paid: boolean;
+  deposit_2_amount: number;
+  deposit_2_paid_at: string | null;
+  manufacturing_started_at: string | null;
+  manufacturing_completed_at: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  estimated_completion: string | null;
+  estimated_delivery: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ShippingUpdate {
+  date: string;
+  status: string;
+  location?: string;
+}
+
+export interface FollowUpEntry {
+  id: string;
+  lead_id: string | null;
+  quote_id: string | null;
+  scheduled_for: string;
+  sent_at: string | null;
+  email_type: string;
+  sequence_number: number;
+  status: string;
+  created_at: string;
+}

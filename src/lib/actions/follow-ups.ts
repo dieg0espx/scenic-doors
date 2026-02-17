@@ -1,0 +1,84 @@
+"use server";
+
+import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import type { FollowUpEntry } from "@/lib/types";
+
+export async function getFollowUps(quoteId: string): Promise<FollowUpEntry[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("follow_up_schedule")
+    .select("*")
+    .eq("quote_id", quoteId)
+    .order("scheduled_for", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function scheduleFollowUps(
+  leadId: string,
+  quoteId: string,
+  intervalDays: number = 4,
+  count: number = 3
+): Promise<FollowUpEntry[]> {
+  const supabase = await createClient();
+  const now = new Date();
+
+  const entries = Array.from({ length: count }, (_, i) => {
+    const scheduledFor = new Date(now);
+    scheduledFor.setDate(scheduledFor.getDate() + intervalDays * (i + 1));
+    return {
+      lead_id: leadId,
+      quote_id: quoteId,
+      scheduled_for: scheduledFor.toISOString(),
+      email_type: "follow_up",
+      sequence_number: i + 1,
+      status: "pending",
+    };
+  });
+
+  const { data, error } = await supabase
+    .from("follow_up_schedule")
+    .insert(entries)
+    .select();
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+  return data ?? [];
+}
+
+export async function cancelFollowUp(id: string, quoteId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("follow_up_schedule")
+    .update({ status: "cancelled" })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+}
+
+export async function markFollowUpSent(id: string, quoteId: string): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("follow_up_schedule")
+    .update({ status: "sent", sent_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+}
+
+export async function getPendingFollowUps(): Promise<FollowUpEntry[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("follow_up_schedule")
+    .select("*")
+    .eq("status", "pending")
+    .lte("scheduled_for", new Date().toISOString())
+    .order("scheduled_for", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}

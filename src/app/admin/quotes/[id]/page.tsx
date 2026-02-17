@@ -20,7 +20,12 @@ import { getQuoteDetail } from "@/lib/actions/quotes";
 import { getQuoteNotes } from "@/lib/actions/quote-notes";
 import { getQuoteTasks } from "@/lib/actions/quote-tasks";
 import { getEmailHistory } from "@/lib/actions/email-history";
+import { getApprovalDrawing } from "@/lib/actions/approval-drawings";
+import { getOrderTracking } from "@/lib/actions/order-tracking";
+import { getQuotePhotos } from "@/lib/actions/quote-photos";
+import { getFollowUps } from "@/lib/actions/follow-ups";
 import QuoteDetailClient from "./QuoteDetailClient";
+import AdminPortalManager from "@/components/admin/AdminPortalManager";
 
 export const dynamic = "force-dynamic";
 
@@ -30,11 +35,15 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [quote, notes, tasks, emails] = await Promise.all([
+  const [quote, notes, tasks, emails, drawing, tracking, photos, followUps] = await Promise.all([
     getQuoteDetail(id),
     getQuoteNotes(id),
     getQuoteTasks(id),
     getEmailHistory(id),
+    getApprovalDrawing(id).catch(() => null),
+    getOrderTracking(id).catch(() => null),
+    getQuotePhotos(id).catch(() => []),
+    getFollowUps(id).catch(() => []),
   ]);
 
   if (!quote) redirect("/admin/quotes");
@@ -357,7 +366,7 @@ export default async function QuoteDetailPage({
 
       {/* Delivery info */}
       {quote.delivery_type && (
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5 sm:p-6">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5 sm:p-6 mb-6">
           <p className="text-[11px] text-white/25 uppercase tracking-wider font-medium mb-2">Delivery</p>
           <p className="text-sm text-white/50">
             <span className="text-white/70 font-medium capitalize">{quote.delivery_type}</span>
@@ -365,6 +374,19 @@ export default async function QuoteDetailPage({
           </p>
         </div>
       )}
+
+      {/* Portal Management */}
+      <AdminPortalManager
+        quoteId={id}
+        quoteName={quote.client_name}
+        grandTotal={Number(quote.grand_total || quote.cost || 0)}
+        drawing={drawing}
+        tracking={tracking}
+        photos={photos}
+        followUps={followUps}
+        leadId={quote.lead_id}
+        portalStage={quote.portal_stage || "quote_sent"}
+      />
     </div>
   );
 }
