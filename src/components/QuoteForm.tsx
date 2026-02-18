@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 
 const DOOR_TYPES = [
-  "Ultra Slim Multi-Slide", "Multi-Slide Patio", "Bi-Fold",
-  "Slide & Stack", "Pocket", "Pivot Entry", "Fold-Up Windows",
+  "Multi-Slide & Pocket", "Ultra Slim Multi-Slide", "Bi-Fold Doors",
+  "Slide-&-Stack", "Awning Window", "Pivot Entry",
 ];
 const MATERIALS = [
   "Aluminum", "Solid Wood - Walnut", "Solid Wood - Oak",
@@ -23,7 +23,7 @@ const GLASS_TYPES = [
   "Dual-Glazed", "Triple-Glazed", "Quad-Glazed",
   "Frosted", "Tinted", "Low-E", "Acoustic", "Clear",
 ];
-const CUSTOMER_TYPES = ["residential", "commercial", "contractor"];
+const CUSTOMER_TYPES = ["homeowner", "contractor", "architect", "dealer", "other"];
 const LEAD_STATUSES = ["new", "hot", "warm", "cold", "hold", "archived"];
 
 /* ── Custom Select Dropdown ─────────────────────────────── */

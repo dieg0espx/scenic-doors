@@ -9,13 +9,20 @@ import {
   Trash2,
   Plus,
   Truck,
-  Package,
-  Wrench,
+  Check,
+  X,
   Loader2,
-  ArrowLeft,
+  Shield,
+  Wrench,
+  Eye,
+  Sparkles,
+  ClipboardCheck,
+  Trash,
+  GraduationCap,
 } from "lucide-react";
 import type { ConfiguredItem, WizardState, WizardAction } from "@/lib/quote-wizard/types";
-import { calculateQuoteTotals, DELIVERY_COSTS, INSTALLATION_COST } from "@/lib/quote-wizard/pricing";
+import { calculateQuoteTotals, DELIVERY_COSTS, INSTALLATION_COST, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
+import { getLayoutImageUrl } from "@/lib/quote-wizard/layout-images";
 import { createQuote } from "@/lib/actions/quotes";
 import { updateLead } from "@/lib/actions/leads";
 
@@ -23,6 +30,269 @@ interface StepQuoteSummaryProps {
   state: WizardState;
   dispatch: React.Dispatch<WizardAction>;
 }
+
+/* ── Constants ────────────────────────────────────────── */
+
+const REGULAR_DELIVERY_ITEMS = [
+  { included: false, text: "Customer unloads truck" },
+  { included: false, text: "Customer disposes materials" },
+  { included: false, text: "No stair transport" },
+  { included: false, text: "No unpacking service" },
+];
+
+const WHITE_GLOVE_ITEMS = [
+  { included: true, text: "Delivery to install area" },
+  { included: true, text: "Materials removed" },
+  { included: true, text: "Stair transport (2 stories)" },
+  { included: true, text: "Unpack & inspect" },
+];
+
+const INSTALLATION_FEATURES = [
+  {
+    icon: Shield,
+    title: "Site Preparation and Protection",
+    desc: "Secure and properly prepare the work area, ensuring adjacent surfaces, finishes, and property are fully protected throughout the installation process.",
+  },
+  {
+    icon: Wrench,
+    title: "Professional Weatherproofing & Installation by Certified Technicians",
+    desc: "All installation and weatherproofing work is performed by trained technicians in accordance with industry standards for safety, precision, and quality workmanship.",
+  },
+  {
+    icon: Eye,
+    title: "Final Adjustments and Operation Testing",
+    desc: "Upon completion, all components will be adjusted and tested to confirm proper alignment, smooth function, and optimal operating performance.",
+  },
+  {
+    icon: Trash,
+    title: "Cleanup and Debris Removal",
+    desc: "All installation-related debris will be removed and the work area will be left broom-clean upon completion.",
+  },
+  {
+    icon: GraduationCap,
+    title: "Operation Demonstration and Care Instructions",
+    desc: "Customer will receive a walkthrough on product operation, maintenance guidelines, and recommended care procedures to ensure long-term performance.",
+  },
+  {
+    icon: ClipboardCheck,
+    title: "1-Year Installation Warranty",
+    desc: "Workmanship is warrantied for one (1) year from the installation date, covering defects arising from labor or installation methods.",
+  },
+];
+
+/* ── Helpers ──────────────────────────────────────────── */
+
+function getItemLabel(index: number): string {
+  return `Item ${String.fromCharCode(65 + index)}`;
+}
+
+function getConfigCode(item: ConfiguredItem): string {
+  if (!item.panelCount || !item.panelLayout) return "";
+  const layout = item.panelLayout;
+
+  // "Split 2L-2R" → "2L_2R"
+  if (layout.startsWith("Split ")) {
+    return `${item.panelCount}p_${layout.slice(6).replace("-", "_")}`;
+  }
+  // "All Left (4L)" → "4L", "All Right (3R)" → "3R"
+  const parenMatch = layout.match(/\(([^)]+)\)/);
+  if (parenMatch) {
+    return `${item.panelCount}p_${parenMatch[1]}`;
+  }
+  // Slide-stack: "1L + 1R" → "1L_1R", "2L" → "2L"
+  if (/^\d+[LR]/.test(layout)) {
+    return `${item.panelCount}p_${layout.replace(/ \+ /g, "_")}`;
+  }
+  // "Both Fixed" → "FF"
+  if (layout === "Both Fixed") {
+    return `${item.panelCount}p_FF`;
+  }
+  // Sliding: "Operating + Fixed" → "O+F"
+  const short = layout
+    .replace(/Operating/g, "O")
+    .replace(/Fixed/g, "F")
+    .replace(/ \+ /g, "+")
+    .replace(/ \(L\)/, "(L)")
+    .replace(/ \(R\)/, "(R)");
+  return `${item.panelCount}p_${short}`;
+}
+
+function getSystemDisplayName(item: ConfiguredItem): string {
+  const slug = item.doorTypeSlug;
+  if (slug === "bi-fold") return "Bi-Fold";
+  if (slug === "slide-stack") return "Slide & Stack";
+  if (slug === "awning-window") return "Awning Window";
+  if (slug === "multi-slide-pocket" || slug === "ultra-slim") {
+    return item.systemType === "pocket" ? "Pocket" : "Multi-Slide";
+  }
+  return item.doorType;
+}
+
+/* ── Bi-Fold Panel Diagram ────────────────────────────── */
+
+function BifoldDiagram({ panelCount, layout }: { panelCount: number; layout: string }) {
+  let leftPanels = 0;
+  let rightPanels = 0;
+
+  if (layout.startsWith("Split")) {
+    const match = layout.match(/(\d+)L[_-](\d+)R/);
+    if (match) {
+      leftPanels = +match[1];
+      rightPanels = +match[2];
+    }
+  } else if (layout.includes("L)") || layout === "2L" || layout === "2R" || /^\d+L$/.test(layout)) {
+    leftPanels = panelCount;
+  } else if (layout.includes("R)") || /^\d+R$/.test(layout)) {
+    rightPanels = panelCount;
+  } else if (layout === "1L + 1R") {
+    leftPanels = 1;
+    rightPanels = 1;
+  } else {
+    leftPanels = Math.ceil(panelCount / 2);
+    rightPanels = panelCount - leftPanels;
+  }
+
+  const renderPanel = (index: number, total: number, direction: "left" | "right") => {
+    const angle = index % 2 === 0 ? -14 : 14;
+    const isEdge = (direction === "left" && index === 0) || (direction === "right" && index === total - 1);
+    return (
+      <div
+        key={`${direction}-${index}`}
+        className="relative bg-white border-2 border-ocean-700 rounded-sm"
+        style={{
+          width: "clamp(40px, 8vw, 64px)",
+          height: "clamp(100px, 20vw, 160px)",
+          transform: `rotate(${angle}deg)`,
+          marginLeft: index > 0 ? "-3px" : "0",
+          zIndex: isEdge ? 1 : 2,
+        }}
+      >
+        <div className="absolute inset-1.5 sm:inset-2 border border-ocean-300 rounded-sm" />
+        {index === total - 1 && direction === "left" && (
+          <div className="absolute top-1/2 -translate-y-1/2 right-1 w-1 h-3 rounded-full bg-ocean-500" />
+        )}
+        {index === 0 && direction === "right" && (
+          <div className="absolute top-1/2 -translate-y-1/2 left-1 w-1 h-3 rounded-full bg-ocean-500" />
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex items-end justify-center py-4 sm:py-6">
+      {leftPanels > 0 && (
+        <div className="flex items-end">
+          {Array.from({ length: leftPanels }).map((_, i) => renderPanel(i, leftPanels, "left"))}
+        </div>
+      )}
+      {leftPanels > 0 && rightPanels > 0 && (
+        <div
+          className="bg-ocean-50 border border-dashed border-ocean-200 rounded mx-1 sm:mx-2"
+          style={{
+            width: "clamp(30px, 6vw, 52px)",
+            height: "clamp(100px, 20vw, 160px)",
+          }}
+        />
+      )}
+      {rightPanels > 0 && (
+        <div className="flex items-end">
+          {Array.from({ length: rightPanels }).map((_, i) => renderPanel(i, rightPanels, "right"))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Sliding Panel Diagram ────────────────────────────── */
+
+function SlidingDiagram({ panelCount, layout }: { panelCount: number; layout: string }) {
+  const panels = layout
+    .replace(/Operating/g, "O")
+    .replace(/Fixed/g, "F")
+    .replace(/ \+ /g, "")
+    .replace(/ \(L\)/g, "")
+    .replace(/ \(R\)/g, "")
+    .split("");
+
+  if (layout === "Both Fixed") {
+    return (
+      <div className="flex items-end justify-center gap-1 py-4 sm:py-6">
+        {[0, 1].map((i) => (
+          <div
+            key={i}
+            className="relative bg-ocean-50 border-2 border-ocean-400 rounded-sm"
+            style={{ width: "clamp(50px, 10vw, 80px)", height: "clamp(80px, 16vw, 130px)" }}
+          >
+            <div className="absolute inset-1.5 sm:inset-2 border border-ocean-200 rounded-sm" />
+            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-bold text-ocean-400">F</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (layout === "All Fixed") {
+    return (
+      <div className="flex items-end justify-center gap-1 py-4 sm:py-6">
+        {Array.from({ length: panelCount }).map((_, i) => (
+          <div
+            key={i}
+            className="relative bg-ocean-50 border-2 border-ocean-400 rounded-sm"
+            style={{ width: "clamp(36px, 7vw, 56px)", height: "clamp(80px, 16vw, 130px)" }}
+          >
+            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-bold text-ocean-400">F</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-end justify-center gap-0.5 sm:gap-1 py-4 sm:py-6">
+      {panels.map((p, i) => {
+        const isOperating = p === "O";
+        return (
+          <div
+            key={i}
+            className={`relative border-2 rounded-sm ${isOperating ? "bg-white border-primary-500" : "bg-ocean-50 border-ocean-400"}`}
+            style={{
+              width: `clamp(${panelCount > 4 ? 28 : 40}px, ${panelCount > 4 ? 5 : 8}vw, ${panelCount > 4 ? 44 : 64}px)`,
+              height: "clamp(80px, 16vw, 130px)",
+            }}
+          >
+            <div className={`absolute inset-1 sm:inset-1.5 border rounded-sm ${isOperating ? "border-primary-200" : "border-ocean-200"}`} />
+            <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-bold ${isOperating ? "text-primary-500" : "text-ocean-400"}`}>
+              {isOperating ? "O" : "F"}
+            </span>
+            {isOperating && (
+              <div className="absolute top-1/2 -translate-y-1/2 right-0.5 sm:right-1 w-0.5 sm:w-1 h-2 sm:h-3 rounded-full bg-primary-500" />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── Panel Diagram Router ─────────────────────────────── */
+
+function PanelDiagram({ item }: { item: ConfiguredItem }) {
+  if (!item.panelCount || !item.panelLayout) return null;
+
+  const slug = item.doorTypeSlug;
+
+  if (slug === "bi-fold" || slug === "slide-stack") {
+    return <BifoldDiagram panelCount={item.panelCount} layout={item.panelLayout} />;
+  }
+
+  if (slug === "multi-slide-pocket" || slug === "ultra-slim") {
+    return <SlidingDiagram panelCount={item.panelCount} layout={item.panelLayout} />;
+  }
+
+  return null;
+}
+
+/* ── Item Card ────────────────────────────────────────── */
 
 function ItemCard({
   item,
@@ -34,91 +304,200 @@ function ItemCard({
   dispatch: React.Dispatch<WizardAction>;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const label = getItemLabel(index);
+  const configCode = getConfigCode(item);
+  const systemName = getSystemDisplayName(item);
+  const config = PRODUCT_CONFIGS[item.doorTypeSlug];
 
   return (
-    <div className="bg-white rounded-xl border border-ocean-200 overflow-hidden">
-      <div className="p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3 min-w-0">
-          <span className="w-8 h-8 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center text-sm font-bold shrink-0">
-            {index + 1}
-          </span>
-          <div className="min-w-0">
-            <h4 className="font-semibold text-ocean-900 text-sm truncate">{item.doorType}</h4>
-            <p className="text-xs text-ocean-500">
-              {item.width}&quot; x {item.height}&quot;
-              {item.roomName && ` — ${item.roomName}`}
-            </p>
+    <div className="bg-white rounded-xl sm:rounded-2xl border border-ocean-200 overflow-hidden shadow-sm">
+      {/* Collapsed header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full p-3 sm:p-5 text-left cursor-pointer hover:bg-ocean-50/50 transition-colors"
+      >
+        <div className="flex items-start sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <span className="shrink-0 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md bg-primary-50 text-primary-700 text-[10px] sm:text-xs font-bold">
+              {label}
+            </span>
+            <h4 className="font-semibold text-ocean-900 text-sm sm:text-base truncate">
+              {item.doorType}{item.roomName ? ` - ${item.roomName}` : ""}
+            </h4>
+          </div>
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 text-ocean-400 shrink-0" />
+          ) : (
+            <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-ocean-400 shrink-0" />
+          )}
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+          <div>
+            <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Dimensions</p>
+            <p className="text-xs sm:text-sm font-semibold text-ocean-800">{item.width}&quot; W &times; {item.height}&quot; H</p>
+          </div>
+          {configCode && (
+            <div>
+              <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Configuration</p>
+              <p className="text-xs sm:text-sm font-semibold text-ocean-800 font-mono">{configCode}</p>
+            </div>
+          )}
+          <div>
+            <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Colors</p>
+            <p className="text-xs sm:text-sm font-semibold text-ocean-800">{item.exteriorFinish}</p>
+          </div>
+          <div>
+            <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Price</p>
+            <p className="text-xs sm:text-sm font-bold text-primary-600">${item.itemTotal.toLocaleString()}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="font-bold text-ocean-900">
-            ${item.itemTotal.toLocaleString()}
-          </span>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="p-1 text-ocean-400 hover:text-ocean-600 cursor-pointer"
-          >
-            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
+      </button>
 
+      {/* Expanded details */}
       {expanded && (
-        <div className="px-4 pb-4 border-t border-ocean-100 pt-3">
-          <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-            <div>
-              <span className="text-ocean-400 text-xs">Color</span>
-              <p className="text-ocean-800 font-medium">{item.exteriorFinish}</p>
+        <div className="border-t border-ocean-100">
+          {/* Selected Configuration */}
+          <div className="p-4 sm:p-6 text-center border-b border-ocean-100">
+            <h3 className="font-heading font-bold text-ocean-900 text-lg sm:text-2xl mb-1">{item.doorType}</h3>
+            <p className="font-semibold text-ocean-700 text-sm sm:text-base mb-1">Selected Configuration</p>
+            <p className="text-[10px] sm:text-xs font-semibold text-red-500 uppercase tracking-wider">
+              Caution: as viewed from outside the building
+            </p>
+
+            {/* Panel Diagram */}
+            <div className="my-2 sm:my-4">
+              <PanelDiagram item={item} />
             </div>
-            <div>
-              <span className="text-ocean-400 text-xs">Glass</span>
-              <p className="text-ocean-800 font-medium">{item.glassType}</p>
-            </div>
-            <div>
-              <span className="text-ocean-400 text-xs">Hardware</span>
-              <p className="text-ocean-800 font-medium">{item.hardwareFinish}</p>
-            </div>
-            <div>
-              <span className="text-ocean-400 text-xs">Est. Panels</span>
-              <p className="text-ocean-800 font-medium">{item.panelCount}</p>
-            </div>
-            <div>
-              <span className="text-ocean-400 text-xs">Base Price</span>
-              <p className="text-ocean-800 font-medium">${item.basePrice.toLocaleString()}</p>
-            </div>
-            <div>
-              <span className="text-ocean-400 text-xs">Rough Opening</span>
-              <p className="text-ocean-800 font-medium">{item.width + 1}&quot; x {item.height + 0.5}&quot;</p>
-            </div>
+
+            {configCode && (
+              <p className="text-xs sm:text-sm text-ocean-500 font-mono mb-2">{configCode} configuration</p>
+            )}
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                dispatch({ type: "EDIT_ITEM", payload: index });
-                dispatch({ type: "SET_STEP", payload: 3 });
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors cursor-pointer"
-            >
-              <Pencil className="w-3 h-3" /> Edit
-            </button>
-            <button
-              onClick={() => dispatch({ type: "DUPLICATE_ITEM", payload: index })}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-ocean-600 bg-ocean-50 rounded-lg hover:bg-ocean-100 transition-colors cursor-pointer"
-            >
-              <Copy className="w-3 h-3" /> Duplicate
-            </button>
-            <button
-              onClick={() => dispatch({ type: "REMOVE_ITEM", payload: index })}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors cursor-pointer"
-            >
-              <Trash2 className="w-3 h-3" /> Remove
-            </button>
+
+          {/* System Type + Actions */}
+          <div className="p-4 sm:p-6 border-b border-ocean-100">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+              <h4 className="font-bold text-ocean-900 text-sm sm:text-base">System Type: {systemName}</h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => dispatch({ type: "DUPLICATE_ITEM", payload: index })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-ocean-700 bg-white border border-ocean-200 rounded-lg hover:bg-ocean-50 transition-colors cursor-pointer"
+                >
+                  <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Duplicate
+                </button>
+                <button
+                  onClick={() => dispatch({ type: "REMOVE_ITEM", payload: index })}
+                  className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Remove
+                </button>
+              </div>
+            </div>
+            {item.roomName && (
+              <p className="text-xs sm:text-sm text-ocean-500">Room: {item.roomName}</p>
+            )}
+          </div>
+
+          {/* Configuration Details */}
+          <div className="p-4 sm:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-bold text-ocean-900 text-sm sm:text-base">Configuration Details</h4>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    dispatch({ type: "EDIT_ITEM", payload: index });
+                    dispatch({ type: "SET_STEP", payload: 3 });
+                  }}
+                  className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors cursor-pointer"
+                >
+                  <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Edit
+                </button>
+                <div className="text-right">
+                  <p className="text-[10px] sm:text-xs text-ocean-400 font-semibold uppercase">Quantity</p>
+                  <p className="text-sm sm:text-base font-bold text-ocean-900">1</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+              {/* System & Configuration */}
+              <div className="bg-ocean-50/60 rounded-xl p-3 sm:p-4">
+                <p className="text-xs font-semibold text-ocean-500 uppercase tracking-wider mb-2">System & Configuration</p>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-ocean-500">System Type</span>
+                    <span className="font-medium text-ocean-800">{systemName}</span>
+                  </div>
+                  {configCode && (
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-ocean-500">Configuration</span>
+                      <span className="font-medium text-ocean-800 font-mono">{configCode}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Colors */}
+              <div className="bg-ocean-50/60 rounded-xl p-3 sm:p-4">
+                <p className="text-xs font-semibold text-ocean-500 uppercase tracking-wider mb-2">Colors</p>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-ocean-500">Exterior</span>
+                    <span className="font-medium text-ocean-800">{item.exteriorFinish}</span>
+                  </div>
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-ocean-500">Interior</span>
+                    <span className="font-medium text-ocean-800">
+                      {item.exteriorFinish === "Two-tone" && item.interiorFinish ? item.interiorFinish : "Not selected"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dimensions */}
+              <div className="bg-ocean-50/60 rounded-xl p-3 sm:p-4">
+                <p className="text-xs font-semibold text-ocean-500 uppercase tracking-wider mb-2">Dimensions</p>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-ocean-500">Door Size</span>
+                    <span className="font-medium text-ocean-800">{item.width}&quot; W x {item.height}&quot; H</span>
+                  </div>
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-ocean-500">Rough Opening</span>
+                    <span className="font-medium text-ocean-800">{item.width + 1}&quot; W x {item.height + 1}&quot; H</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Options */}
+              <div className="bg-ocean-50/60 rounded-xl p-3 sm:p-4">
+                <p className="text-xs font-semibold text-ocean-500 uppercase tracking-wider mb-2">Options</p>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-ocean-500">Glass Type</span>
+                    <span className="font-medium text-ocean-800">{item.glassType}</span>
+                  </div>
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-ocean-500">Hardware</span>
+                    <span className="font-medium text-ocean-800">{item.hardwareFinish}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Door Cost */}
+            <div className="mt-4 pt-4 border-t border-ocean-200 flex justify-between items-center">
+              <span className="text-sm sm:text-base font-semibold text-ocean-700">Door Cost:</span>
+              <span className="text-base sm:text-lg font-bold text-primary-600">${item.itemTotal.toLocaleString()}</span>
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+/* ── Main Component ───────────────────────────────────── */
 
 export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryProps) {
   const { items, services, contact, leadId, isSubmitting } = state;
@@ -130,10 +509,10 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
 
     try {
       const firstItem = items[0];
-      const quoteItems = items.map((item, i) => ({
+      const quoteItems = items.map((item) => ({
         id: item.id,
         name: item.doorType,
-        description: `${item.width}" x ${item.height}" | ${item.exteriorFinish} | ${item.glassType} | ${item.hardwareFinish}${item.roomName ? ` | ${item.roomName}` : ""}`,
+        description: `${item.width}" x ${item.height}" | ${item.exteriorFinish}${item.exteriorFinish === "Two-tone" && item.interiorFinish ? ` / ${item.interiorFinish} interior` : ""} | ${item.glassType} | ${item.hardwareFinish}${item.roomName ? ` | ${item.roomName}` : ""}`,
         quantity: 1,
         unit_price: item.itemTotal,
         total: item.itemTotal,
@@ -178,201 +557,257 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
     }
   }
 
+  function toggleDelivery(value: "regular" | "white-glove") {
+    dispatch({
+      type: "SET_SERVICES",
+      payload: { deliveryType: services.deliveryType === value ? "none" : value },
+    });
+  }
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl sm:text-3xl font-heading font-bold text-ocean-900 mb-2">
-          Quote Summary
+    <div className="max-w-4xl mx-auto px-1 sm:px-0">
+      {/* Header */}
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-heading font-bold text-ocean-900 mb-2">
+          Your Quote Summary
         </h2>
-        <p className="text-ocean-500">Review your selections and submit your quote</p>
+        <p className="text-sm sm:text-base text-ocean-500">
+          Review your selections below. You can go back to make changes.
+        </p>
       </div>
 
-      {/* Items */}
-      <div className="space-y-3 mb-6">
-        {items.map((item, i) => (
-          <ItemCard key={item.id} item={item} index={i} dispatch={dispatch} />
-        ))}
+      {/* ── Quote Items ── */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg">
+            Quote Items ({items.length})
+          </h3>
+          <button
+            onClick={() => {
+              dispatch({ type: "ADD_ANOTHER_ITEM" });
+              dispatch({ type: "SET_STEP", payload: 2 });
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Add Another Item
+          </button>
+        </div>
+        <p className="text-xs sm:text-sm text-ocean-400 mb-3 sm:mb-4">
+          Select an item below to view its details, or add another item to your quote.
+        </p>
+        <div className="space-y-3 sm:space-y-4">
+          {items.map((item, i) => (
+            <ItemCard key={item.id} item={item} index={i} dispatch={dispatch} />
+          ))}
+        </div>
       </div>
 
-      <button
-        onClick={() => {
-          dispatch({ type: "ADD_ANOTHER_ITEM" });
-          dispatch({ type: "SET_STEP", payload: 2 });
-        }}
-        className="w-full flex items-center justify-center gap-2 py-3 border-2 border-dashed border-ocean-200 rounded-xl text-primary-600 font-medium hover:border-primary-300 hover:bg-primary-50/50 transition-colors mb-8 cursor-pointer"
-      >
-        <Plus className="w-4 h-4" />
-        Add Another Item
-      </button>
+      {/* ── Services ── */}
+      <div className="mb-6 sm:mb-8">
+        <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg mb-4 sm:mb-5">Services</h3>
 
-      {/* Services */}
-      <div className="bg-white rounded-xl border border-ocean-200 p-6 mb-6">
-        <h3 className="font-heading font-bold text-ocean-900 text-lg mb-4">Services</h3>
+        {/* Delivery Options */}
+        <div className="mb-5 sm:mb-6">
+          <p className="text-sm font-semibold text-ocean-700 mb-3">Delivery Options</p>
+          <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+            {/* Regular Delivery */}
+            <button
+              onClick={() => toggleDelivery("regular")}
+              className={`text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                services.deliveryType === "regular"
+                  ? "border-primary-500 bg-primary-50/60 shadow-sm"
+                  : "border-ocean-200 hover:border-ocean-300 bg-white"
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h4 className="font-bold text-sm sm:text-base text-ocean-900">Regular Delivery</h4>
+                  <p className="text-xs text-ocean-500 mt-0.5">Curbside delivery only.</p>
+                </div>
+                <span className="text-sm sm:text-base font-bold text-primary-600 shrink-0">
+                  ${DELIVERY_COSTS.regular.toLocaleString()}
+                </span>
+              </div>
+              <div className="space-y-1.5 mt-3">
+                {REGULAR_DELIVERY_ITEMS.map((item) => (
+                  <div key={item.text} className="flex items-center gap-2 text-xs sm:text-sm text-ocean-500">
+                    <X className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
+                    {item.text}
+                  </div>
+                ))}
+              </div>
+            </button>
 
-        {/* Delivery */}
-        <div className="mb-5">
-          <p className="text-sm font-medium text-ocean-700 mb-3">Delivery Option</p>
-          <div className="grid sm:grid-cols-3 gap-3">
-            {[
-              {
-                value: "none" as const,
-                label: "No Delivery",
-                price: "$0",
-                icon: Package,
-                desc: "Pick up from warehouse",
-              },
-              {
-                value: "regular" as const,
-                label: "Standard Delivery",
-                price: `$${DELIVERY_COSTS.regular.toLocaleString()}`,
-                icon: Truck,
-                desc: "Curbside delivery to your address",
-              },
-              {
-                value: "white-glove" as const,
-                label: "White Glove",
-                price: `$${DELIVERY_COSTS["white-glove"].toLocaleString()}`,
-                icon: Truck,
-                desc: "Inside delivery with placement",
-              },
-            ].map((opt) => {
-              const isSelected = services.deliveryType === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  onClick={() => dispatch({ type: "SET_SERVICES", payload: { deliveryType: opt.value } })}
-                  className={`text-left p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                    isSelected
-                      ? "border-primary-500 bg-primary-50"
-                      : "border-ocean-200 hover:border-primary-300"
-                  }`}
-                >
-                  <opt.icon className={`w-5 h-5 mb-2 ${isSelected ? "text-primary-500" : "text-ocean-400"}`} />
-                  <p className="font-semibold text-sm text-ocean-900">{opt.label}</p>
-                  <p className="text-xs text-ocean-500 mb-1">{opt.desc}</p>
-                  <p className="text-sm font-bold text-primary-600">{opt.price}</p>
-                </button>
-              );
-            })}
+            {/* White Glove */}
+            <button
+              onClick={() => toggleDelivery("white-glove")}
+              className={`text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                services.deliveryType === "white-glove"
+                  ? "border-primary-500 bg-primary-50/60 shadow-sm"
+                  : "border-ocean-200 hover:border-ocean-300 bg-white"
+              }`}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <h4 className="font-bold text-sm sm:text-base text-ocean-900">White Glove</h4>
+                  <p className="text-xs text-ocean-500 mt-0.5">Full-service delivery.</p>
+                </div>
+                <span className="text-sm sm:text-base font-bold text-primary-600 shrink-0">
+                  ${DELIVERY_COSTS["white-glove"].toLocaleString()}
+                </span>
+              </div>
+              <div className="space-y-1.5 mt-3">
+                {WHITE_GLOVE_ITEMS.map((item) => (
+                  <div key={item.text} className="flex items-center gap-2 text-xs sm:text-sm text-ocean-700">
+                    <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-500 shrink-0" />
+                    {item.text}
+                  </div>
+                ))}
+              </div>
+            </button>
           </div>
         </div>
 
         {/* Installation */}
         <div>
-          <button
-            onClick={() =>
-              dispatch({
-                type: "SET_SERVICES",
-                payload: { includeInstallation: !services.includeInstallation },
-              })
-            }
-            className={`w-full text-left p-4 rounded-xl border-2 transition-all cursor-pointer ${
-              services.includeInstallation
-                ? "border-primary-500 bg-primary-50"
-                : "border-ocean-200 hover:border-primary-300"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Wrench
-                  className={`w-5 h-5 ${services.includeInstallation ? "text-primary-500" : "text-ocean-400"}`}
-                />
-                <div>
-                  <p className="font-semibold text-sm text-ocean-900">
-                    Professional Weatherproofing & Installation
-                  </p>
-                  <p className="text-xs text-ocean-500">
-                    Expert installation including weatherproofing, alignment, and hardware adjustment
-                  </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-ocean-700">Installation Service</p>
+          </div>
+          <div className={`rounded-xl sm:rounded-2xl border-2 transition-all overflow-hidden ${
+            services.includeInstallation
+              ? "border-primary-500 bg-white"
+              : "border-ocean-200 bg-white"
+          }`}>
+            {/* Toggle header */}
+            <button
+              onClick={() =>
+                dispatch({
+                  type: "SET_SERVICES",
+                  payload: { includeInstallation: !services.includeInstallation },
+                })
+              }
+              className="w-full p-4 sm:p-5 text-left cursor-pointer hover:bg-ocean-50/30 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <Wrench className={`w-4 h-4 sm:w-5 sm:h-5 ${services.includeInstallation ? "text-primary-500" : "text-ocean-400"}`} />
+                  <div>
+                    <h4 className="font-bold text-sm sm:text-base text-ocean-900">
+                      Professional Weatherproofing & Installation
+                    </h4>
+                    {services.includeInstallation && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 mt-0.5">
+                        <Check className="w-3 h-3" /> Included
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="font-bold text-primary-600">${INSTALLATION_COST.toLocaleString()}</span>
-                <div
-                  className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
-                    services.includeInstallation ? "bg-primary-500" : "bg-ocean-200"
-                  }`}
-                >
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="text-sm sm:text-base font-bold text-primary-600">${INSTALLATION_COST.toLocaleString()}</span>
                   <div
-                    className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                      services.includeInstallation ? "translate-x-4" : "translate-x-0"
+                    className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+                      services.includeInstallation ? "bg-primary-500" : "bg-ocean-200"
                     }`}
-                  />
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                        services.includeInstallation ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </button>
+            </button>
+
+            {/* Expanded installation details */}
+            {services.includeInstallation && (
+              <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-ocean-100">
+                <p className="text-xs sm:text-sm text-ocean-500 mt-3 mb-4">
+                  Complete professional installation with weatherproofing, sealing, and quality inspection.
+                </p>
+                <div className="space-y-4">
+                  {INSTALLATION_FEATURES.map((feature) => {
+                    const Icon = feature.icon;
+                    return (
+                      <div key={feature.title} className="flex gap-3">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 mt-0.5">
+                          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-500" />
+                        </div>
+                        <div>
+                          <p className="text-xs sm:text-sm font-semibold text-ocean-800">{feature.title}</p>
+                          <p className="text-[11px] sm:text-xs text-ocean-500 leading-relaxed mt-0.5">{feature.desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Totals */}
-      <div className="bg-white rounded-xl border border-ocean-200 p-6 mb-8">
-        <h3 className="font-heading font-bold text-ocean-900 text-lg mb-4">Quote Totals</h3>
-        <div className="space-y-2 text-sm">
+      {/* ── Total Quote Estimate ── */}
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-ocean-200 p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
+        <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg mb-4">Total Quote Estimate</h3>
+        <div className="space-y-2 sm:space-y-2.5 text-sm">
           <div className="flex justify-between text-ocean-600">
-            <span>All Items Subtotal ({items.length} item{items.length !== 1 ? "s" : ""})</span>
-            <span>${totals.subtotal.toLocaleString()}</span>
+            <span>All Items Subtotal</span>
+            <span className="font-medium">${totals.subtotal.toLocaleString()}</span>
           </div>
           {totals.installationCost > 0 && (
             <div className="flex justify-between text-ocean-600">
               <span>Installation</span>
-              <span>${totals.installationCost.toLocaleString()}</span>
+              <span className="font-medium">${totals.installationCost.toLocaleString()}</span>
             </div>
           )}
           {totals.deliveryCost > 0 && (
             <div className="flex justify-between text-ocean-600">
               <span>Delivery</span>
-              <span>${totals.deliveryCost.toLocaleString()}</span>
+              <span className="font-medium">${totals.deliveryCost.toLocaleString()}</span>
             </div>
           )}
           <div className="flex justify-between text-ocean-600">
             <span>Estimated Tax (8%)</span>
-            <span>${totals.tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <span className="font-medium">${totals.tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
           </div>
-          <div className="flex justify-between pt-3 border-t border-ocean-200 text-lg font-bold text-ocean-900">
+          <div className="flex justify-between pt-3 border-t border-ocean-200 text-base sm:text-lg font-bold text-ocean-900">
             <span>Grand Total</span>
             <span className="text-primary-600">
-              ${totals.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              ${totals.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
           </div>
         </div>
       </div>
 
+      {/* Error */}
       {state.error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs sm:text-sm">
           {state.error}
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={() => dispatch({ type: "SET_STEP", payload: 3 })}
-          className="px-6 py-3 rounded-lg border border-ocean-200 text-ocean-600 font-medium hover:bg-ocean-50 transition-colors cursor-pointer flex items-center gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting || items.length === 0}
-          className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg cursor-pointer"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-5 h-5 animate-spin" />
-              Submitting Quote...
-            </>
-          ) : (
-            "Save & Email Quote"
-          )}
-        </button>
-      </div>
+      {/* ── Actions ── */}
+      <button
+        onClick={handleSubmit}
+        disabled={isSubmitting || items.length === 0}
+        className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 sm:py-4 px-6 rounded-xl transition-all text-base sm:text-lg cursor-pointer shadow-lg shadow-primary-600/25 hover:shadow-xl hover:shadow-primary-500/30 active:scale-[0.99]"
+      >
+        {isSubmitting ? (
+          <>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            Submitting Quote...
+          </>
+        ) : (
+          "Save & Email Quote"
+        )}
+      </button>
 
       <div className="text-center mt-4">
         <button
           onClick={() => dispatch({ type: "RESET" })}
-          className="text-sm text-ocean-400 hover:text-ocean-600 transition-colors cursor-pointer"
+          className="text-xs sm:text-sm text-ocean-400 hover:text-ocean-600 transition-colors cursor-pointer"
         >
           Start New Quote
         </button>

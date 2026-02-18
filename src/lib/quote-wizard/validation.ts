@@ -1,4 +1,5 @@
 import type { ContactInfo, ConfiguredItem } from "./types";
+import { PRODUCT_CONFIGS } from "./pricing";
 
 export interface ValidationErrors {
   [key: string]: string;
@@ -35,20 +36,35 @@ export function validateContactInfo(contact: ContactInfo): ValidationErrors {
 
 export function validateConfiguration(item: ConfiguredItem): ValidationErrors {
   const errors: ValidationErrors = {};
+  const config = PRODUCT_CONFIGS[item.doorTypeSlug];
+  const maxHeight = config?.maxHeight ?? 140;
+  const maxWidth = config?.maxWidth ?? 240;
 
   if (!item.width || item.width <= 0) {
     errors.width = "Width is required";
-  } else if (item.width > 240) {
-    errors.width = "Maximum width is 240 inches";
+  } else if (item.width > maxWidth) {
+    errors.width = `Maximum width is ${maxWidth} inches`;
   }
 
   if (!item.height || item.height <= 0) {
     errors.height = "Height is required";
-  } else if (item.height > 140) {
-    errors.height = "Maximum height is 140 inches";
+  } else if (item.height > maxHeight) {
+    errors.height = `Maximum height is ${maxHeight} inches`;
+  }
+
+  if (config?.hasPanelCount) {
+    if (!item.panelCount || item.panelCount < 2) {
+      errors.panelCount = "Please select a panel count";
+    }
+    if (!item.panelLayout) {
+      errors.panelLayout = "Please select a panel layout";
+    }
   }
 
   if (!item.exteriorFinish) errors.exteriorFinish = "Please select a color";
+  if (item.exteriorFinish === "Two-tone" && !item.interiorFinish) {
+    errors.interiorFinish = "Please select an interior finish";
+  }
   if (!item.glassType) errors.glassType = "Please select a glass type";
   if (!item.hardwareFinish) errors.hardwareFinish = "Please select a hardware finish";
 

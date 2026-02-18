@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Shield, Clock, Award, BadgeCheck, ArrowRight, Loader2 } from "lucide-react";
+import { Shield, Clock, Award, BadgeCheck, ArrowRight, Loader2, ChevronDown } from "lucide-react";
 import type { ContactInfo, WizardAction } from "@/lib/quote-wizard/types";
 import { validateContactInfo, type ValidationErrors } from "@/lib/quote-wizard/validation";
 import { createLead } from "@/lib/actions/leads";
@@ -14,26 +14,97 @@ interface StepContactInfoProps {
 }
 
 const TIMELINE_OPTIONS = [
-  { value: "asap", label: "ASAP" },
-  { value: "1-3months", label: "1-3 Months" },
-  { value: "3-6months", label: "3-6 Months" },
-  { value: "6months+", label: "6+ Months" },
-  { value: "planning", label: "Just Planning" },
+  { value: "asap", label: "ASAP (0–30 days)" },
+  { value: "1-3months", label: "1–3 months" },
+  { value: "3-6months", label: "3–6 months" },
+  { value: "6months+", label: "6+ months / Planning" },
+  { value: "researching", label: "Just researching" },
 ];
 
 const CUSTOMER_TYPE_OPTIONS = [
-  { value: "residential", label: "Residential Homeowner" },
-  { value: "commercial", label: "Commercial Property" },
-  { value: "contractor", label: "Contractor / Builder" },
+  { value: "homeowner", label: "Homeowner" },
+  { value: "contractor", label: "Contractor/Builder" },
+  { value: "architect", label: "Architect/Designer" },
+  { value: "dealer", label: "Dealer/Reseller" },
+  { value: "other", label: "Other" },
 ];
 
 const SOURCE_OPTIONS = [
-  { value: "google", label: "Google Search" },
+  { value: "google", label: "Google/Search" },
   { value: "referral", label: "Referral" },
-  { value: "contractor", label: "Contractor / Architect" },
   { value: "social", label: "Social Media" },
+  { value: "event", label: "Event/Showroom" },
   { value: "other", label: "Other" },
 ];
+
+/* ── Custom Dropdown ──────────────────────────────────── */
+function Dropdown({
+  value,
+  onChange,
+  options,
+  placeholder,
+  hasError,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder: string;
+  hasError?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open, close]);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`w-full flex items-center justify-between px-4 py-3 border rounded-lg bg-white text-left transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 cursor-pointer ${
+          hasError ? "border-red-400" : open ? "border-primary-500 ring-2 ring-primary-500/30" : "border-ocean-200 hover:border-ocean-300"
+        }`}
+      >
+        <span className={selected ? "text-ocean-900" : "text-ocean-400"}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <ChevronDown
+          className={`w-4 h-4 text-ocean-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1.5 w-full rounded-lg border border-ocean-200 bg-white shadow-lg shadow-ocean-900/10 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="max-h-60 overflow-y-auto py-1">
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { onChange(opt.value); close(); }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors cursor-pointer ${
+                  value === opt.value
+                    ? "bg-primary-500 text-white"
+                    : "text-ocean-800 hover:bg-primary-50"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function StepContactInfo({ contact, dispatch, isSubmitting }: StepContactInfoProps) {
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -85,15 +156,11 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
       errors[field] ? "border-red-400" : "border-ocean-200"
     }`;
 
-  const selectClass = (field: string) =>
-    `w-full px-4 py-3 border rounded-lg bg-white text-ocean-900 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500 ${
-      errors[field] ? "border-red-400" : "border-ocean-200"
-    }`;
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-3xl mx-auto px-1 sm:px-0">
       {/* Header */}
-      <div className="text-center mb-8">
+      <div className="text-center mb-6 sm:mb-8">
         <Image
           src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif"
           alt="Scenic Doors"
@@ -109,7 +176,7 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
         </p>
 
         {/* Badges */}
-        <div className="flex flex-wrap justify-center gap-4 mb-8">
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-6 sm:mb-8">
           {[
             { icon: Award, label: "Custom Design" },
             { icon: Clock, label: "24hr Quote" },
@@ -117,9 +184,9 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
           ].map(({ icon: Icon, label }) => (
             <div
               key={label}
-              className="flex items-center gap-2 px-4 py-2 bg-primary-50 rounded-full text-sm text-primary-700 font-medium"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary-50 rounded-full text-xs sm:text-sm text-primary-700 font-medium"
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               {label}
             </div>
           ))}
@@ -127,7 +194,7 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
         <div className="grid sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-ocean-700 mb-1.5">
@@ -219,16 +286,13 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
           <label className="block text-sm font-medium text-ocean-700 mb-1.5">
             Project Timeline <span className="text-red-400">*</span>
           </label>
-          <select
+          <Dropdown
             value={contact.timeline}
-            onChange={(e) => handleChange("timeline", e.target.value)}
-            className={selectClass("timeline")}
-          >
-            <option value="">Select timeline</option>
-            {TIMELINE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
+            onChange={(v) => handleChange("timeline", v)}
+            options={TIMELINE_OPTIONS}
+            placeholder="Select timeline..."
+            hasError={!!errors.timeline}
+          />
           {errors.timeline && <p className="mt-1 text-xs text-red-500">{errors.timeline}</p>}
         </div>
 
@@ -237,32 +301,26 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
             <label className="block text-sm font-medium text-ocean-700 mb-1.5">
               What best describes you? <span className="text-red-400">*</span>
             </label>
-            <select
+            <Dropdown
               value={contact.customerType}
-              onChange={(e) => handleChange("customerType", e.target.value)}
-              className={selectClass("customerType")}
-            >
-              <option value="">Select type</option>
-              {CUSTOMER_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              onChange={(v) => handleChange("customerType", v)}
+              options={CUSTOMER_TYPE_OPTIONS}
+              placeholder="Select one..."
+              hasError={!!errors.customerType}
+            />
             {errors.customerType && <p className="mt-1 text-xs text-red-500">{errors.customerType}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-ocean-700 mb-1.5">
               How did you hear about us? <span className="text-red-400">*</span>
             </label>
-            <select
+            <Dropdown
               value={contact.source}
-              onChange={(e) => handleChange("source", e.target.value)}
-              className={selectClass("source")}
-            >
-              <option value="">Select source</option>
-              {SOURCE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+              onChange={(v) => handleChange("source", v)}
+              options={SOURCE_OPTIONS}
+              placeholder="Select an option..."
+              hasError={!!errors.source}
+            />
             {errors.source && <p className="mt-1 text-xs text-red-500">{errors.source}</p>}
           </div>
         </div>
@@ -287,7 +345,7 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
       </form>
 
       {/* Trust Badges */}
-      <div className="flex flex-wrap justify-center gap-6 mt-8 pt-6 border-t border-ocean-100">
+      <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-3 sm:gap-6 mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-ocean-100">
         {[
           { icon: Shield, label: "Secure & Private" },
           { icon: BadgeCheck, label: "No Pressure Sales" },
@@ -295,7 +353,7 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
           { icon: Clock, label: "Licensed & Insured" },
         ].map(({ icon: Icon, label }) => (
           <div key={label} className="flex items-center gap-1.5 text-xs text-ocean-400">
-            <Icon className="w-3.5 h-3.5" />
+            <Icon className="w-3.5 h-3.5 shrink-0" />
             {label}
           </div>
         ))}

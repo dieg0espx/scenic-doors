@@ -14,15 +14,18 @@ export interface ConfiguredItem {
   id: string;
   doorType: string;
   doorTypeSlug: string;
+  systemType: string;
   width: number;
   height: number;
+  panelCount: number;
+  panelLayout: string;
   roomName: string;
   exteriorFinish: string;
+  interiorFinish: string;
   glassType: string;
   hardwareFinish: string;
   basePrice: number;
   glassPriceModifier: number;
-  panelCount: number;
   itemTotal: number;
 }
 
@@ -82,15 +85,18 @@ export function createEmptyItem(): ConfiguredItem {
     id: crypto.randomUUID(),
     doorType: "",
     doorTypeSlug: "",
+    systemType: "slider",
     width: 0,
     height: 0,
+    panelCount: 0,
+    panelLayout: "",
     roomName: "",
     exteriorFinish: "",
+    interiorFinish: "",
     glassType: "",
     hardwareFinish: "",
     basePrice: 0,
     glassPriceModifier: 0,
-    panelCount: 0,
     itemTotal: 0,
   };
 }

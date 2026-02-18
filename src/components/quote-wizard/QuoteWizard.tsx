@@ -157,7 +157,7 @@ export default function QuoteWizard() {
 
   return (
     <div className="min-h-screen bg-ocean-50">
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-12">
         <QuoteWizardStepper currentStep={currentStep} />
 
         {state.error && currentStep !== 4 && (
