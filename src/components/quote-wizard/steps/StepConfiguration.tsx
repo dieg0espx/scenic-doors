@@ -598,7 +598,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                           src={glass.image}
                           alt={glass.name}
                           fill
-                          className="object-cover"
+                          className="object-contain"
                         />
                         {glass.badge && (
                           <span className="absolute top-2 left-2 text-[10px] font-bold text-white bg-primary-500 px-2 py-0.5 rounded-full">
@@ -644,7 +644,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                       }`}
                     >
                       <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-lg overflow-hidden shrink-0 bg-ocean-50">
-                        <Image src={glass.image} alt={glass.name} fill className="object-cover" />
+                        <Image src={glass.image} alt={glass.name} fill className="object-contain" />
                       </div>
                       <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2.5">
