@@ -111,7 +111,6 @@ export async function createQuote(formData: {
       follow_up_date: formData.follow_up_date || null,
       lead_id: formData.lead_id || null,
       created_by: formData.created_by || null,
-      portal_stage: "quote_sent",
     })
     .select()
     .single();
