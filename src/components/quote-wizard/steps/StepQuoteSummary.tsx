@@ -128,168 +128,21 @@ function getSystemDisplayName(item: ConfiguredItem): string {
   return item.doorType;
 }
 
-/* ── Bi-Fold Panel Diagram ────────────────────────────── */
-
-function BifoldDiagram({ panelCount, layout }: { panelCount: number; layout: string }) {
-  let leftPanels = 0;
-  let rightPanels = 0;
-
-  if (layout.startsWith("Split")) {
-    const match = layout.match(/(\d+)L[_-](\d+)R/);
-    if (match) {
-      leftPanels = +match[1];
-      rightPanels = +match[2];
-    }
-  } else if (layout.includes("L)") || layout === "2L" || layout === "2R" || /^\d+L$/.test(layout)) {
-    leftPanels = panelCount;
-  } else if (layout.includes("R)") || /^\d+R$/.test(layout)) {
-    rightPanels = panelCount;
-  } else if (layout === "1L + 1R") {
-    leftPanels = 1;
-    rightPanels = 1;
-  } else {
-    leftPanels = Math.ceil(panelCount / 2);
-    rightPanels = panelCount - leftPanels;
-  }
-
-  const renderPanel = (index: number, total: number, direction: "left" | "right") => {
-    const angle = index % 2 === 0 ? -14 : 14;
-    const isEdge = (direction === "left" && index === 0) || (direction === "right" && index === total - 1);
-    return (
-      <div
-        key={`${direction}-${index}`}
-        className="relative bg-white border-2 border-ocean-700 rounded-sm"
-        style={{
-          width: "clamp(40px, 8vw, 64px)",
-          height: "clamp(100px, 20vw, 160px)",
-          transform: `rotate(${angle}deg)`,
-          marginLeft: index > 0 ? "-3px" : "0",
-          zIndex: isEdge ? 1 : 2,
-        }}
-      >
-        <div className="absolute inset-1.5 sm:inset-2 border border-ocean-300 rounded-sm" />
-        {index === total - 1 && direction === "left" && (
-          <div className="absolute top-1/2 -translate-y-1/2 right-1 w-1 h-3 rounded-full bg-ocean-500" />
-        )}
-        {index === 0 && direction === "right" && (
-          <div className="absolute top-1/2 -translate-y-1/2 left-1 w-1 h-3 rounded-full bg-ocean-500" />
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <div className="flex items-end justify-center py-4 sm:py-6">
-      {leftPanels > 0 && (
-        <div className="flex items-end">
-          {Array.from({ length: leftPanels }).map((_, i) => renderPanel(i, leftPanels, "left"))}
-        </div>
-      )}
-      {leftPanels > 0 && rightPanels > 0 && (
-        <div
-          className="bg-ocean-50 border border-dashed border-ocean-200 rounded mx-1 sm:mx-2"
-          style={{
-            width: "clamp(30px, 6vw, 52px)",
-            height: "clamp(100px, 20vw, 160px)",
-          }}
-        />
-      )}
-      {rightPanels > 0 && (
-        <div className="flex items-end">
-          {Array.from({ length: rightPanels }).map((_, i) => renderPanel(i, rightPanels, "right"))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ── Sliding Panel Diagram ────────────────────────────── */
-
-function SlidingDiagram({ panelCount, layout }: { panelCount: number; layout: string }) {
-  const panels = layout
-    .replace(/Operating/g, "O")
-    .replace(/Fixed/g, "F")
-    .replace(/ \+ /g, "")
-    .replace(/ \(L\)/g, "")
-    .replace(/ \(R\)/g, "")
-    .split("");
-
-  if (layout === "Both Fixed") {
-    return (
-      <div className="flex items-end justify-center gap-1 py-4 sm:py-6">
-        {[0, 1].map((i) => (
-          <div
-            key={i}
-            className="relative bg-ocean-50 border-2 border-ocean-400 rounded-sm"
-            style={{ width: "clamp(50px, 10vw, 80px)", height: "clamp(80px, 16vw, 130px)" }}
-          >
-            <div className="absolute inset-1.5 sm:inset-2 border border-ocean-200 rounded-sm" />
-            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-bold text-ocean-400">F</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (layout === "All Fixed") {
-    return (
-      <div className="flex items-end justify-center gap-1 py-4 sm:py-6">
-        {Array.from({ length: panelCount }).map((_, i) => (
-          <div
-            key={i}
-            className="relative bg-ocean-50 border-2 border-ocean-400 rounded-sm"
-            style={{ width: "clamp(36px, 7vw, 56px)", height: "clamp(80px, 16vw, 130px)" }}
-          >
-            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] font-bold text-ocean-400">F</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-end justify-center gap-0.5 sm:gap-1 py-4 sm:py-6">
-      {panels.map((p, i) => {
-        const isOperating = p === "O";
-        return (
-          <div
-            key={i}
-            className={`relative border-2 rounded-sm ${isOperating ? "bg-white border-primary-500" : "bg-ocean-50 border-ocean-400"}`}
-            style={{
-              width: `clamp(${panelCount > 4 ? 28 : 40}px, ${panelCount > 4 ? 5 : 8}vw, ${panelCount > 4 ? 44 : 64}px)`,
-              height: "clamp(80px, 16vw, 130px)",
-            }}
-          >
-            <div className={`absolute inset-1 sm:inset-1.5 border rounded-sm ${isOperating ? "border-primary-200" : "border-ocean-200"}`} />
-            <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-bold ${isOperating ? "text-primary-500" : "text-ocean-400"}`}>
-              {isOperating ? "O" : "F"}
-            </span>
-            {isOperating && (
-              <div className="absolute top-1/2 -translate-y-1/2 right-0.5 sm:right-1 w-0.5 sm:w-1 h-2 sm:h-3 rounded-full bg-primary-500" />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ── Panel Diagram Router ─────────────────────────────── */
+/* ── Panel Diagram ────────────────────────────────────── */
 
 function PanelDiagram({ item }: { item: ConfiguredItem }) {
   if (!item.panelCount || !item.panelLayout) return null;
-
-  const slug = item.doorTypeSlug;
-
-  if (slug === "bi-fold" || slug === "slide-stack") {
-    return <BifoldDiagram panelCount={item.panelCount} layout={item.panelLayout} />;
-  }
-
-  if (slug === "multi-slide-pocket" || slug === "ultra-slim") {
-    return <SlidingDiagram panelCount={item.panelCount} layout={item.panelLayout} />;
-  }
-
-  return null;
+  const imgUrl = getLayoutImageUrl(item.doorTypeSlug, item.panelCount, item.panelLayout);
+  if (!imgUrl) return null;
+  return (
+    <div className="flex items-center justify-center py-4 sm:py-6">
+      <img
+        src={imgUrl}
+        alt={item.panelLayout}
+        className="h-28 sm:h-40 w-auto object-contain"
+      />
+    </div>
+  );
 }
 
 /* ── Item Card ────────────────────────────────────────── */

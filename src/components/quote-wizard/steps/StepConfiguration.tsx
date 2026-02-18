@@ -386,7 +386,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                     {availableLayouts.map((layout) => {
                       const isSelected = item.panelLayout === layout;
-                      const imgUrl = getLayoutImageUrl(item.panelCount, layout);
+                      const imgUrl = getLayoutImageUrl(item.doorTypeSlug, item.panelCount, layout);
                       return (
                         <button
                           key={layout}
