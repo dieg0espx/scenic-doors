@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull:*)",
+      "Bash(npm install:*)",
+      "Bash(npx next build:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)",
+      "Bash(npx npm ls:*)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nAdd admin dashboard and client-facing pages with full mobile optimization\n\n- Add complete admin panel: dashboard, clients, quotes, orders, contracts, invoices, payments\n- Add client-facing flow: quote view, contract signing, payment summary, invoice pages\n- Add ProgressStepper component for multi-step client flow\n- Add SignaturePad component with touch-optimized canvas\n- Mobile-optimize all pages: larger tap targets, sticky CTAs, responsive layouts, active:scale feedback\n- Add Supabase auth, middleware, and server actions\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)"
+    ]
+  }
+}
