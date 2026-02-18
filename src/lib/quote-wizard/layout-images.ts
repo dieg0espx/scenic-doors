@@ -20,6 +20,8 @@ const SLIDING_IMAGES: Record<string, string> = {
   "3p_All Fixed": `${C}/v1771424009/all_fixed_3_panels_y0eox0.svg`,
   // 4 panels
   "4p_Operating + Fixed + Fixed + Operating": `${C}/v1771424359/ope_fix_fix_ope_4_panels_qnucnn.svg`,
+  // 6 panels
+  "6p_Operating + Fixed + Fixed + Fixed + Fixed + Operating": `${C}/v1771424358/op_fix_fix_1_fix_fix_ope_6_panels_ode3gv.svg`,
 };
 
 /* ── Bi-Fold layouts ────────────────────────────────────── */

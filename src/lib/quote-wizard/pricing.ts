@@ -157,23 +157,10 @@ const SLIDING_LAYOUTS: Record<number, string[]> = {
     "All Fixed",
   ],
   4: [
-    "Operating + Operating + Fixed + Fixed",
-    "Fixed + Fixed + Operating + Operating",
     "Operating + Fixed + Fixed + Operating",
-    "Fixed + Operating + Operating + Fixed",
-    "All Fixed",
-  ],
-  5: [
-    "Operating + Operating + Operating + Fixed + Fixed",
-    "Fixed + Fixed + Operating + Operating + Operating",
-    "Operating + Operating + Fixed + Fixed + Operating",
-    "All Fixed",
   ],
   6: [
-    "Operating + Operating + Operating + Fixed + Fixed + Fixed",
-    "Fixed + Fixed + Fixed + Operating + Operating + Operating",
-    "Operating + Operating + Fixed + Fixed + Operating + Operating",
-    "All Fixed",
+    "Operating + Fixed + Fixed + Fixed + Fixed + Operating",
   ],
 };
 
