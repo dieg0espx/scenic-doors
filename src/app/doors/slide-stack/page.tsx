@@ -62,19 +62,19 @@ const gallery = [
 
 const stackingOptions = [
   {
-    title: "Single-Side Stack",
-    description: "All panels slide and stack to one side. Ideal for corners or when one side needs to remain clear.",
-    features: ["Maximizes one-sided clearance", "Great for corner installations", "Simpler track configuration"],
+    title: "Open Right to Left",
+    description: "All panels slide smoothly to the left side, stacking neatly for maximum clearance on the right.",
+    features: ["Clear right-side opening", "Panels stack on left", "Ideal for left-wall space"],
   },
   {
-    title: "Split Stack",
-    description: "Panels divide and stack to both sides. Creates a grand, centered entrance with balanced aesthetics.",
-    features: ["Symmetrical appearance", "Balanced weight distribution", "Perfect for wide openings"],
+    title: "Open Left to Right",
+    description: "All panels slide smoothly to the right side, stacking neatly for maximum clearance on the left.",
+    features: ["Clear left-side opening", "Panels stack on right", "Ideal for right-wall space"],
   },
   {
-    title: "90° Corner Stack",
-    description: "Panels meet and stack at a corner, opening two walls simultaneously. Ultimate indoor-outdoor connection.",
-    features: ["Opens two walls at once", "Dramatic corner views", "Maximum ventilation"],
+    title: "Open Middle (Stack Right & Stack Left)",
+    description: "Panels split from the center and stack to both sides. Creates a grand, centered entrance with balanced aesthetics.",
+    features: ["Symmetrical center opening", "Balanced panel distribution", "Perfect for wide openings"],
   },
 ];
 

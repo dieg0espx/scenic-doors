@@ -62,20 +62,19 @@ const gallery = [
 
 const configurations = [
   {
-    title: "XO / OX",
-    description: "Two-panel system where one panel slides past the fixed panel. Perfect for standard openings.",
+    title: "Open Right to Left",
+    description: "All panels slide smoothly to the left side, stacking neatly for maximum clearance on the right.",
+    features: ["Clear right-side opening", "Panels stack on left", "Ideal for left-wall space"],
   },
   {
-    title: "OXO / OXXO",
-    description: "Three or four panel system with operable center panels. Ideal for medium-sized openings.",
+    title: "Open Left to Right",
+    description: "All panels slide smoothly to the right side, stacking neatly for maximum clearance on the left.",
+    features: ["Clear left-side opening", "Panels stack on right", "Ideal for right-wall space"],
   },
   {
-    title: "XXX / XXXX",
-    description: "Multiple sliding panels for expansive openings. All panels are operable for maximum flexibility.",
-  },
-  {
-    title: "XXXXXX / OXXXXO",
-    description: "Large-scale configurations for grand openings. Create dramatic indoor-outdoor transitions.",
+    title: "Open Middle (Stack Right & Stack Left)",
+    description: "Panels split from the center and stack to both sides. Creates a grand, centered entrance with balanced aesthetics.",
+    features: ["Symmetrical center opening", "Balanced panel distribution", "Perfect for wide openings"],
   },
 ];
 
