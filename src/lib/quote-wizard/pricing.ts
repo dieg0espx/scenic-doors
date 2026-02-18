@@ -159,6 +159,9 @@ const SLIDING_LAYOUTS: Record<number, string[]> = {
   4: [
     "Operating + Fixed + Fixed + Operating",
   ],
+  5: [
+    "Operating + Fixed + Fixed + Fixed + Operating",
+  ],
   6: [
     "Operating + Fixed + Fixed + Fixed + Fixed + Operating",
   ],
