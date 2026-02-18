@@ -61,19 +61,19 @@ const gallery = [
 
 const configurations = [
   {
-    title: "Bi-Fold",
-    description: "Panels fold to one or both sides, creating a wide-open space perfect for entertaining and indoor-outdoor flow.",
-    features: ["Maximum opening width", "Panels fold compactly", "Great for patios"],
+    title: "Open Right to Left",
+    description: "Panels fold and stack to the left side. Ideal for maximizing clearance on the right side of your opening.",
+    features: ["Clear right-side opening", "Panels fold to left", "Depends on opening size"],
   },
   {
-    title: "Stacking",
-    description: "Panels stack neatly to one side, maximizing your clear opening and unobstructed views.",
-    features: ["Clean stacked look", "Flexible positioning", "Easy access"],
+    title: "Open Left to Right",
+    description: "Panels fold and stack to the right side. Ideal for maximizing clearance on the left side of your opening.",
+    features: ["Clear left-side opening", "Panels fold to right", "Depends on opening size"],
   },
   {
-    title: "Corner Meet",
-    description: "Panels meet at a 90° corner, creating a dramatic architectural statement with no center post.",
-    features: ["No corner mullion", "Opens two walls", "Ultimate views"],
+    title: "Open Middle (Stack Right & Stack Left)",
+    description: "Panels split from the center and fold to both sides. Creates a grand, centered entrance with balanced aesthetics.",
+    features: ["Symmetrical center opening", "Balanced panel distribution", "Depends on opening size"],
   },
 ];
 
