@@ -127,7 +127,7 @@ export function getAvailablePanelCounts(
   const usable = width - offset;
   if (usable <= 0) return [];
   const options: PanelCountOption[] = [];
-  for (let n = 2; n <= 10; n++) {
+  for (let n = 2; n <= 8; n++) {
     const pw = usable / n;
     if (pw >= minPanelWidth && pw <= maxPanelWidth) {
       options.push({
