@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from 'react';
 
 const SlidingDoorAnimation = () => {
-  const [selectedConfig, setSelectedConfig] = useState('OXO');
-  const [openAmount, setOpenAmount] = useState(0);
-  const [showWallPocket, setShowWallPocket] = useState(false);
+  const [slidePosition, setSlidePosition] = useState(50); // 0 = left panel forward, 50 = both visible, 100 = right panel forward
 
   useEffect(() => {
     // Add custom slider styles
@@ -43,88 +41,62 @@ const SlidingDoorAnimation = () => {
       document.head.removeChild(style);
     };
   }, []);
-  const [isAnimating, setIsAnimating] = useState(false);
 
-  const animateDoor = () => {
-    if (isAnimating) return;
+  // Calculate panel positions and offsets
+  // When slidePosition = 0: left panel slides fully right (behind right panel)
+  // When slidePosition = 50: both panels side by side (neutral position)
+  // When slidePosition = 100: right panel slides fully left (behind left panel)
 
-    setIsAnimating(true);
-    const targetValue = openAmount > 50 ? 0 : 100;
-    const duration = 2000; // 2 seconds
-    const startTime = Date.now();
-    const startValue = openAmount;
-    const difference = targetValue - startValue;
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-
-      // Ease in-out function for smooth animation
-      const easeProgress = progress < 0.5
-        ? 2 * progress * progress
-        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-
-      const newValue = startValue + (difference * easeProgress);
-      setOpenAmount(newValue);
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        setIsAnimating(false);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  };
-
-  const configurations: Record<string, { panels: number; fixed: number[]; sliding: number[]; directions: number[] }> = {
-    'XO': { panels: 2, fixed: [1], sliding: [0], directions: [-1] },
-    'OX': { panels: 2, fixed: [0], sliding: [1], directions: [1] },
-    'OXO': { panels: 3, fixed: [0, 2], sliding: [1], directions: [1] },
-    'OXXO': { panels: 4, fixed: [0, 3], sliding: [1, 2], directions: [1, -1] },
-    'XX': { panels: 2, fixed: [], sliding: [0, 1], directions: [-1, 1] },
-    'XXX': { panels: 3, fixed: [], sliding: [0, 1, 2], directions: [-1, 0, 1] },
-    'XXXX': { panels: 4, fixed: [], sliding: [0, 1, 2, 3], directions: [-1, -1, 1, 1] },
-  };
-
-  const config = configurations[selectedConfig];
-  const panelWidth = 100 / config.panels;
-
-  // Reset slider when config changes
-  useEffect(() => {
-    setOpenAmount(0);
-  }, [selectedConfig]);
-
-  // Calculate panel position based on slider value
-  const getPanelPosition = (index: number) => {
-    const basePosition = index * panelWidth;
-
-    if (config.sliding.includes(index)) {
-      const slidingIndex = config.sliding.indexOf(index);
-      const direction = config.directions[slidingIndex];
-      const slideAmount = panelWidth * 0.95 * (openAmount / 100);
-      return basePosition + (direction * slideAmount);
+  const getLeftPanelOffset = () => {
+    if (slidePosition < 50) {
+      // Left panel slides right to overlap with right panel
+      return (1 - slidePosition / 50) * 48; // Moves up to 48% right
     }
-
-    return basePosition;
+    return 0; // At or past center position
   };
 
-  const Panel = ({ index, position }: { index: number; position: number }) => {
-    const isSliding = config.sliding.includes(index);
-    const isLocked = openAmount < 5;
+  const getRightPanelOffset = () => {
+    if (slidePosition > 50) {
+      // Right panel slides left to overlap with left panel
+      return -((slidePosition - 50) / 50) * 48; // Moves up to -48% left
+    }
+    return 0; // At or before center position
+  };
+
+  // Determine z-index based on which panel should be visible on top
+  const getLeftPanelZIndex = () => {
+    return slidePosition < 50 ? 5 : 10; // Behind when sliding right, front otherwise
+  };
+
+  const getRightPanelZIndex = () => {
+    return slidePosition > 50 ? 5 : 10; // Behind when sliding left, front otherwise
+  };
+
+  const Panel = ({
+    basePosition,
+    offset,
+    zIndex,
+    label,
+  }: {
+    basePosition: number;
+    offset: number;
+    zIndex: number;
+    label: string;
+  }) => {
+    const isMoving = slidePosition !== 50;
 
     return (
       <div
         style={{
           position: 'absolute',
-          left: `${position}%`,
+          left: `${basePosition + offset}%`,
           top: 0,
-          width: `${panelWidth}%`,
+          width: '50%',
           height: '100%',
-          transition: 'left 0.05s linear',
+          transition: 'left 0.15s ease-out',
           display: 'flex',
           flexDirection: 'column',
-          zIndex: isSliding ? 10 : 5,
+          zIndex: zIndex,
         }}
       >
         {/* Frame */}
@@ -136,7 +108,7 @@ const SlidingDoorAnimation = () => {
             borderRadius: '2px',
             background: 'linear-gradient(180deg, rgba(200,220,240,0.3) 0%, rgba(180,200,220,0.2) 100%)',
             position: 'relative',
-            boxShadow: isSliding
+            boxShadow: isMoving
               ? '0 4px 20px rgba(0,0,0,0.15)'
               : '0 2px 10px rgba(0,0,0,0.1)',
           }}
@@ -187,47 +159,31 @@ const SlidingDoorAnimation = () => {
           }} />
 
           {/* Handle for sliding panels */}
-          {isSliding && (
-            <div style={{
-              position: 'absolute',
-              top: '45%',
-              right: '12px',
-              width: '8px',
-              height: '40px',
-              background: 'linear-gradient(90deg, #4B5563 0%, #374151 100%)',
-              borderRadius: '4px',
-              boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3)',
-            }} />
-          )}
+          <div style={{
+            position: 'absolute',
+            top: '45%',
+            right: '12px',
+            width: '8px',
+            height: '40px',
+            background: 'linear-gradient(90deg, #4B5563 0%, #374151 100%)',
+            borderRadius: '4px',
+            boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.3)',
+          }} />
 
-          {/* Lock indicator */}
-          {isSliding && (
-            <div style={{
-              position: 'absolute',
-              bottom: '20px',
-              right: '10px',
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: isLocked ? '#10B981' : '#EF4444',
-              boxShadow: isLocked
-                ? '0 0 8px rgba(16, 185, 129, 0.5)'
-                : '0 0 8px rgba(239, 68, 68, 0.5)',
-              transition: 'all 0.2s',
-            }} />
-          )}
-
-          {/* Panel type indicator */}
+          {/* Panel label */}
           <div style={{
             position: 'absolute',
             bottom: '8px',
             left: '50%',
             transform: 'translateX(-50%)',
-            fontSize: '10px',
+            fontSize: '12px',
             color: '#6B7280',
             fontWeight: '600',
+            background: 'rgba(255,255,255,0.8)',
+            padding: '4px 8px',
+            borderRadius: '4px',
           }}>
-            {selectedConfig[index]}
+            {label}
           </div>
         </div>
       </div>
@@ -252,44 +208,15 @@ const SlidingDoorAnimation = () => {
           color: '#1F2937',
           margin: '0 0 8px 0',
         }}>
-          Interactive Configuration Preview
+          Multi-Slide Door Preview
         </h2>
         <p style={{
           fontSize: '14px',
           color: '#6B7280',
           margin: 0,
         }}>
-          Explore different panel configurations and see how they operate
+          Two panels slide horizontally, overlapping within the frame
         </p>
-      </div>
-
-      {/* Configuration Selector */}
-      <div style={{
-        display: 'flex',
-        gap: '8px',
-        marginBottom: '24px',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-      }}>
-        {Object.keys(configurations).map((cfg) => (
-          <button
-            key={cfg}
-            onClick={() => setSelectedConfig(cfg)}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              border: selectedConfig === cfg ? '2px solid #3898EC' : '2px solid #E5E7EB',
-              background: selectedConfig === cfg ? '#EFF6FF' : '#FFFFFF',
-              color: selectedConfig === cfg ? '#1D4ED8' : '#4B5563',
-              fontWeight: '600',
-              fontSize: '14px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            {cfg}
-          </button>
-        ))}
       </div>
 
       {/* Door Animation Container */}
@@ -332,48 +259,27 @@ const SlidingDoorAnimation = () => {
         <div style={{
           position: 'relative',
           height: '350px',
-          background: showWallPocket
-            ? 'linear-gradient(90deg, #F3F4F6 0%, #FFFFFF 15%, #FFFFFF 85%, #F3F4F6 100%)'
-            : '#FFFFFF',
+          background: '#FFFFFF',
           overflow: 'hidden',
           border: '3px solid #4B5563',
           borderTop: 'none',
           borderBottom: 'none',
         }}>
-          {/* Wall pocket indicators */}
-          {showWallPocket && (
-            <>
-              <div style={{
-                position: 'absolute',
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: '12%',
-                background: 'repeating-linear-gradient(90deg, #E5E7EB 0px, #E5E7EB 2px, #F9FAFB 2px, #F9FAFB 8px)',
-                borderRight: '2px dashed #9CA3AF',
-                opacity: 0.7,
-              }} />
-              <div style={{
-                position: 'absolute',
-                right: 0,
-                top: 0,
-                bottom: 0,
-                width: '12%',
-                background: 'repeating-linear-gradient(90deg, #F9FAFB 0px, #F9FAFB 6px, #E5E7EB 6px, #E5E7EB 8px)',
-                borderLeft: '2px dashed #9CA3AF',
-                opacity: 0.7,
-              }} />
-            </>
-          )}
+          {/* Left Panel */}
+          <Panel
+            basePosition={0}
+            offset={getLeftPanelOffset()}
+            zIndex={getLeftPanelZIndex()}
+            label="Left Panel"
+          />
 
-          {/* Panels */}
-          {Array.from({ length: config.panels }).map((_, index) => (
-            <Panel
-              key={index}
-              index={index}
-              position={getPanelPosition(index)}
-            />
-          ))}
+          {/* Right Panel */}
+          <Panel
+            basePosition={50}
+            offset={getRightPanelOffset()}
+            zIndex={getRightPanelZIndex()}
+            label="Right Panel"
+          />
         </div>
 
         {/* Track - Bottom */}
@@ -413,7 +319,7 @@ const SlidingDoorAnimation = () => {
           marginTop: '8px',
           padding: '0 20px',
         }}>
-          {Array.from({ length: config.panels * 2 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} style={{
               width: '10px',
               height: '10px',
@@ -446,29 +352,27 @@ const SlidingDoorAnimation = () => {
             fontWeight: '600',
             color: '#374151',
           }}>
-            Door Position
+            Panel Position
           </span>
           <span style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: openAmount < 5 ? '#10B981' : '#3898EC',
-            minWidth: '80px',
-            textAlign: 'right',
+            fontSize: '14px',
+            fontWeight: '600',
+            color: '#6B7280',
           }}>
-            {Math.round(openAmount)}%
+            {slidePosition < 50 ? 'Left Sliding →' : slidePosition > 50 ? '← Right Sliding' : 'Centered'}
           </span>
         </div>
 
         {/* Custom Slider */}
         <div style={{ position: 'relative', height: '40px', userSelect: 'none', touchAction: 'none' }}>
-          {/* Slider input - MUST BE FIRST */}
+          {/* Slider input */}
           <input
             type="range"
             min="0"
             max="100"
-            value={openAmount}
-            onChange={(e) => setOpenAmount(Number(e.target.value))}
-            onInput={(e) => setOpenAmount(Number((e.target as HTMLInputElement).value))}
+            value={slidePosition}
+            onChange={(e) => setSlidePosition(Number(e.target.value))}
+            onInput={(e) => setSlidePosition(Number((e.target as HTMLInputElement).value))}
             className="sliding-door-slider"
             style={{
               position: 'absolute',
@@ -503,15 +407,44 @@ const SlidingDoorAnimation = () => {
             zIndex: 1,
           }} />
 
-          {/* Filled track */}
+          {/* Center marker */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '3px',
+            height: '20px',
+            background: '#9CA3AF',
+            borderRadius: '2px',
+            pointerEvents: 'none',
+            zIndex: 2,
+          }} />
+
+          {/* Filled track (left side) */}
           <div style={{
             position: 'absolute',
             top: '50%',
             transform: 'translateY(-50%)',
             left: 0,
-            width: `${openAmount}%`,
+            width: slidePosition < 50 ? `${50 - slidePosition}%` : '0%',
             height: '8px',
             background: 'linear-gradient(90deg, #3898EC 0%, #1D4ED8 100%)',
+            borderRadius: '4px',
+            transition: 'width 0.05s linear',
+            pointerEvents: 'none',
+            zIndex: 2,
+          }} />
+
+          {/* Filled track (right side) */}
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            right: 0,
+            width: slidePosition > 50 ? `${slidePosition - 50}%` : '0%',
+            height: '8px',
+            background: 'linear-gradient(-90deg, #3898EC 0%, #1D4ED8 100%)',
             borderRadius: '4px',
             transition: 'width 0.05s linear',
             pointerEvents: 'none',
@@ -522,7 +455,7 @@ const SlidingDoorAnimation = () => {
           <div style={{
             position: 'absolute',
             top: '50%',
-            left: `${openAmount}%`,
+            left: `${slidePosition}%`,
             transform: 'translate(-50%, -50%)',
             width: '28px',
             height: '28px',
@@ -557,114 +490,12 @@ const SlidingDoorAnimation = () => {
           fontSize: '12px',
           color: '#9CA3AF',
         }}>
-          <span>Closed</span>
-          <span>Open</span>
+          <span>Left Panel Forward</span>
+          <span style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>Center</span>
+          <span>Right Panel Forward</span>
         </div>
       </div>
 
-      {/* Wall Pocket Toggle */}
-      <label style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        cursor: 'pointer',
-        fontSize: '14px',
-        color: '#4B5563',
-        marginTop: '20px',
-        padding: '12px 20px',
-        background: showWallPocket ? '#EFF6FF' : '#F9FAFB',
-        borderRadius: '10px',
-        border: showWallPocket ? '2px solid #3898EC' : '2px solid transparent',
-        transition: 'all 0.2s',
-      }}>
-        <input
-          type="checkbox"
-          checked={showWallPocket}
-          onChange={(e) => setShowWallPocket(e.target.checked)}
-          style={{ display: 'none' }}
-        />
-        <div style={{
-          width: '44px',
-          height: '24px',
-          background: showWallPocket ? '#3898EC' : '#D1D5DB',
-          borderRadius: '12px',
-          position: 'relative',
-          transition: 'all 0.2s',
-        }}>
-          <div style={{
-            position: 'absolute',
-            top: '2px',
-            left: showWallPocket ? '22px' : '2px',
-            width: '20px',
-            height: '20px',
-            background: '#FFFFFF',
-            borderRadius: '50%',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-            transition: 'left 0.2s',
-          }} />
-        </div>
-        Show Wall Pocket Configuration
-      </label>
-
-      {/* Legend */}
-      <div style={{
-        marginTop: '24px',
-        padding: '20px',
-        background: '#F9FAFB',
-        borderRadius: '12px',
-        maxWidth: '600px',
-        width: '100%',
-      }}>
-        <h3 style={{
-          margin: '0 0 16px 0',
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#374151',
-        }}>
-          Configuration Legend
-        </h3>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-          gap: '12px',
-          fontSize: '13px',
-          color: '#6B7280',
-        }}>
-          <div><strong>X</strong> = Sliding Panel</div>
-          <div><strong>O</strong> = Fixed Panel</div>
-        </div>
-        <div style={{
-          marginTop: '16px',
-          paddingTop: '16px',
-          borderTop: '1px solid #E5E7EB',
-          fontSize: '12px',
-          color: '#9CA3AF',
-          display: 'flex',
-          gap: '24px',
-          flexWrap: 'wrap',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{
-              display: 'inline-block',
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: '#10B981',
-            }} />
-            Locked (Closed)
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{
-              display: 'inline-block',
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: '#EF4444',
-            }} />
-            Unlocked (Open)
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
