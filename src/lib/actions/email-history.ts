@@ -38,6 +38,12 @@ export async function recordEmailSent(entry: {
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    // If table doesn't exist yet, return a placeholder instead of crashing
+    if (error.message.includes("schema cache") || error.message.includes("relation")) {
+      return { id: "", quote_id: entry.quote_id || null, recipient_email: entry.recipient_email, subject: entry.subject || null, type: entry.type || null, sent_at: new Date().toISOString() } as EmailHistoryEntry;
+    }
+    throw new Error(error.message);
+  }
   return data;
 }

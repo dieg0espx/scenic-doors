@@ -23,7 +23,7 @@ import {
 import type { ConfiguredItem, WizardState, WizardAction } from "@/lib/quote-wizard/types";
 import { calculateQuoteTotals, DELIVERY_COSTS, INSTALLATION_COST, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
 import { getLayoutImageUrl } from "@/lib/quote-wizard/layout-images";
-import { createQuote } from "@/lib/actions/quotes";
+import { createQuote, sendQuoteToClient } from "@/lib/actions/quotes";
 import { updateLead } from "@/lib/actions/leads";
 
 interface StepQuoteSummaryProps {
@@ -396,6 +396,13 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
 
       if (leadId) {
         await updateLead(leadId, { has_quote: true });
+      }
+
+      // Send quote email to client
+      try {
+        await sendQuoteToClient(quote.id, window.location.origin);
+      } catch {
+        // Don't block the flow if email fails
       }
 
       dispatch({ type: "SET_QUOTE_ID", payload: quote.id });
