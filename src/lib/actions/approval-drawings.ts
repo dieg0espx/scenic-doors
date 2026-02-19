@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sendInternalNotificationEmail } from "@/lib/email";
+import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import type { ApprovalDrawing } from "@/lib/types";
 
 export async function getApprovalDrawing(quoteId: string): Promise<ApprovalDrawing | null> {
@@ -152,4 +154,36 @@ export async function signApprovalDrawing(
     .from("quotes")
     .update({ portal_stage: "approval_signed" })
     .eq("id", drawing.quote_id);
+
+  // Send internal notification
+  try {
+    const emails = await getNotificationEmailsByType("approval_signed");
+    if (emails.length > 0) {
+      const { data: quote } = await supabase
+        .from("quotes")
+        .select("quote_number, client_name")
+        .eq("id", drawing.quote_id)
+        .single();
+
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      await sendInternalNotificationEmail(
+        {
+          heading: "Approval Drawing Signed",
+          headingColor: "#2563eb",
+          headingBg: "#eff6ff",
+          headingBorder: "#dbeafe",
+          message: `${customerName} has signed the approval drawing. The order is now ready for tracking.`,
+          details: [
+            { label: "Quote", value: quote?.quote_number ?? "—" },
+            { label: "Client", value: quote?.client_name ?? customerName },
+            { label: "Signed By", value: customerName },
+          ],
+          adminUrl: `${origin}/admin/quotes/${drawing.quote_id}`,
+        },
+        emails
+      );
+    }
+  } catch {
+    // Don't fail the signing if notification fails
+  }
 }

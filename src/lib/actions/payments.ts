@@ -2,7 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendInvoiceEmail, sendPaymentReceiptEmail } from "@/lib/email";
+import { sendInvoiceEmail, sendPaymentReceiptEmail, sendInternalNotificationEmail } from "@/lib/email";
+import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 
 export async function createPayment({
   quoteId,
@@ -187,9 +188,36 @@ export async function submitPaymentConfirmation(
           .update({ status: "in_progress" })
           .eq("quote_id", payment.quote_id);
       }
+
+      // Send internal notification
+      const notifyEmails = await getNotificationEmailsByType("payment_received");
+      if (notifyEmails.length > 0) {
+        const typeLabel = payment.payment_type === "advance_50" ? "50% Advance" : "50% Balance";
+        const formattedAmt = Number(payment.amount).toLocaleString("en-US", { minimumFractionDigits: 2 });
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        await sendInternalNotificationEmail(
+          {
+            heading: `Payment Received — ${invoiceNumber}`,
+            headingColor: "#16a34a",
+            headingBg: "#f0fdf4",
+            headingBorder: "#dcfce7",
+            message: `${quotes.client_name} has completed a payment.`,
+            details: [
+              { label: "Invoice", value: invoiceNumber },
+              { label: "Client", value: quotes.client_name },
+              { label: "Type", value: typeLabel },
+              { label: "Amount", value: `$${formattedAmt}` },
+              { label: "Method", value: paymentMethod },
+              { label: "Reference", value: paymentReference },
+            ],
+            adminUrl: `${origin}/admin/quotes/${payment.quote_id}`,
+          },
+          notifyEmails
+        );
+      }
     }
   } catch {
-    // Don't fail the payment if email/order-update fails
+    // Don't fail the payment if email/order-update/notification fails
   }
 
   revalidatePath("/admin/payments");

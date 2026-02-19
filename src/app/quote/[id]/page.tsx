@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { getQuoteById, markQuoteViewed, updateQuoteStatus } from "@/lib/actions/quotes";
-import { FileText, CheckCircle2, XCircle, DoorOpen, Layers, Palette, GlassWater, Ruler, ArrowRight, Truck, MapPin } from "lucide-react";
+import { FileText, CheckCircle2, XCircle, DoorOpen, Layers, Palette, GlassWater, Ruler, ArrowRight, Truck, MapPin, Clock } from "lucide-react";
 import ProgressStepper from "@/components/ProgressStepper";
 
 interface Quote {
@@ -28,6 +28,7 @@ const statusColors: Record<string, { dot: string; bg: string; text: string }> = 
   draft: { dot: "bg-gray-400", bg: "bg-gray-400/10", text: "text-gray-300" },
   sent: { dot: "bg-blue-400", bg: "bg-blue-400/10", text: "text-blue-300" },
   viewed: { dot: "bg-amber-400", bg: "bg-amber-400/10", text: "text-amber-300" },
+  pending_approval: { dot: "bg-amber-400", bg: "bg-amber-400/10", text: "text-amber-300" },
   accepted: { dot: "bg-emerald-400", bg: "bg-emerald-400/10", text: "text-emerald-300" },
   declined: { dot: "bg-red-400", bg: "bg-red-400/10", text: "text-red-300" },
 };
@@ -48,7 +49,6 @@ function CenteredCard({ children }: { children: React.ReactNode }) {
 
 export default function PublicQuotePage() {
   const params = useParams();
-  const router = useRouter();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -69,8 +69,9 @@ export default function PublicQuotePage() {
   async function handleAccept() {
     if (!quote) return;
     setActionLoading(true);
-    await updateQuoteStatus(quote.id, "accepted");
-    router.push(`/quote/${quote.id}/contract`);
+    await updateQuoteStatus(quote.id, "pending_approval");
+    setQuote({ ...quote, status: "pending_approval" });
+    setActionLoading(false);
   }
 
   async function handleDecline() {
@@ -114,6 +115,20 @@ export default function PublicQuotePage() {
         <p className="text-white/30 text-sm">
           Thank you for your time. If you change your mind or have any questions,
           please don&apos;t hesitate to contact us.
+        </p>
+      </CenteredCard>
+    );
+  }
+
+  if (quote.status === "pending_approval") {
+    return (
+      <CenteredCard>
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+          <Clock className="w-7 h-7 text-amber-400/60" />
+        </div>
+        <h1 className="text-xl font-bold text-white mb-2">Acceptance Submitted</h1>
+        <p className="text-white/30 text-sm">
+          Thank you for accepting the quote! Our team is reviewing your acceptance and you&apos;ll receive an email with the next steps shortly.
         </p>
       </CenteredCard>
     );

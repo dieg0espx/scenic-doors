@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sendInternalNotificationEmail } from "@/lib/email";
+import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import type { Lead, LeadMetrics } from "@/lib/types";
 
 export async function getLeads(): Promise<Lead[]> {
@@ -84,6 +86,35 @@ export async function createLead(formData: {
     throw new Error(error.message);
   }
   revalidatePath("/admin/leads");
+
+  // Send internal notification
+  try {
+    const emails = await getNotificationEmailsByType("lead");
+    if (emails.length > 0) {
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      await sendInternalNotificationEmail(
+        {
+          heading: "New Lead",
+          headingColor: "#0d9488",
+          headingBg: "#f0fdfa",
+          headingBorder: "#ccfbf1",
+          message: "A new lead has been created and is ready for follow-up.",
+          details: [
+            { label: "Name", value: data.name },
+            ...(data.email ? [{ label: "Email", value: data.email }] : []),
+            ...(data.phone ? [{ label: "Phone", value: data.phone }] : []),
+            ...(data.zip ? [{ label: "Zip", value: data.zip }] : []),
+            { label: "Type", value: data.customer_type || "homeowner" },
+          ],
+          adminUrl: `${origin}/admin/leads`,
+        },
+        emails
+      );
+    }
+  } catch {
+    // Don't fail lead creation if notification fails
+  }
+
   return data;
 }
 

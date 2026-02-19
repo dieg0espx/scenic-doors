@@ -1,28 +1,33 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { createQuote, updateQuote } from "@/lib/actions/quotes";
+import { createQuote, updateQuote, sendQuoteToClient, notifyNewQuote } from "@/lib/actions/quotes";
 import {
   User, Mail, Phone, Building2, DoorOpen, Ruler, DollarSign,
   StickyNote, ChevronDown, Check, Layers, GlassWater, Paintbrush,
   Plus, X, Save, Truck, MapPin, Users, Search, UserPlus,
-  Calendar, Tag, Thermometer,
+  Calendar, Tag, Thermometer, Wrench, Trash2, Copy, ChevronRight,
 } from "lucide-react";
 
-const DOOR_TYPES = [
-  "Multi-Slide & Pocket", "Ultra Slim Multi-Slide", "Bi-Fold Doors",
-  "Slide-&-Stack", "Awning Window", "Pivot Entry",
-];
-const MATERIALS = [
-  "Aluminum", "Solid Wood - Walnut", "Solid Wood - Oak",
-  "Solid Wood - Mahogany", "Steel & Glass", "Bronze & Copper",
-];
-const COLORS = ["Black", "White", "Dark Brown", "Gray", "RAL Custom"];
-const GLASS_TYPES = [
-  "Dual-Glazed", "Triple-Glazed", "Quad-Glazed",
-  "Frosted", "Tinted", "Low-E", "Acoustic", "Clear",
-];
+import { PRODUCTS } from "@/lib/quote-wizard/product-data";
+import {
+  PRODUCT_CONFIGS,
+  getAvailablePanelCounts,
+  getPanelLayouts,
+  calculateItemTotal,
+  calculateQuoteTotals,
+  DELIVERY_COSTS,
+  INSTALLATION_COST,
+  TAX_RATE,
+  GLASS_MODIFIERS,
+} from "@/lib/quote-wizard/pricing";
+import type { ConfiguredItem, ServiceOptions } from "@/lib/quote-wizard/types";
+import { createEmptyItem } from "@/lib/quote-wizard/types";
+
+const EXTERIOR_COLORS = ["Black", "White", "Bronze (paint)", "Anodized Aluminum"];
+const INTERIOR_COLORS = ["Black", "White", "Bronze (paint)", "Anodized Aluminum"];
+const GLASS_TYPES = Object.keys(GLASS_MODIFIERS);
 const CUSTOMER_TYPES = ["homeowner", "contractor", "architect", "dealer", "other"];
 const LEAD_STATUSES = ["new", "hot", "warm", "cold", "hold", "archived"];
 
@@ -160,6 +165,386 @@ interface QuoteFormProps {
   adminUsers?: AdminUserOption[];
 }
 
+/* ── Door Item Card ─────────────────────────────────────── */
+function DoorItemCard({
+  item,
+  index,
+  onUpdate,
+  onRemove,
+  onDuplicate,
+  canRemove,
+  inputClass,
+  totalItems,
+}: {
+  item: ConfiguredItem;
+  index: number;
+  onUpdate: (updates: Partial<ConfiguredItem>) => void;
+  onRemove: () => void;
+  onDuplicate: () => void;
+  canRemove: boolean;
+  inputClass: string;
+  totalItems: number;
+}) {
+  const [expanded, setExpanded] = useState(true);
+  const config = item.doorTypeSlug ? PRODUCT_CONFIGS[item.doorTypeSlug] : null;
+
+  const panelCountOptions = useMemo(() => {
+    if (!config || !config.hasPanelCount || item.width <= 0) return [];
+    return getAvailablePanelCounts(
+      item.width,
+      config.usableOpeningOffset,
+      config.panelMinWidth,
+      config.panelMaxWidth
+    );
+  }, [config, item.width]);
+
+  const panelLayoutOptions = useMemo(() => {
+    if (!item.doorTypeSlug || item.panelCount <= 0) return [];
+    return getPanelLayouts(item.panelCount, item.doorTypeSlug);
+  }, [item.doorTypeSlug, item.panelCount]);
+
+  const isTwoTone = item.interiorFinish !== "" && item.interiorFinish !== item.exteriorFinish;
+
+  function handleProductChange(slug: string) {
+    const product = PRODUCTS.find((p) => p.slug === slug);
+    if (!product) return;
+    const newConfig = PRODUCT_CONFIGS[slug];
+    const updates: Partial<ConfiguredItem> = {
+      doorType: product.name,
+      doorTypeSlug: slug,
+      basePrice: product.basePrice,
+      systemType: newConfig?.hasSystemType ? "slider" : "",
+      width: 0,
+      height: 0,
+      panelCount: 0,
+      panelLayout: "",
+      roomName: "",
+      exteriorFinish: "",
+      interiorFinish: "",
+      glassType: "",
+      hardwareFinish: "",
+    };
+    onUpdate(updates);
+  }
+
+  function handleWidthChange(w: number) {
+    onUpdate({ width: w, panelCount: 0, panelLayout: "" });
+  }
+
+  function handlePanelCountChange(count: number) {
+    onUpdate({ panelCount: count, panelLayout: "" });
+  }
+
+  const itemTotal = item.doorTypeSlug ? calculateItemTotal(item) : 0;
+
+  // Sync itemTotal when dependencies change
+  useEffect(() => {
+    if (item.itemTotal !== itemTotal) {
+      onUpdate({ itemTotal });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemTotal]);
+
+  return (
+    <div className="relative rounded-2xl border border-white/[0.06] bg-white/[0.015]" style={{ zIndex: totalItems - index }}>
+      {/* Card Header */}
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl cursor-pointer hover:bg-white/[0.03] transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+            <DoorOpen className="w-4 h-4 text-amber-400" />
+          </div>
+          <div className="text-left">
+            <h4 className="text-sm font-semibold text-white">
+              Item {index + 1}{item.doorType ? `: ${item.doorType}` : ""}
+            </h4>
+            {item.doorType && item.width > 0 && (
+              <p className="text-xs text-white/35">
+                {item.width}&quot; x {item.height}&quot;
+                {item.exteriorFinish ? ` | ${item.exteriorFinish}` : ""}
+                {itemTotal > 0 ? ` | $${itemTotal.toLocaleString()}` : ""}
+              </p>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {itemTotal > 0 && (
+            <span className="text-sm font-semibold text-emerald-400 mr-2">
+              ${itemTotal.toLocaleString()}
+            </span>
+          )}
+          <ChevronRight className={`w-4 h-4 text-white/25 transition-transform ${expanded ? "rotate-90" : ""}`} />
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="p-5 sm:p-6 space-y-4">
+          {/* Product Type */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+              <DoorOpen className="w-3.5 h-3.5" /> Product Type
+            </label>
+            <CustomSelect
+              name={`item_${index}_product`}
+              value={item.doorType}
+              onChange={(val) => {
+                const product = PRODUCTS.find((p) => p.name === val);
+                if (product) handleProductChange(product.slug);
+              }}
+              options={PRODUCTS.map((p) => p.name)}
+              placeholder="Select a product..."
+            />
+          </div>
+
+          {config && (
+            <>
+              {/* System Type (if applicable) */}
+              {config.hasSystemType && (
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                    <Layers className="w-3.5 h-3.5" /> System Type
+                  </label>
+                  <div className="flex gap-3">
+                    {["slider", "pocket"].map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => onUpdate({ systemType: type })}
+                        className={`flex-1 py-3 sm:py-2.5 rounded-xl border text-sm font-medium transition-all cursor-pointer active:scale-95 capitalize ${
+                          item.systemType === type
+                            ? "bg-violet-500/10 border-violet-500/30 text-violet-300 ring-2 ring-violet-500/20"
+                            : "bg-white/[0.03] border-white/[0.08] text-white/40 hover:border-white/[0.15] hover:bg-white/[0.05]"
+                        }`}
+                      >
+                        {type}{type === "pocket" ? " (+$1,200)" : ""}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Dimensions */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                    <Ruler className="w-3.5 h-3.5" /> Width (inches)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={config.maxWidth}
+                    className={inputClass}
+                    placeholder={`Max ${config.maxWidth}"`}
+                    value={item.width || ""}
+                    onChange={(e) => handleWidthChange(Number(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                    <Ruler className="w-3.5 h-3.5" /> Height (inches)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={config.maxHeight}
+                    className={inputClass}
+                    placeholder={`Max ${config.maxHeight}"`}
+                    value={item.height || ""}
+                    onChange={(e) => onUpdate({ height: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              {/* Panel Count */}
+              {config.hasPanelCount && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                      <Layers className="w-3.5 h-3.5" /> Panel Count
+                    </label>
+                    {panelCountOptions.length > 0 ? (
+                      <CustomSelect
+                        name={`item_${index}_panels`}
+                        value={item.panelCount > 0 ? `${item.panelCount} panels (${panelCountOptions.find(o => o.count === item.panelCount)?.perPanelWidth}" each)` : ""}
+                        onChange={(val) => {
+                          const count = parseInt(val);
+                          handlePanelCountChange(count);
+                        }}
+                        options={panelCountOptions.map(
+                          (o) => `${o.count} panels (${o.perPanelWidth}" each)`
+                        )}
+                        placeholder={item.width > 0 ? "Select panel count..." : "Enter width first"}
+                      />
+                    ) : (
+                      <div className={inputClass + " flex items-center text-white/25"}>
+                        {item.width > 0 ? "No valid panel counts for this width" : "Enter width first"}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                      <Layers className="w-3.5 h-3.5" /> Panel Layout
+                    </label>
+                    {panelLayoutOptions.length > 0 ? (
+                      <CustomSelect
+                        name={`item_${index}_layout`}
+                        value={item.panelLayout}
+                        onChange={(val) => onUpdate({ panelLayout: val })}
+                        options={panelLayoutOptions}
+                        placeholder="Select layout..."
+                      />
+                    ) : (
+                      <div className={inputClass + " flex items-center text-white/25"}>
+                        {item.panelCount > 0 ? "No layouts available" : "Select panel count first"}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Room Name (awning window) */}
+              {config.hasRoomName && (
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                    <Tag className="w-3.5 h-3.5" /> Room Name
+                  </label>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    placeholder="e.g. Master Bedroom"
+                    value={item.roomName}
+                    onChange={(e) => onUpdate({ roomName: e.target.value })}
+                  />
+                </div>
+              )}
+
+              {/* Finish */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                  <Paintbrush className="w-3.5 h-3.5" /> Exterior Finish
+                </label>
+                <CustomSelect
+                  name={`item_${index}_exterior`}
+                  value={item.exteriorFinish}
+                  onChange={(val) => onUpdate({ exteriorFinish: val, interiorFinish: isTwoTone ? item.interiorFinish : "" })}
+                  options={EXTERIOR_COLORS}
+                  placeholder="Select exterior finish..."
+                />
+              </div>
+
+              {/* Two-tone toggle */}
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div
+                    className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                      isTwoTone
+                        ? "bg-violet-500 border-violet-500"
+                        : "border-white/[0.12] bg-transparent group-hover:border-white/[0.25]"
+                    }`}
+                    onClick={() => {
+                      if (isTwoTone) {
+                        onUpdate({ interiorFinish: "" });
+                      } else {
+                        onUpdate({ interiorFinish: item.exteriorFinish || INTERIOR_COLORS[0] });
+                      }
+                    }}
+                  >
+                    {isTwoTone && <Check className="w-3.5 h-3.5 text-white" />}
+                  </div>
+                  <span className="text-white/50 text-sm">Two-tone (different interior finish)</span>
+                </label>
+                {isTwoTone && (
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                      <Paintbrush className="w-3.5 h-3.5" /> Interior Finish
+                    </label>
+                    <CustomSelect
+                      name={`item_${index}_interior`}
+                      value={item.interiorFinish}
+                      onChange={(val) => onUpdate({ interiorFinish: val })}
+                      options={INTERIOR_COLORS}
+                      placeholder="Select interior finish..."
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Glass Type */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                  <GlassWater className="w-3.5 h-3.5" /> Glass Type
+                </label>
+                <CustomSelect
+                  name={`item_${index}_glass`}
+                  value={item.glassType}
+                  onChange={(val) => {
+                    onUpdate({ glassType: val, glassPriceModifier: GLASS_MODIFIERS[val] ?? 0 });
+                  }}
+                  options={GLASS_TYPES.map((g) => {
+                    const mod = GLASS_MODIFIERS[g];
+                    return mod === 0 ? g : `${g}`;
+                  })}
+                  placeholder="Select glass type..."
+                />
+                {item.glassType && GLASS_MODIFIERS[item.glassType] !== 0 && (
+                  <p className="text-xs text-white/30 mt-1.5">
+                    {GLASS_MODIFIERS[item.glassType] > 0 ? "+" : ""}${GLASS_MODIFIERS[item.glassType]} per panel
+                  </p>
+                )}
+              </div>
+
+              {/* Hardware Finish */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+                  <Wrench className="w-3.5 h-3.5" /> Hardware Finish
+                </label>
+                <CustomSelect
+                  name={`item_${index}_hardware`}
+                  value={item.hardwareFinish}
+                  onChange={(val) => onUpdate({ hardwareFinish: val })}
+                  options={config.hardwareOptions}
+                  placeholder="Select hardware finish..."
+                />
+              </div>
+            </>
+          )}
+
+          {/* Item Price + Actions */}
+          <div className="flex items-center justify-between pt-4 mt-4 border-t border-white/[0.04]">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onDuplicate}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-white/40 hover:text-white/70 bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all cursor-pointer"
+              >
+                <Copy className="w-3 h-3" /> Duplicate
+              </button>
+              {canRemove && (
+                <button
+                  type="button"
+                  onClick={onRemove}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400/60 hover:text-red-400 bg-red-500/[0.03] border border-red-500/[0.06] hover:bg-red-500/[0.08] transition-all cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" /> Remove
+                </button>
+              )}
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-white/30 uppercase tracking-wider">Item Total</p>
+              <p className="text-lg font-bold text-emerald-400">
+                ${itemTotal.toLocaleString()}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Quote Form ──────────────────────────────────────────── */
 export default function QuoteForm({ initialData, clients = [], adminUsers = [] }: QuoteFormProps) {
   const router = useRouter();
@@ -186,28 +571,22 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientCompany, setNewClientCompany] = useState("");
 
-  // Custom select state
-  const [doorType, setDoorType] = useState(initialData?.door_type || "");
-  const [material, setMaterial] = useState(initialData?.material || "");
-  const [color, setColor] = useState(initialData?.color || "");
-  const [glassType, setGlassType] = useState(initialData?.glass_type || "");
-  const [deliveryType, setDeliveryType] = useState(initialData?.delivery_type || "delivery");
-  const [deliveryAddress, setDeliveryAddress] = useState(initialData?.delivery_address || "");
-  const [selectedAddressId, setSelectedAddressId] = useState("");
-
   // New fields
-  const [customerType, setCustomerType] = useState(initialData?.customer_type || "residential");
+  const [customerType, setCustomerType] = useState(initialData?.customer_type || "homeowner");
   const [customerPhone, setCustomerPhone] = useState(initialData?.customer_phone || "");
   const [customerZip, setCustomerZip] = useState(initialData?.customer_zip || "");
   const [assignedTo, setAssignedTo] = useState(initialData?.assigned_to || "");
   const [leadStatus, setLeadStatus] = useState(initialData?.lead_status || "new");
   const [followUpDate, setFollowUpDate] = useState(initialData?.follow_up_date || "");
 
-  // Pricing
-  const [subtotal, setSubtotal] = useState(initialData?.subtotal?.toString() || "");
-  const [installationCost, setInstallationCost] = useState(initialData?.installation_cost?.toString() || "");
-  const [deliveryCost, setDeliveryCost] = useState(initialData?.delivery_cost?.toString() || "");
-  const [tax, setTax] = useState(initialData?.tax?.toString() || "");
+  // Door items
+  const [items, setItems] = useState<ConfiguredItem[]>([createEmptyItem()]);
+
+  // Services
+  const [services, setServices] = useState<ServiceOptions>({
+    deliveryType: "none",
+    includeInstallation: false,
+  });
 
   // Filter clients based on search
   const filteredClients = clients.filter(
@@ -231,18 +610,32 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
     setSelectedClientId(client.id);
     setClientSearch("");
     setClientDropdownOpen(false);
-    const defaultAddr = client.client_addresses.find((a) => a.is_default);
-    if (defaultAddr) {
-      setSelectedAddressId(defaultAddr.id);
-      setDeliveryAddress(defaultAddr.address);
-    }
   }
 
-  function handleSelectAddress(addrId: string) {
-    setSelectedAddressId(addrId);
-    const addr = selectedClient?.client_addresses.find((a) => a.id === addrId);
-    if (addr) setDeliveryAddress(addr.address);
+  // Item management
+  function updateItem(index: number, updates: Partial<ConfiguredItem>) {
+    setItems((prev) => prev.map((item, i) => (i === index ? { ...item, ...updates } : item)));
   }
+
+  function removeItem(index: number) {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function duplicateItem(index: number) {
+    setItems((prev) => {
+      const copy = { ...prev[index], id: crypto.randomUUID() };
+      return [...prev.slice(0, index + 1), copy, ...prev.slice(index + 1)];
+    });
+  }
+
+  function addItem() {
+    setItems((prev) => [...prev, createEmptyItem()]);
+  }
+
+  // Calculate totals
+  const totals = useMemo(() => {
+    return calculateQuoteTotals(items, services);
+  }, [items, services]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -251,21 +644,30 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
 
     const clientName = clientMode === "existing" && selectedClient ? selectedClient.name : newClientName;
     const clientEmail = clientMode === "existing" && selectedClient ? selectedClient.email : newClientEmail;
-    const costVal = parseFloat((document.getElementById("cost") as HTMLInputElement)?.value || "0");
-    const grandTotal = (parseFloat(subtotal) || 0) + (parseFloat(installationCost) || 0) + (parseFloat(deliveryCost) || 0) + (parseFloat(tax) || 0);
+
+    const firstItem = items[0];
+    const quoteItems = items.map((item) => ({
+      id: item.id,
+      name: item.doorType,
+      description: `${item.width}" x ${item.height}" | ${item.exteriorFinish}${item.interiorFinish && item.interiorFinish !== item.exteriorFinish ? ` / ${item.interiorFinish} interior` : ""} | ${item.glassType} | ${item.hardwareFinish}${item.roomName ? ` | ${item.roomName}` : ""}`,
+      quantity: 1,
+      unit_price: item.itemTotal,
+      total: item.itemTotal,
+    }));
+
+    const notes = (document.getElementById("notes") as HTMLTextAreaElement)?.value || "";
 
     const data = {
       client_name: clientName,
       client_email: clientEmail,
-      door_type: doorType,
-      material: material,
-      color: color,
-      glass_type: glassType,
-      size: (document.getElementById("size") as HTMLInputElement)?.value || "",
-      cost: costVal,
-      notes: (document.getElementById("notes") as HTMLTextAreaElement)?.value || undefined,
-      delivery_type: deliveryType,
-      delivery_address: deliveryType === "delivery" ? deliveryAddress : undefined,
+      door_type: firstItem?.doorType || "",
+      material: "Aluminum",
+      color: firstItem?.exteriorFinish || "",
+      glass_type: firstItem?.glassType || "",
+      size: firstItem ? `${firstItem.width}" x ${firstItem.height}"` : "",
+      cost: totals.grandTotal,
+      notes: notes || undefined,
+      delivery_type: services.deliveryType === "none" ? "pickup" : "delivery",
       client_id: clientMode === "existing" ? selectedClientId || undefined : undefined,
       save_as_client: clientMode === "new" ? saveAsClient : undefined,
       client_phone: clientMode === "new" && saveAsClient ? newClientPhone || undefined : undefined,
@@ -275,11 +677,12 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
       customer_zip: customerZip || undefined,
       assigned_to: assignedTo || undefined,
       lead_status: leadStatus,
-      subtotal: parseFloat(subtotal) || undefined,
-      installation_cost: parseFloat(installationCost) || undefined,
-      delivery_cost: parseFloat(deliveryCost) || undefined,
-      tax: parseFloat(tax) || undefined,
-      grand_total: grandTotal > 0 ? grandTotal : costVal,
+      items: JSON.stringify(quoteItems),
+      subtotal: totals.subtotal,
+      installation_cost: totals.installationCost,
+      delivery_cost: totals.deliveryCost,
+      tax: totals.tax,
+      grand_total: totals.grandTotal,
       follow_up_date: followUpDate || undefined,
     };
 
@@ -287,7 +690,21 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
       if (isEdit) {
         await updateQuote(initialData.id, data);
       } else {
-        await createQuote(data);
+        const quote = await createQuote(data);
+
+        // Send quote email to client (non-blocking)
+        try {
+          await sendQuoteToClient(quote.id, window.location.origin);
+        } catch {
+          // Don't block redirect if email fails
+        }
+
+        // Notify admin/sales reps (non-blocking)
+        try {
+          await notifyNewQuote(quote.id, window.location.origin);
+        } catch {
+          // Don't block redirect if notification fails
+        }
       }
       router.push("/admin/quotes");
     } catch (err) {
@@ -302,7 +719,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
   return (
     <form onSubmit={handleSubmit} className="max-w-4xl space-y-6">
       {/* ── Section 1: Client ── */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+      <div className="relative z-[60] rounded-2xl border border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
           <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
             <User className="w-4 h-4 text-violet-400" />
@@ -354,7 +771,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
                     </div>
                     <button
                       type="button"
-                      onClick={() => { setSelectedClientId(""); setDeliveryAddress(""); setSelectedAddressId(""); }}
+                      onClick={() => { setSelectedClientId(""); }}
                       className="p-1.5 rounded-lg text-white/30 hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
                     >
                       <X className="w-4 h-4" />
@@ -487,7 +904,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
             </>
           )}
 
-          {/* New customer fields */}
+          {/* Customer fields */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 mt-4 border-t border-white/[0.04]">
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
@@ -532,7 +949,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
       </div>
 
       {/* ── Section 2: Lead Management ── */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+      <div className="relative z-[50] rounded-2xl border border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
           <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center">
             <Thermometer className="w-4 h-4 text-rose-400" />
@@ -560,18 +977,24 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
               <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
                 <User className="w-3.5 h-3.5" /> Assigned To
               </label>
-              <select
-                value={assignedTo}
-                onChange={(e) => setAssignedTo(e.target.value)}
-                className={inputClass + " cursor-pointer"}
-              >
-                <option value="">Unassigned</option>
-                {adminUsers.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
+              <CustomSelect
+                name="assigned_to"
+                value={
+                  assignedTo
+                    ? adminUsers.find((u) => u.id === assignedTo)?.name || ""
+                    : "Unassigned"
+                }
+                onChange={(val) => {
+                  if (val === "Unassigned") {
+                    setAssignedTo("");
+                  } else {
+                    const user = adminUsers.find((u) => u.name === val);
+                    if (user) setAssignedTo(user.id);
+                  }
+                }}
+                options={["Unassigned", ...adminUsers.map((u) => u.name)]}
+                placeholder="Select assignee..."
+              />
             </div>
             <div>
               <label htmlFor="follow_up_date" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
@@ -580,7 +1003,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
               <input
                 id="follow_up_date"
                 type="date"
-                className={inputClass}
+                className={inputClass + " [color-scheme:dark]"}
                 value={followUpDate}
                 onChange={(e) => setFollowUpDate(e.target.value)}
               />
@@ -589,230 +1012,168 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
         </div>
       </div>
 
-      {/* ── Section 3: Door Specs ── */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-        <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
-          <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-            <DoorOpen className="w-4 h-4 text-amber-400" />
+      {/* ── Section 3: Door Items ── */}
+      <div className="relative z-[40] space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+              <DoorOpen className="w-4 h-4 text-amber-400" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-white">Door Items</h3>
+              <p className="text-sm text-white/35">Configure each door system</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-base font-semibold text-white">Door Specifications</h3>
-            <p className="text-sm text-white/35">Configure the door system details</p>
-          </div>
+          <button
+            type="button"
+            onClick={addItem}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-sm font-medium hover:bg-amber-500/15 transition-all cursor-pointer active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> Add Item
+          </button>
         </div>
-        <div className="p-5 sm:p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                <DoorOpen className="w-3.5 h-3.5" /> Door Type
-              </label>
-              <CustomSelect
-                name="door_type"
-                value={doorType}
-                onChange={setDoorType}
-                options={DOOR_TYPES}
-                placeholder="Select door type..."
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                <Layers className="w-3.5 h-3.5" /> Material
-              </label>
-              <CustomSelect
-                name="material"
-                value={material}
-                onChange={setMaterial}
-                options={MATERIALS}
-                placeholder="Select material..."
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                <Paintbrush className="w-3.5 h-3.5" /> Color
-              </label>
-              <CustomSelect
-                name="color"
-                value={color}
-                onChange={setColor}
-                options={COLORS}
-                placeholder="Select color..."
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                <GlassWater className="w-3.5 h-3.5" /> Glass Type
-              </label>
-              <CustomSelect
-                name="glass_type"
-                value={glassType}
-                onChange={setGlassType}
-                options={GLASS_TYPES}
-                placeholder="Select glass type..."
-              />
-            </div>
-          </div>
-        </div>
+
+        {items.map((item, index) => (
+          <DoorItemCard
+            key={item.id}
+            item={item}
+            index={index}
+            onUpdate={(updates) => updateItem(index, updates)}
+            onRemove={() => removeItem(index)}
+            onDuplicate={() => duplicateItem(index)}
+            canRemove={items.length > 1}
+            inputClass={inputClass}
+            totalItems={items.length}
+          />
+        ))}
       </div>
 
-      {/* ── Section 4: Pricing ── */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-        <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-            <DollarSign className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-white">Pricing & Dimensions</h3>
-            <p className="text-sm text-white/35">Set the size, costs, and total</p>
-          </div>
-        </div>
-        <div className="p-5 sm:p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label htmlFor="size" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                <Ruler className="w-3.5 h-3.5" /> Dimensions
-              </label>
-              <input id="size" name="size" type="text" required className={inputClass} placeholder='e.g. 72" x 96"' defaultValue={initialData?.size || ""} />
-            </div>
-            <div>
-              <label htmlFor="cost" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                <DollarSign className="w-3.5 h-3.5" /> Base Cost
-              </label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25 text-sm font-medium">$</span>
-                <input id="cost" name="cost" type="number" step="0.01" min="0" required className={inputClass + " pl-8"} placeholder="15,000.00" defaultValue={initialData?.cost || ""} />
-              </div>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <label className="text-xs font-medium text-white/30 mb-1.5 block uppercase tracking-wider">Subtotal</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs">$</span>
-                <input type="number" step="0.01" min="0" className={inputClass + " pl-7 text-xs"} placeholder="0.00" value={subtotal} onChange={(e) => setSubtotal(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-white/30 mb-1.5 block uppercase tracking-wider">Installation</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs">$</span>
-                <input type="number" step="0.01" min="0" className={inputClass + " pl-7 text-xs"} placeholder="0.00" value={installationCost} onChange={(e) => setInstallationCost(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-white/30 mb-1.5 block uppercase tracking-wider">Delivery</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs">$</span>
-                <input type="number" step="0.01" min="0" className={inputClass + " pl-7 text-xs"} placeholder="0.00" value={deliveryCost} onChange={(e) => setDeliveryCost(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-white/30 mb-1.5 block uppercase tracking-wider">Tax</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20 text-xs">$</span>
-                <input type="number" step="0.01" min="0" className={inputClass + " pl-7 text-xs"} placeholder="0.00" value={tax} onChange={(e) => setTax(e.target.value)} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Section 5: Delivery ── */}
+      {/* ── Section 4: Services ── */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
         <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
           <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
             <Truck className="w-4 h-4 text-sky-400" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-white">Delivery</h3>
-            <p className="text-sm text-white/35">How should the product be received?</p>
+            <h3 className="text-base font-semibold text-white">Services</h3>
+            <p className="text-sm text-white/35">Delivery and installation options</p>
           </div>
         </div>
         <div className="p-5 sm:p-6 space-y-4">
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setDeliveryType("delivery")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl border text-sm font-medium transition-all cursor-pointer active:scale-95 ${
-                deliveryType === "delivery"
-                  ? "bg-sky-500/10 border-sky-500/30 text-sky-300 ring-2 ring-sky-500/20"
-                  : "bg-white/[0.03] border-white/[0.08] text-white/40 hover:border-white/[0.15] hover:bg-white/[0.05]"
-              }`}
-            >
-              <Truck className="w-4 h-4" /> Delivery
-            </button>
-            <button
-              type="button"
-              onClick={() => setDeliveryType("pickup")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl border text-sm font-medium transition-all cursor-pointer active:scale-95 ${
-                deliveryType === "pickup"
-                  ? "bg-amber-500/10 border-amber-500/30 text-amber-300 ring-2 ring-amber-500/20"
-                  : "bg-white/[0.03] border-white/[0.08] text-white/40 hover:border-white/[0.15] hover:bg-white/[0.05]"
-              }`}
-            >
-              <MapPin className="w-4 h-4" /> Pickup
-            </button>
-          </div>
-          {deliveryType === "delivery" && (
-            <div className="space-y-3">
-              {clientMode === "existing" && selectedClient && selectedClient.client_addresses.length > 0 && (
-                <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                    <MapPin className="w-3.5 h-3.5" /> Saved Addresses
-                  </label>
-                  <div className="space-y-2">
-                    {selectedClient.client_addresses.map((addr) => (
-                      <button
-                        key={addr.id}
-                        type="button"
-                        onClick={() => handleSelectAddress(addr.id)}
-                        className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition-all cursor-pointer ${
-                          selectedAddressId === addr.id
-                            ? "bg-sky-500/[0.06] border-sky-500/20 text-white"
-                            : "bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium uppercase tracking-wider text-white/30">{addr.label}</span>
-                          {addr.is_default && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300">Default</span>
-                          )}
-                        </div>
-                        <p className="text-sm mt-0.5">{addr.address}</p>
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => { setSelectedAddressId("custom"); setDeliveryAddress(""); }}
-                      className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition-all cursor-pointer ${
-                        selectedAddressId === "custom"
-                          ? "bg-sky-500/[0.06] border-sky-500/20 text-white"
-                          : "bg-white/[0.02] border-dashed border-white/[0.08] text-white/40 hover:bg-white/[0.04]"
-                      }`}
-                    >
-                      + Enter custom address
-                    </button>
-                  </div>
-                </div>
-              )}
-              {(clientMode === "new" || !selectedClient || selectedClient.client_addresses.length === 0 || selectedAddressId === "custom") && (
-                <div>
-                  <label htmlFor="delivery_address" className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
-                    <MapPin className="w-3.5 h-3.5" /> Delivery Address
-                  </label>
-                  <textarea
-                    id="delivery_address"
-                    name="delivery_address"
-                    rows={2}
-                    required
-                    className={inputClass + " resize-none"}
-                    placeholder="Enter the full delivery address..."
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                  />
-                </div>
-              )}
+          {/* Delivery */}
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+              <Truck className="w-3.5 h-3.5" /> Delivery
+            </label>
+            <div className="flex gap-3">
+              {(["regular", "white-glove", "none"] as const).map((type) => {
+                const labels: Record<string, string> = {
+                  regular: "Regular ($800)",
+                  "white-glove": "White Glove ($1,500)",
+                  none: "None",
+                };
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setServices((s) => ({ ...s, deliveryType: type }))}
+                    className={`flex-1 py-3 sm:py-2.5 rounded-xl border text-sm font-medium transition-all cursor-pointer active:scale-95 ${
+                      services.deliveryType === type
+                        ? "bg-sky-500/10 border-sky-500/30 text-sky-300 ring-2 ring-sky-500/20"
+                        : "bg-white/[0.03] border-white/[0.08] text-white/40 hover:border-white/[0.15] hover:bg-white/[0.05]"
+                    }`}
+                  >
+                    {labels[type]}
+                  </button>
+                );
+              })}
             </div>
-          )}
+          </div>
+
+          {/* Installation */}
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer group">
+              <div
+                className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                  services.includeInstallation
+                    ? "bg-sky-500 border-sky-500"
+                    : "border-white/[0.12] bg-transparent group-hover:border-white/[0.25]"
+                }`}
+                onClick={() => setServices((s) => ({ ...s, includeInstallation: !s.includeInstallation }))}
+              >
+                {services.includeInstallation && <Check className="w-3.5 h-3.5 text-white" />}
+              </div>
+              <div>
+                <span className="text-white/70 text-sm font-medium">Include Installation</span>
+                <span className="text-white/30 text-sm ml-2">($1,750)</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 5: Pricing Summary ── */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+        <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+            <DollarSign className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Pricing Summary</h3>
+            <p className="text-sm text-white/35">Auto-calculated from items and services</p>
+          </div>
+        </div>
+        <div className="p-5 sm:p-6">
+          <div className="space-y-3">
+            {/* Item breakdown */}
+            {items.map((item, i) =>
+              item.doorType && item.itemTotal > 0 ? (
+                <div key={item.id} className="flex items-center justify-between text-sm">
+                  <span className="text-white/50">
+                    {item.doorType}{item.width > 0 ? ` (${item.width}" x ${item.height}")` : ""}
+                  </span>
+                  <span className="text-white/70 font-medium">${item.itemTotal.toLocaleString()}</span>
+                </div>
+              ) : null
+            )}
+
+            <div className="border-t border-white/[0.06] pt-3 mt-3" />
+
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/50">Subtotal</span>
+              <span className="text-white/70 font-medium">${totals.subtotal.toLocaleString()}</span>
+            </div>
+
+            {totals.deliveryCost > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/50">
+                  Delivery ({services.deliveryType === "white-glove" ? "White Glove" : "Regular"})
+                </span>
+                <span className="text-white/70 font-medium">${totals.deliveryCost.toLocaleString()}</span>
+              </div>
+            )}
+
+            {totals.installationCost > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-white/50">Installation</span>
+                <span className="text-white/70 font-medium">${totals.installationCost.toLocaleString()}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/50">Tax ({(TAX_RATE * 100).toFixed(0)}%)</span>
+              <span className="text-white/70 font-medium">${totals.tax.toLocaleString()}</span>
+            </div>
+
+            <div className="border-t border-white/[0.06] pt-3 mt-1" />
+
+            <div className="flex items-center justify-between">
+              <span className="text-white font-semibold">Grand Total</span>
+              <span className="text-2xl font-bold text-emerald-400">
+                ${totals.grandTotal.toLocaleString()}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

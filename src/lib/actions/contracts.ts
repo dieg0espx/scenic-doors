@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { uploadSignature } from "@/lib/cloudinary";
 import { revalidatePath } from "next/cache";
+import { sendInternalNotificationEmail } from "@/lib/email";
+import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 
 export async function createContract({
   quoteId,
@@ -36,6 +38,42 @@ export async function createContract({
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/contracts");
+
+  // Send internal notification
+  try {
+    const emails = await getNotificationEmailsByType("contract_signed");
+    if (emails.length > 0) {
+      const { data: quote } = await supabase
+        .from("quotes")
+        .select("quote_number, client_email, door_type, grand_total, cost")
+        .eq("id", quoteId)
+        .single();
+
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const total = quote ? Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "—";
+
+      await sendInternalNotificationEmail(
+        {
+          heading: "Contract Signed",
+          headingColor: "#2563eb",
+          headingBg: "#eff6ff",
+          headingBorder: "#dbeafe",
+          message: `${clientName} has signed the contract. The deal is locked in.`,
+          details: [
+            { label: "Quote", value: quote?.quote_number ?? "—" },
+            { label: "Client", value: clientName },
+            { label: "Door Type", value: quote?.door_type ?? "—" },
+            { label: "Total", value: `$${total}` },
+          ],
+          adminUrl: `${origin}/admin/quotes/${quoteId}`,
+        },
+        emails
+      );
+    }
+  } catch {
+    // Don't fail the contract creation if notification fails
+  }
+
   return data;
 }
 

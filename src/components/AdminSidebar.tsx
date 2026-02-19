@@ -17,22 +17,34 @@ import {
   Menu,
   X,
   Shield,
+  CircleUser,
 } from "lucide-react";
 
-const navItems = [
+const baseNavItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { label: "Quotes", href: "/admin/quotes", icon: FileText },
   { label: "Leads", href: "/admin/leads", icon: UserPlus },
   { label: "Orders", href: "/admin/orders", icon: Package },
   { label: "Marketing", href: "/admin/marketing", icon: BarChart3 },
-  { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Users", href: "/admin/users", icon: Users, adminOnly: true },
   { label: "Notifications", href: "/admin/notifications", icon: Bell },
+  { label: "My Account", href: "/admin/account", icon: CircleUser, nonAdminOnly: true },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({
+  currentUser,
+}: {
+  currentUser: { name: string; role: string };
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const isAdmin = currentUser.role === "admin";
+  const navItems = baseNavItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false;
+    if (item.nonAdminOnly && isAdmin) return false;
+    return true;
+  });
 
   useEffect(() => {
     setOpen(false);
@@ -74,11 +86,12 @@ export default function AdminSidebar() {
         </button>
       </div>
 
-      {/* Role badge */}
-      <div className="px-5 mb-3">
+      {/* User info + role badge */}
+      <div className="px-5 mb-3 space-y-2">
+        <p className="text-sm font-medium text-white/70 truncate">{currentUser.name}</p>
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/15">
           <Shield className="w-3.5 h-3.5 text-amber-400/70" />
-          <span className="text-[11px] font-medium text-amber-400/70 uppercase tracking-wider">Role: admin</span>
+          <span className="text-[11px] font-medium text-amber-400/70 uppercase tracking-wider">Role: {currentUser.role}</span>
         </div>
       </div>
 

@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sendInternalNotificationEmail } from "@/lib/email";
+import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import type { OrderTracking } from "@/lib/types";
 
 // Valid stage transitions: current stage → allowed next stages
@@ -131,6 +133,46 @@ export async function updateOrderStage(
     .eq("id", quoteId);
 
   revalidatePath(`/admin/quotes/${quoteId}`);
+
+  // Send internal notification
+  try {
+    const emails = await getNotificationEmailsByType("order_stage_change");
+    if (emails.length > 0) {
+      const { data: quote } = await supabase
+        .from("quotes")
+        .select("quote_number, client_name")
+        .eq("id", quoteId)
+        .single();
+
+      const stageLabels: Record<string, string> = {
+        manufacturing: "Manufacturing",
+        deposit_2_pending: "Deposit 2 Pending",
+        shipping: "Shipping",
+        delivered: "Delivered",
+      };
+
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      await sendInternalNotificationEmail(
+        {
+          heading: `Order Stage: ${stageLabels[stage] || stage}`,
+          headingColor: "#d97706",
+          headingBg: "#fffbeb",
+          headingBorder: "#fef3c7",
+          message: `An order has moved to the "${stageLabels[stage] || stage}" stage.`,
+          details: [
+            { label: "Quote", value: quote?.quote_number ?? "—" },
+            { label: "Client", value: quote?.client_name ?? "—" },
+            { label: "Previous", value: current.stage.replace(/_/g, " ") },
+            { label: "New Stage", value: stageLabels[stage] || stage },
+          ],
+          adminUrl: `${origin}/admin/quotes/${quoteId}`,
+        },
+        emails
+      );
+    }
+  } catch {
+    // Don't fail the stage update if notification fails
+  }
 }
 
 export async function markDepositPaid(

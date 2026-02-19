@@ -1,34 +1,57 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { createAdminUser } from "@/lib/actions/admin-users";
+import CustomSelect from "@/components/admin/CustomSelect";
+
+const ROLES = [
+  { value: "admin", label: "Admin" },
+  { value: "sales", label: "Sales Person" },
+  { value: "manager", label: "Manager" },
+  { value: "user", label: "User" },
+  { value: "marketing", label: "Marketing" },
+];
+
+function parseTags(input: string): string[] {
+  return input
+    .split(/[,\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 export default function UserForm({ onSuccess }: { onSuccess?: () => void }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
   const [prefix, setPrefix] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [homeZipcode, setHomeZipcode] = useState("");
   const [role, setRole] = useState("sales");
-  const [startDate, setStartDate] = useState("");
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
   const [locationCode, setLocationCode] = useState("");
   const [zipInput, setZipInput] = useState("");
   const [zipcodes, setZipcodes] = useState<string[]>([]);
   const [refInput, setRefInput] = useState("");
   const [referralCodes, setReferralCodes] = useState<string[]>([]);
 
-  function addZipcode() {
-    if (zipInput.trim() && !zipcodes.includes(zipInput.trim())) {
-      setZipcodes([...zipcodes, zipInput.trim()]);
+  function addZipcodes() {
+    const tags = parseTags(zipInput);
+    if (tags.length > 0) {
+      setZipcodes((prev) => [...prev, ...tags.filter((t) => !prev.includes(t))]);
       setZipInput("");
     }
   }
 
-  function addReferralCode() {
-    if (refInput.trim() && !referralCodes.includes(refInput.trim())) {
-      setReferralCodes([...referralCodes, refInput.trim()]);
+  function addReferralCodes() {
+    const tags = parseTags(refInput);
+    if (tags.length > 0) {
+      setReferralCodes((prev) => [...prev, ...tags.filter((t) => !prev.includes(t))]);
       setRefInput("");
     }
   }
@@ -44,22 +67,24 @@ export default function UserForm({ onSuccess }: { onSuccess?: () => void }) {
         prefix: prefix || undefined,
         email: email || undefined,
         phone: phone || undefined,
+        home_zipcode: homeZipcode || undefined,
         role,
         start_date: startDate || undefined,
         location_code: locationCode || undefined,
         zipcodes,
         referral_codes: referralCodes,
       });
-      // Reset form
       setName("");
       setPrefix("");
       setEmail("");
       setPhone("");
+      setHomeZipcode("");
       setRole("sales");
-      setStartDate("");
+      setStartDate(new Date().toISOString().split("T")[0]);
       setLocationCode("");
       setZipcodes([]);
       setReferralCodes([]);
+      router.refresh();
       onSuccess?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create user");
@@ -72,74 +97,49 @@ export default function UserForm({ onSuccess }: { onSuccess?: () => void }) {
     "w-full px-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white text-sm placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/40 transition-all";
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5">
-      <h3 className="text-sm font-semibold text-white mb-4">Add User</h3>
+    <form onSubmit={handleSubmit} className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5 sm:p-6">
+      <h3 className="text-base font-semibold text-white mb-1">Add User</h3>
+      <p className="text-sm text-white/35 mb-5">Add a new team member to the system.</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <input
-          required
-          className={inputClass}
-          placeholder="Full Name *"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <input
-          className={inputClass}
-          placeholder="Prefix (Mr/Mrs)"
-          value={prefix}
-          onChange={(e) => setPrefix(e.target.value)}
-        />
-        <input
-          type="email"
-          className={inputClass}
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="tel"
-          className={inputClass}
-          placeholder="Phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-        />
-        <select
-          className={inputClass + " cursor-pointer"}
-          value={role}
-          onChange={(e) => setRole(e.target.value)}
-        >
-          <option value="admin">Admin</option>
-          <option value="sales">Sales</option>
-          <option value="manager">Manager</option>
-          <option value="installer">Installer</option>
-        </select>
-        <input
-          type="date"
-          className={inputClass}
-          placeholder="Start Date"
-          value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-        />
-        <input
-          className={inputClass}
-          placeholder="Location Code"
-          value={locationCode}
-          onChange={(e) => setLocationCode(e.target.value)}
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Name */}
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Name</label>
+          <input
+            required
+            className={inputClass}
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+
+        {/* Prefix */}
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Prefix (2–4 letters)</label>
+          <input
+            className={inputClass}
+            placeholder="e.g. SDML"
+            maxLength={4}
+            value={prefix}
+            onChange={(e) => setPrefix(e.target.value.toUpperCase())}
+          />
+        </div>
 
         {/* Zipcodes tag input */}
-        <div className="sm:col-span-2 lg:col-span-1">
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Zipcodes</label>
           <div className="flex gap-2">
             <input
               className={inputClass}
-              placeholder="Add zipcode"
+              placeholder="Comma or space separated"
               value={zipInput}
               onChange={(e) => setZipInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addZipcode())}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addZipcodes())}
             />
             <button
               type="button"
-              onClick={addZipcode}
+              onClick={addZipcodes}
               className="px-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white/40 hover:text-white/70 transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -150,9 +150,7 @@ export default function UserForm({ onSuccess }: { onSuccess?: () => void }) {
               {zipcodes.map((z) => (
                 <span key={z} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-violet-500/10 text-violet-300 text-xs">
                   {z}
-                  <button type="button" onClick={() => setZipcodes(zipcodes.filter((x) => x !== z))} className="cursor-pointer">
-                    <X className="w-3 h-3" />
-                  </button>
+                  <button type="button" onClick={() => setZipcodes(zipcodes.filter((x) => x !== z))} className="cursor-pointer"><X className="w-3 h-3" /></button>
                 </span>
               ))}
             </div>
@@ -160,18 +158,19 @@ export default function UserForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
 
         {/* Referral codes tag input */}
-        <div className="sm:col-span-2 lg:col-span-1">
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Referral Codes</label>
           <div className="flex gap-2">
             <input
               className={inputClass}
-              placeholder="Add referral code"
+              placeholder="Comma or space separated"
               value={refInput}
               onChange={(e) => setRefInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addReferralCode())}
+              onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addReferralCodes())}
             />
             <button
               type="button"
-              onClick={addReferralCode}
+              onClick={addReferralCodes}
               className="px-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-white/40 hover:text-white/70 transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -182,13 +181,47 @@ export default function UserForm({ onSuccess }: { onSuccess?: () => void }) {
               {referralCodes.map((r) => (
                 <span key={r} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-500/10 text-teal-300 text-xs">
                   {r}
-                  <button type="button" onClick={() => setReferralCodes(referralCodes.filter((x) => x !== r))} className="cursor-pointer">
-                    <X className="w-3 h-3" />
-                  </button>
+                  <button type="button" onClick={() => setReferralCodes(referralCodes.filter((x) => x !== r))} className="cursor-pointer"><X className="w-3 h-3" /></button>
                 </span>
               ))}
             </div>
           )}
+        </div>
+
+        {/* Email */}
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Email</label>
+          <input type="email" className={inputClass} placeholder="user@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </div>
+
+        {/* Phone */}
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Phone</label>
+          <input type="tel" className={inputClass} placeholder="555-000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+        </div>
+
+        {/* Home Zipcode */}
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Home Zipcode</label>
+          <input className={inputClass} placeholder="e.g. 92078" value={homeZipcode} onChange={(e) => setHomeZipcode(e.target.value)} />
+        </div>
+
+        {/* Role */}
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Role</label>
+          <CustomSelect value={role} onChange={setRole} options={ROLES} placeholder="Select role" />
+        </div>
+
+        {/* Start Date */}
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Start Date</label>
+          <input type="date" className={inputClass + " [color-scheme:dark]"} value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+        </div>
+
+        {/* Location Code */}
+        <div>
+          <label className="text-xs font-medium text-white/40 mb-1.5 block uppercase tracking-wider">Location Code</label>
+          <input className={inputClass} placeholder="e.g. SD" value={locationCode} onChange={(e) => setLocationCode(e.target.value.toUpperCase())} />
         </div>
       </div>
 
@@ -198,14 +231,14 @@ export default function UserForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
       )}
 
-      <div className="mt-4">
+      <div className="mt-5">
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white text-sm font-medium transition-all shadow-lg shadow-violet-500/25 cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white text-sm font-medium transition-all shadow-lg shadow-violet-500/25 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
-          {loading ? "Adding..." : "Add User"}
+          {loading ? "Creating..." : "Create"}
         </button>
       </div>
     </form>

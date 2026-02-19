@@ -4,6 +4,18 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { NotificationSettings } from "@/lib/types";
 
+const ALL_NOTIFICATION_TYPES = [
+  "lead",
+  "new_quote",
+  "quote_pending_approval",
+  "quote_accepted",
+  "quote_declined",
+  "payment_received",
+  "approval_signed",
+  "order_stage_change",
+  "contract_signed",
+];
+
 export async function getNotificationSettings(): Promise<NotificationSettings[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -15,7 +27,25 @@ export async function getNotificationSettings(): Promise<NotificationSettings[]>
     if (error.message.includes("schema cache")) return [];
     throw new Error(error.message);
   }
-  return data ?? [];
+
+  const existing = data ?? [];
+  const existingTypes = new Set(existing.map((s) => s.type));
+  const missing = ALL_NOTIFICATION_TYPES.filter((t) => !existingTypes.has(t));
+
+  if (missing.length > 0) {
+    await supabase
+      .from("notification_settings")
+      .insert(missing.map((type) => ({ type, emails: [] })));
+
+    // Re-fetch to include newly created rows
+    const { data: refreshed } = await supabase
+      .from("notification_settings")
+      .select("*")
+      .order("type");
+    return refreshed ?? existing;
+  }
+
+  return existing;
 }
 
 export async function getNotificationEmailsByType(type: string): Promise<string[]> {

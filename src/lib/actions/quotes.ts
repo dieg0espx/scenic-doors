@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendQuoteEmail, sendNewQuoteNotificationEmail } from "@/lib/email";
+import { sendQuoteEmail, sendNewQuoteNotificationEmail, sendInternalNotificationEmail, sendQuoteApprovedEmail } from "@/lib/email";
 import { recordEmailSent } from "@/lib/actions/email-history";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import type { Quote, DashboardMetrics } from "@/lib/types";
@@ -231,7 +231,7 @@ export async function getQuoteDetail(id: string) {
 
 export async function updateQuoteStatus(
   id: string,
-  status: "draft" | "sent" | "viewed" | "accepted" | "declined"
+  status: "draft" | "sent" | "viewed" | "pending_approval" | "accepted" | "declined"
 ) {
   const supabase = await createClient();
   const updates: Record<string, unknown> = { status };
@@ -245,6 +245,121 @@ export async function updateQuoteStatus(
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/quotes");
+
+  // Send internal notifications for pending_approval/declined
+  if (status === "pending_approval" || status === "declined") {
+    try {
+      const { data: quote } = await supabase
+        .from("quotes")
+        .select("quote_number, client_name, client_email, door_type, grand_total, cost")
+        .eq("id", id)
+        .single();
+      if (!quote) return;
+
+      const type = status === "pending_approval" ? "quote_pending_approval" : "quote_declined";
+      const emails = await getNotificationEmailsByType(type);
+      if (emails.length === 0) return;
+
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const total = Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+
+      await sendInternalNotificationEmail(
+        {
+          heading: status === "pending_approval" ? `Quote ${quote.quote_number} Awaiting Approval` : `Quote ${quote.quote_number} Declined`,
+          headingColor: status === "pending_approval" ? "#d97706" : "#dc2626",
+          headingBg: status === "pending_approval" ? "#fffbeb" : "#fef2f2",
+          headingBorder: status === "pending_approval" ? "#fef3c7" : "#fecaca",
+          message: status === "pending_approval"
+            ? `${quote.client_name} has accepted their quote and is awaiting your approval before the contract is sent.`
+            : `${quote.client_name} has declined their quote. Consider following up to understand why.`,
+          details: [
+            { label: "Quote", value: quote.quote_number },
+            { label: "Client", value: quote.client_name },
+            { label: "Email", value: quote.client_email },
+            { label: "Door Type", value: quote.door_type },
+            { label: "Total", value: `$${total}` },
+          ],
+          adminUrl: `${origin}/admin/quotes/${id}`,
+          ctaLabel: status === "pending_approval" ? "Review & Approve" : "View in Admin",
+        },
+        emails
+      );
+    } catch {
+      // Don't fail the status update if notification fails
+    }
+  }
+}
+
+export async function approveQuote(id: string) {
+  const supabase = await createClient();
+
+  // Verify quote is in pending_approval status
+  const { data: quote, error: fetchError } = await supabase
+    .from("quotes")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !quote) throw new Error("Quote not found");
+  if (quote.status !== "pending_approval") throw new Error("Quote is not pending approval");
+
+  // Update to accepted
+  const { error } = await supabase
+    .from("quotes")
+    .update({ status: "accepted", accepted_at: new Date().toISOString() })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/quotes");
+
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+
+  // Send approval email to client
+  try {
+    await sendQuoteApprovedEmail({
+      clientName: quote.client_name,
+      clientEmail: quote.client_email,
+      quoteNumber: quote.quote_number,
+      contractUrl: `${origin}/quote/${id}/contract`,
+    });
+
+    await recordEmailSent({
+      quote_id: id,
+      recipient_email: quote.client_email,
+      subject: `Quote ${quote.quote_number} Approved — Sign Your Contract`,
+      type: "approval",
+    });
+  } catch {
+    // Don't fail the approval if email fails
+  }
+
+  // Notify admin team via quote_accepted notification type
+  try {
+    const emails = await getNotificationEmailsByType("quote_accepted");
+    if (emails.length > 0) {
+      const total = Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+      await sendInternalNotificationEmail(
+        {
+          heading: `Quote ${quote.quote_number} Approved`,
+          headingColor: "#16a34a",
+          headingBg: "#f0fdf4",
+          headingBorder: "#dcfce7",
+          message: `Quote for ${quote.client_name} has been approved. The client has been sent a link to sign the contract.`,
+          details: [
+            { label: "Quote", value: quote.quote_number },
+            { label: "Client", value: quote.client_name },
+            { label: "Email", value: quote.client_email },
+            { label: "Door Type", value: quote.door_type },
+            { label: "Total", value: `$${total}` },
+          ],
+          adminUrl: `${origin}/admin/quotes/${id}`,
+        },
+        emails
+      );
+    }
+  } catch {
+    // Don't fail the approval if notification fails
+  }
 }
 
 export async function updateQuoteLeadStatus(

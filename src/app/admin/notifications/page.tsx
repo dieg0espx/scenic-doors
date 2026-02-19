@@ -1,11 +1,16 @@
 import { Bell } from "lucide-react";
 import { getNotificationSettings } from "@/lib/actions/notification-settings";
+import { getAdminUsers } from "@/lib/actions/admin-users";
 import NotificationSettingsComponent from "@/components/admin/NotificationSettings";
 
 export const dynamic = "force-dynamic";
 
 export default async function NotificationsPage() {
-  const settings = await getNotificationSettings();
+  const [settings, users] = await Promise.all([
+    getNotificationSettings(),
+    getAdminUsers(),
+  ]);
+  const activeUsers = users.filter((u) => u.status === "active" && u.email);
 
   return (
     <div className="max-w-3xl">
@@ -20,7 +25,7 @@ export default async function NotificationsPage() {
         </p>
       </div>
 
-      <NotificationSettingsComponent settings={settings} />
+      <NotificationSettingsComponent settings={settings} users={activeUsers} />
     </div>
   );
 }

@@ -78,9 +78,24 @@ export default async function QuoteDetailPage({
           >
             <Pencil className="w-3.5 h-3.5" /> Edit
           </Link>
-          <QuoteDetailClient quoteId={id} quoteEmail={quote.client_email} />
+          <QuoteDetailClient quoteId={id} quoteEmail={quote.client_email} quoteStatus={quote.status} />
         </div>
       </div>
+
+      {/* Pending Approval Banner */}
+      {quote.status === "pending_approval" && (
+        <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.06] mb-6 px-5 py-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-amber-300">Pending Approval</p>
+            <p className="text-xs text-amber-300/60">
+              The client has accepted this quote. Review the details and approve or decline to proceed.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Quote header */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] mb-6">
@@ -92,8 +107,8 @@ export default async function QuoteDetailPage({
             <span className={`px-2 py-0.5 rounded-lg text-xs font-medium ${sc.bg} ${sc.text}`}>
               {leadStatus.charAt(0).toUpperCase() + leadStatus.slice(1)}
             </span>
-            <span className="px-2 py-0.5 rounded-lg text-xs font-medium bg-white/[0.06] text-white/50">
-              {quote.status}
+            <span className={`px-2 py-0.5 rounded-lg text-xs font-medium ${quote.status === "pending_approval" ? "bg-amber-400/10 text-amber-300" : "bg-white/[0.06] text-white/50"}`}>
+              {quote.status === "pending_approval" ? "Pending Approval" : quote.status}
             </span>
           </div>
           <p className="text-white/35 text-sm">

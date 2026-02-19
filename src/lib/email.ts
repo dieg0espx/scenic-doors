@@ -513,6 +513,241 @@ export async function sendPaymentReceiptEmail(data: PaymentReceiptData) {
   });
 }
 
+interface WelcomeEmailData {
+  name: string;
+  email: string;
+  password: string;
+  role: string;
+  loginUrl: string;
+}
+
+export async function sendWelcomeEmail(data: WelcomeEmailData) {
+  const roleLabel =
+    data.role === "admin" ? "Admin" :
+    data.role === "sales" ? "Sales Person" :
+    data.role === "manager" ? "Manager" :
+    data.role === "marketing" ? "Marketing" : "User";
+
+  // HTML-escape the password to prevent rendering issues
+  const safePassword = data.password
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:#f5f3ff;border-bottom:1px solid #ede9fe;padding:20px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:#7c3aed;">Welcome to Scenic Doors</p>
+      </div>
+
+      <div style="padding:24px 32px;">
+        <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.name},</p>
+        <p style="margin:0 0 20px;font-size:14px;color:#71717a;line-height:1.6;">
+          Your account has been created. You can now log in to the Scenic Doors admin panel using the credentials below.
+        </p>
+
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:20px;">
+          <p style="margin:0 0 16px;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;font-weight:600;">Your Login Credentials</p>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#a1a1aa;width:100px;">Role</td>
+              <td style="padding:6px 0;font-size:13px;color:#18181b;font-weight:500;">${roleLabel}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#a1a1aa;">Email</td>
+              <td style="padding:6px 0;font-size:13px;color:#18181b;font-weight:500;">${data.email}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- Password in a distinct copyable box -->
+        <div style="margin-top:16px;background:#18181b;border-radius:10px;padding:16px 20px;text-align:center;">
+          <p style="margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:#a1a1aa;font-weight:600;">Your Password</p>
+          <p style="margin:0;font-size:18px;font-weight:700;font-family:'Courier New',Courier,monospace;color:#ffffff;letter-spacing:2px;word-break:break-all;user-select:all;">${safePassword}</p>
+        </div>
+
+        <p style="margin:20px 0 0;font-size:12px;color:#ef4444;line-height:1.5;">
+          For security, please change your password after your first login.
+        </p>
+      </div>
+
+      <div style="padding:0 32px 32px;text-align:center;">
+        <a href="${data.loginUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
+          Log In Now
+        </a>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  // Also include plain text version so password is always copyable
+  const text = `Welcome to Scenic Doors!\n\nHi ${data.name},\n\nYour account has been created.\n\nEmail: ${data.email}\nPassword: ${data.password}\nRole: ${roleLabel}\n\nLog in at: ${data.loginUrl}\n\nPlease change your password after your first login.`;
+
+  await transporter.sendMail({
+    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: data.email,
+    subject: `Your Scenic Doors Account Has Been Created`,
+    html,
+    text,
+  });
+}
+
+interface InternalNotificationData {
+  heading: string;
+  headingColor: string;
+  headingBg: string;
+  headingBorder: string;
+  message: string;
+  details: { label: string; value: string }[];
+  adminUrl?: string;
+  ctaLabel?: string;
+}
+
+export async function sendInternalNotificationEmail(
+  data: InternalNotificationData,
+  recipientEmails: string[]
+) {
+  if (recipientEmails.length === 0) return;
+
+  const detailRows = data.details
+    .map(
+      (d) => `<tr>
+        <td style="padding:6px 0;font-size:13px;color:#a1a1aa;width:120px;">${d.label}</td>
+        <td style="padding:6px 0;font-size:13px;color:#18181b;font-weight:500;">${d.value}</td>
+      </tr>`
+    )
+    .join("");
+
+  const ctaButton = data.adminUrl
+    ? `<div style="padding:0 32px 32px;text-align:center;">
+        <a href="${data.adminUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
+          ${data.ctaLabel || "View in Admin"}
+        </a>
+      </div>`
+    : "";
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:${data.headingBg};border-bottom:1px solid ${data.headingBorder};padding:20px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:${data.headingColor};">${data.heading}</p>
+      </div>
+
+      <div style="padding:24px 32px;">
+        <p style="margin:0 0 16px;font-size:14px;color:#71717a;line-height:1.6;">${data.message}</p>
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:20px;">
+          <table style="width:100%;border-collapse:collapse;">${detailRows}</table>
+        </div>
+      </div>
+
+      ${ctaButton}
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: recipientEmails.join(", "),
+    subject: `${data.heading} | Scenic Doors`,
+    html,
+  });
+}
+
+interface QuoteApprovedEmailData {
+  clientName: string;
+  clientEmail: string;
+  quoteNumber: string;
+  contractUrl: string;
+}
+
+export async function sendQuoteApprovedEmail(data: QuoteApprovedEmailData) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:#f0fdf4;border-bottom:1px solid #dcfce7;padding:20px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:#16a34a;">Quote Approved</p>
+      </div>
+
+      <div style="padding:24px 32px;">
+        <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.clientName},</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#71717a;line-height:1.6;">
+          Great news! Your quote <strong>${data.quoteNumber}</strong> has been approved. You can now proceed to sign the contract to get your project started.
+        </p>
+      </div>
+
+      <div style="padding:0 32px 32px;text-align:center;">
+        <a href="${data.contractUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#10b981,#059669);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
+          Sign Contract
+        </a>
+        <p style="margin:16px 0 0;font-size:12px;color:#a1a1aa;">
+          Click the button above to review and sign your contract.
+        </p>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: data.clientEmail,
+    subject: `Quote ${data.quoteNumber} Approved — Sign Your Contract | Scenic Doors`,
+    html,
+  });
+}
+
 interface FollowUpEmailData {
   clientName: string;
   clientEmail: string;

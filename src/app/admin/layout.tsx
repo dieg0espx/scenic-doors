@@ -18,9 +18,20 @@ export default async function AdminLayout({
     redirect("/login");
   }
 
+  // Fetch the admin_users record for the logged-in user
+  const { data: adminUser } = await supabase
+    .from("admin_users")
+    .select("name, role")
+    .eq("email", user.email!)
+    .single();
+
+  const currentUser = adminUser
+    ? { name: adminUser.name, role: adminUser.role }
+    : { name: user.email ?? "User", role: "user" };
+
   return (
     <div className="flex min-h-screen bg-[#0d1117]">
-      <AdminSidebar />
+      <AdminSidebar currentUser={currentUser} />
       <main className="flex-1 p-4 pt-18 md:pt-6 sm:p-6 md:p-8 lg:p-10 min-w-0">{children}</main>
     </div>
   );
