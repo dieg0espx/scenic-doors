@@ -43,15 +43,22 @@ export async function getOrders() {
 
   if (error) throw new Error(error.message);
 
-  // Sync order statuses based on actual payment states
-  if (data) {
-    for (const order of data) {
-      const { data: payments } = await supabase
-        .from("payments")
-        .select("payment_type, status")
-        .eq("quote_id", order.quote_id);
+  // Sync order statuses based on actual payment states (batch query)
+  if (data && data.length > 0) {
+    const quoteIds = [...new Set(data.map((o) => o.quote_id))];
+    const { data: allPayments } = await supabase
+      .from("payments")
+      .select("quote_id, payment_type, status")
+      .in("quote_id", quoteIds);
 
-      if (!payments) continue;
+    const paymentsByQuote = new Map<string, typeof allPayments>();
+    for (const p of allPayments ?? []) {
+      if (!paymentsByQuote.has(p.quote_id)) paymentsByQuote.set(p.quote_id, []);
+      paymentsByQuote.get(p.quote_id)!.push(p);
+    }
+
+    for (const order of data) {
+      const payments = paymentsByQuote.get(order.quote_id) ?? [];
 
       const advancePaid = payments.some(
         (p) => p.payment_type === "advance_50" && p.status === "completed"

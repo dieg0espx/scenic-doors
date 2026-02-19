@@ -34,7 +34,11 @@ export default function UsersList({ users }: Props) {
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this user?")) return;
-    await deleteAdminUser(id);
+    try {
+      await deleteAdminUser(id);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete user");
+    }
   }
 
   if (users.length === 0) {

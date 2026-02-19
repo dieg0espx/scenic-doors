@@ -79,6 +79,17 @@ export async function updateApprovalDrawing(
     .eq("id", id);
 
   if (error) throw new Error(error.message);
+
+  // Fetch the quote_id so we can revalidate the correct page
+  const { data: drawing } = await supabase
+    .from("approval_drawings")
+    .select("quote_id")
+    .eq("id", id)
+    .single();
+
+  if (drawing?.quote_id) {
+    revalidatePath(`/admin/quotes/${drawing.quote_id}`);
+  }
 }
 
 export async function sendApprovalDrawing(id: string, quoteId: string): Promise<void> {

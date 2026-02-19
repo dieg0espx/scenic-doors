@@ -1,12 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const BifoldDoorAnimation = () => {
-  const [selectedConfig, setSelectedConfig] = useState(4);
+const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compact }: { panelCountOverride?: number; foldDirectionOverride?: 'left' | 'right' | 'center'; compact?: boolean } = {}) => {
+  const [selectedConfig, setSelectedConfig] = useState(panelCountOverride ?? 4);
   const [openAmount, setOpenAmount] = useState(0);
-  const [foldDirection, setFoldDirection] = useState<'left' | 'right' | 'center'>('left');
+  const [foldDirection, setFoldDirection] = useState<'left' | 'right' | 'center'>(foldDirectionOverride ?? 'left');
   const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (panelCountOverride !== undefined) {
+      setSelectedConfig(panelCountOverride);
+      setOpenAmount(0);
+    }
+  }, [panelCountOverride]);
+
+  useEffect(() => {
+    if (foldDirectionOverride !== undefined) {
+      setFoldDirection(foldDirectionOverride);
+      setOpenAmount(0);
+    }
+  }, [foldDirectionOverride]);
 
   const animateDoor = () => {
     if (isAnimating) return;
@@ -307,101 +321,107 @@ const BifoldDoorAnimation = () => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '40px 20px',
+      padding: compact ? '16px 12px' : '40px 20px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px' }}>
-        <h2 style={{
-          fontSize: '28px',
-          fontWeight: '700',
-          color: '#1F2937',
-          margin: '0 0 8px 0',
-        }}>
-          Bi-Fold Door Preview
-        </h2>
-        <p style={{
-          fontSize: '14px',
-          color: '#6B7280',
-          margin: 0,
-        }}>
-          Explore different panel configurations and folding directions
-        </p>
-      </div>
+      {!compact && (
+        <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px' }}>
+          <h2 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#1F2937',
+            margin: '0 0 8px 0',
+          }}>
+            Bi-Fold Door Preview
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#6B7280',
+            margin: 0,
+          }}>
+            Explore different panel configurations and folding directions
+          </p>
+        </div>
+      )}
 
       {/* Controls */}
       <div style={{
         display: 'flex',
         gap: '12px',
-        marginBottom: '24px',
+        marginBottom: compact ? '16px' : '24px',
         flexWrap: 'wrap',
         justifyContent: 'center',
         alignItems: 'center',
       }}>
-        {/* Panel Count */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
-          {configurations.map((count) => (
-            <button
-              key={count}
-              onClick={() => {
-                setSelectedConfig(count);
-                setOpenAmount(0);
-              }}
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                border: selectedConfig === count ? '2px solid #3B82F6' : '2px solid #E4E4E7',
-                background: selectedConfig === count ? '#EFF6FF' : '#FFFFFF',
-                color: selectedConfig === count ? '#2563EB' : '#71717A',
-                fontWeight: '600',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-            >
-              {count}
-            </button>
-          ))}
-        </div>
+        {/* Panel Count - hide when controlled externally */}
+        {!panelCountOverride && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
+            {configurations.map((count) => (
+              <button
+                key={count}
+                onClick={() => {
+                  setSelectedConfig(count);
+                  setOpenAmount(0);
+                }}
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  border: selectedConfig === count ? '2px solid #3B82F6' : '2px solid #E4E4E7',
+                  background: selectedConfig === count ? '#EFF6FF' : '#FFFFFF',
+                  color: selectedConfig === count ? '#2563EB' : '#71717A',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {count}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Fold Direction */}
-        <div style={{
-          display: 'flex',
-          background: '#F4F4F5',
-          padding: '4px',
-          borderRadius: '10px',
-          marginLeft: '8px',
-        }}>
-          {[
-            { id: 'left' as const, label: '← Left' },
-            { id: 'center' as const, label: '↔ Center' },
-            { id: 'right' as const, label: 'Right →' },
-          ].map((option) => (
-            <button
-              key={option.id}
-              onClick={() => {
-                setFoldDirection(option.id);
-                setOpenAmount(0);
-              }}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: 'none',
-                background: foldDirection === option.id ? '#FFFFFF' : 'transparent',
-                color: foldDirection === option.id ? '#18181B' : '#71717A',
-                fontWeight: '500',
-                fontSize: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-                boxShadow: foldDirection === option.id ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        {/* Fold Direction - hide when controlled externally */}
+        {!foldDirectionOverride && (
+          <div style={{
+            display: 'flex',
+            background: '#F4F4F5',
+            padding: '4px',
+            borderRadius: '10px',
+            marginLeft: panelCountOverride ? '0px' : '8px',
+          }}>
+            {[
+              { id: 'left' as const, label: '← Left' },
+              { id: 'center' as const, label: '↔ Center' },
+              { id: 'right' as const, label: 'Right →' },
+            ].map((option) => (
+              <button
+                key={option.id}
+                onClick={() => {
+                  setFoldDirection(option.id);
+                  setOpenAmount(0);
+                }}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: foldDirection === option.id ? '#FFFFFF' : 'transparent',
+                  color: foldDirection === option.id ? '#18181B' : '#71717A',
+                  fontWeight: '500',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                  boxShadow: foldDirection === option.id ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Door Animation Container */}
@@ -435,7 +455,7 @@ const BifoldDoorAnimation = () => {
         {/* Door Frame Container */}
         <div style={{
           position: 'relative',
-          height: '400px',
+          height: compact ? '250px' : '400px',
           background: '#FFFFFF',
           overflow: 'visible',
           border: '4px solid #57534E',

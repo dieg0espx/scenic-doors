@@ -29,6 +29,7 @@ const typeLabels: Record<string, string> = {
 export default function PaymentsList({ payments }: { payments: Payment[] }) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (payments.length === 0) {
     return (
@@ -44,11 +45,13 @@ export default function PaymentsList({ payments }: { payments: Payment[] }) {
 
   async function handleMarkCompleted(id: string) {
     setLoadingId(id);
+    setErrorMsg(null);
     try {
       await updatePaymentStatus(id, "completed");
       router.refresh();
-    } catch {
-      // silently fail - revalidation in the action will update the UI
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to update payment status");
+      setTimeout(() => setErrorMsg(null), 4000);
     } finally {
       setLoadingId(null);
     }
@@ -93,6 +96,12 @@ export default function PaymentsList({ payments }: { payments: Payment[] }) {
 
   return (
     <>
+      {errorMsg && (
+        <div className="mb-4 text-red-400 text-sm bg-red-500/[0.08] border border-red-500/20 rounded-xl px-4 py-3">
+          {errorMsg}
+        </div>
+      )}
+
       {/* Mobile cards */}
       <div className="md:hidden space-y-3">
         {payments.map((p) => (

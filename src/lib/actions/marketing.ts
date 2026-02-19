@@ -74,13 +74,16 @@ export async function getMarketingMetrics(
 
 export async function getRevenueBySource(): Promise<RevenueBySource[]> {
   const supabase = await createClient();
-  const { data: leads } = await supabase
+  const { data: leads, error: leadsError } = await supabase
     .from("leads")
     .select("source");
-  const { data: quotes } = await supabase
+  const { data: quotes, error: quotesError } = await supabase
     .from("quotes")
     .select("cost, grand_total, lead_id, leads(source)")
     .not("lead_id", "is", null);
+
+  if (leadsError) throw new Error(leadsError.message);
+  if (quotesError) throw new Error(quotesError.message);
 
   const sourceMap = new Map<string, { revenue: number; count: number }>();
 
@@ -112,11 +115,13 @@ export async function getLeadsOverTime(): Promise<LeadsOverTime[]> {
     Date.now() - 30 * 24 * 60 * 60 * 1000
   ).toISOString();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("leads")
     .select("created_at")
     .gte("created_at", thirtyDaysAgo)
     .order("created_at");
+
+  if (error) throw new Error(error.message);
 
   const dayMap = new Map<string, number>();
   for (let i = 29; i >= 0; i--) {
@@ -152,6 +157,9 @@ export async function getConversionFunnel(): Promise<ConversionFunnel[]> {
         .eq("status", "accepted"),
       supabase.from("orders").select("id", { count: "exact", head: true }),
     ]);
+
+  const firstError = [leadsRes, quotesRes, sentRes, acceptedRes, ordersRes].find((r) => r.error);
+  if (firstError?.error) throw new Error(firstError.error.message);
 
   const totalLeads = leadsRes.count ?? 0;
   const stages = [

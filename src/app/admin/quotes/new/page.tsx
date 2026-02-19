@@ -1,9 +1,13 @@
 import { FileText } from "lucide-react";
 import QuoteForm from "@/components/QuoteForm";
 import { getClients } from "@/lib/actions/clients";
+import { getAdminUsers } from "@/lib/actions/admin-users";
 
 export default async function NewQuotePage() {
-  const clients = await getClients();
+  const [clients, adminUsers] = await Promise.all([
+    getClients(),
+    getAdminUsers(),
+  ]);
 
   return (
     <div>
@@ -18,7 +22,7 @@ export default async function NewQuotePage() {
         </p>
       </div>
 
-      <QuoteForm clients={clients} />
+      <QuoteForm clients={clients} adminUsers={adminUsers} />
 
       {/* Custom scrollbar for dropdowns */}
       <style>{`

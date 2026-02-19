@@ -35,7 +35,11 @@ export default function LeadsList({ leads }: Props) {
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this lead?")) return;
-    await deleteLead(id);
+    try {
+      await deleteLead(id);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to delete lead");
+    }
   }
 
   if (leads.length === 0) {

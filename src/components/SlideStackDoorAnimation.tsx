@@ -1,12 +1,26 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const SlideStackDoorAnimation = () => {
-  const [panelCount, setPanelCount] = useState(4);
+const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compact }: { panelCountOverride?: number; stackSideOverride?: 'left' | 'right' | 'split'; compact?: boolean } = {}) => {
+  const [panelCount, setPanelCount] = useState(panelCountOverride ?? 4);
   const [openAmount, setOpenAmount] = useState(0);
-  const [stackSide, setStackSide] = useState<'left' | 'right' | 'split'>('right');
+  const [stackSide, setStackSide] = useState<'left' | 'right' | 'split'>(stackSideOverride ?? 'right');
   const [isAnimating, setIsAnimating] = useState(false);
+
+  useEffect(() => {
+    if (panelCountOverride !== undefined) {
+      setPanelCount(panelCountOverride);
+      setOpenAmount(0);
+    }
+  }, [panelCountOverride]);
+
+  useEffect(() => {
+    if (stackSideOverride !== undefined) {
+      setStackSide(stackSideOverride);
+      setOpenAmount(0);
+    }
+  }, [stackSideOverride]);
 
   const animateDoor = (currentValue: number, setValue: (val: number) => void) => {
     if (isAnimating) return;
@@ -379,69 +393,74 @@ const SlideStackDoorAnimation = () => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '40px 24px',
+      padding: compact ? '16px 12px' : '40px 24px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px' }}>
-        <h2 style={{
-          fontSize: '28px',
-          fontWeight: '700',
-          color: '#1F2937',
-          margin: '0 0 8px 0',
-        }}>
-          Slide & Stack Door Preview
-        </h2>
-        <p style={{
-          fontSize: '14px',
-          color: '#6B7280',
-          margin: 0,
-        }}>
-          Explore different configurations and see how panels stack
-        </p>
-      </div>
+      {!compact && (
+        <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px' }}>
+          <h2 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#1F2937',
+            margin: '0 0 8px 0',
+          }}>
+            Slide & Stack Door Preview
+          </h2>
+          <p style={{
+            fontSize: '14px',
+            color: '#6B7280',
+            margin: 0,
+          }}>
+            Explore different configurations and see how panels stack
+          </p>
+        </div>
+      )}
 
       {/* Controls */}
       <div style={{
         display: 'flex',
         gap: '12px',
-        marginBottom: '24px',
+        marginBottom: compact ? '16px' : '24px',
         flexWrap: 'wrap',
         justifyContent: 'center',
         alignItems: 'center',
       }}>
-        {/* Panel Count */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
-          {[2, 3, 4, 5, 6].map(count => (
-            <button
-              key={count}
-              onClick={() => { setPanelCount(count); setOpenAmount(0); }}
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '10px',
-                border: panelCount === count ? '2px solid #3B82F6' : '2px solid #E4E4E7',
-                background: panelCount === count ? '#EFF6FF' : '#FFFFFF',
-                color: panelCount === count ? '#2563EB' : '#71717A',
-                fontWeight: '600',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-            >
-              {count}
-            </button>
-          ))}
-        </div>
+        {/* Panel Count - hide when controlled externally */}
+        {!panelCountOverride && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
+            {[2, 3, 4, 5, 6].map(count => (
+              <button
+                key={count}
+                onClick={() => { setPanelCount(count); setOpenAmount(0); }}
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  border: panelCount === count ? '2px solid #3B82F6' : '2px solid #E4E4E7',
+                  background: panelCount === count ? '#EFF6FF' : '#FFFFFF',
+                  color: panelCount === count ? '#2563EB' : '#71717A',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {count}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Stack Direction */}
+        {/* Stack Direction - hide when controlled externally */}
+        {!stackSideOverride && (
         <div style={{
           display: 'flex',
           background: '#F4F4F5',
           padding: '4px',
           borderRadius: '10px',
-          marginLeft: '8px',
+          marginLeft: panelCountOverride ? '0px' : '8px',
         }}>
           {[
             { id: 'left' as const, label: '← Left' },
@@ -468,6 +487,7 @@ const SlideStackDoorAnimation = () => {
             </button>
           ))}
         </div>
+        )}
       </div>
 
       {/* Door Display */}
@@ -476,7 +496,7 @@ const SlideStackDoorAnimation = () => {
 
         <div style={{
           position: 'relative',
-          height: '380px',
+          height: compact ? '250px' : '380px',
           background: '#FFFFFF',
           overflow: 'hidden',
           borderLeft: '4px solid #52525B',

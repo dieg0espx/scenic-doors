@@ -12,6 +12,7 @@ interface Quote {
   client_email: string;
   door_type: string;
   cost: number;
+  grand_total?: number;
   status: string;
   created_at: string;
 }
@@ -99,7 +100,7 @@ export default function QuotesList({ quotes }: { quotes: Quote[] }) {
               <div>
                 <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">Cost</p>
                 <p className="text-white font-semibold text-sm mt-0.5">
-                  ${Number(q.cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  ${Number(q.grand_total || q.cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </p>
               </div>
               <div>
@@ -169,7 +170,7 @@ export default function QuotesList({ quotes }: { quotes: Quote[] }) {
                 </td>
                 <td className="px-5 py-4 text-white/50 text-[13px]">{q.door_type}</td>
                 <td className="px-5 py-4 text-white font-semibold text-[13px]">
-                  ${Number(q.cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  ${Number(q.grand_total || q.cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </td>
                 <td className="px-5 py-4"><StatusBadge status={q.status} /></td>
                 <td className="px-5 py-4 text-white/30 text-xs">{new Date(q.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</td>

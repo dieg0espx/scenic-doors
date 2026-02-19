@@ -14,6 +14,10 @@ import {
 } from "@/lib/quote-wizard/pricing";
 import { validateConfiguration, type ValidationErrors } from "@/lib/quote-wizard/validation";
 import { PRODUCTS } from "@/lib/quote-wizard/product-data";
+import SlidingDoorAnimation from "@/components/SlidingDoorAnimation";
+import BifoldDoorAnimation from "@/components/BifoldDoorAnimation";
+import SlideStackDoorAnimation from "@/components/SlideStackDoorAnimation";
+// PivotDoorAnimation not used here — pivot doors don't have panel count config
 
 interface StepConfigurationProps {
   item: ConfiguredItem;
@@ -147,8 +151,8 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
     : [];
   const availableLayouts = item.panelCount > 0 ? getPanelLayouts(item.panelCount, item.doorTypeSlug) : [];
 
-  const isTwoTone = item.exteriorFinish === "Two-tone";
-  const colorDone = !!item.exteriorFinish && (!isTwoTone || !!item.interiorFinish);
+  const [twoToneEnabled, setTwoToneEnabled] = useState(!!item.interiorFinish);
+  const colorDone = !!item.exteriorFinish && (!twoToneEnabled || !!item.interiorFinish);
 
   const sectionDone = [
     item.width > 0 && item.height > 0 && (!config.hasPanelCount || !!item.panelLayout),
@@ -158,7 +162,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
   ];
   const sectionValues = [
     sectionDone[0] ? `${item.width}" \u00d7 ${item.height}"` : null,
-    isTwoTone && item.interiorFinish ? `Two-tone` : item.exteriorFinish || null,
+    twoToneEnabled && item.interiorFinish ? `Two-tone` : item.exteriorFinish || null,
     item.glassType || null,
     item.hardwareFinish || null,
   ];
@@ -427,6 +431,47 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
               </div>
             )}
 
+            {/* Live Door Animation Preview */}
+            {(item.doorTypeSlug === "bi-fold" || item.doorTypeSlug === "slide-stack" || item.doorTypeSlug === "multi-slide-pocket" || item.doorTypeSlug === "ultra-slim") && (
+              <div>
+                <label className="block text-sm font-semibold text-ocean-800 mb-1">Live Preview</label>
+                <p className="text-xs text-ocean-400 mb-3">See how your door configuration looks and operates.</p>
+                <div className="rounded-xl border border-ocean-200 overflow-hidden bg-white">
+                  {item.doorTypeSlug === "bi-fold" && (
+                    <BifoldDoorAnimation
+                      panelCountOverride={item.panelCount > 0 ? item.panelCount : undefined}
+                      foldDirectionOverride={
+                        item.panelLayout?.includes('Split') ? 'center'
+                        : item.panelLayout?.includes('Right') ? 'right'
+                        : item.panelLayout?.includes('Left') ? 'left'
+                        : undefined
+                      }
+                      compact
+                    />
+                  )}
+                  {item.doorTypeSlug === "slide-stack" && (
+                    <SlideStackDoorAnimation
+                      panelCountOverride={item.panelCount > 0 ? item.panelCount : undefined}
+                      stackSideOverride={
+                        item.panelLayout === '1L + 1R' ? 'split'
+                        : item.panelLayout?.includes('Right') ? 'right'
+                        : item.panelLayout?.includes('Left') || item.panelLayout?.endsWith('L') ? 'left'
+                        : undefined
+                      }
+                      compact
+                    />
+                  )}
+                  {(item.doorTypeSlug === "multi-slide-pocket" || item.doorTypeSlug === "ultra-slim") && (
+                    <SlidingDoorAnimation
+                      panelCountOverride={item.panelCount > 0 ? item.panelCount : undefined}
+                      panelLayoutOverride={item.panelLayout || undefined}
+                      compact
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Room Name (awning only) */}
             {config.hasRoomName && (
               <div>
@@ -465,7 +510,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                     <button
                       key={color}
                       type="button"
-                      onClick={() => updateItem({ exteriorFinish: color, interiorFinish: "" })}
+                      onClick={() => updateItem({ exteriorFinish: color })}
                       className={`relative flex items-center gap-3 p-3 sm:p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
                         isSelected
                           ? "border-primary-500 bg-primary-50/60 shadow-sm shadow-primary-500/10"
@@ -492,32 +537,33 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
               <button
                 type="button"
                 onClick={() => {
-                  if (isTwoTone) {
-                    updateItem({ exteriorFinish: "", interiorFinish: "" });
+                  if (twoToneEnabled) {
+                    setTwoToneEnabled(false);
+                    updateItem({ interiorFinish: "" });
                   } else {
-                    updateItem({ exteriorFinish: "Two-tone", interiorFinish: "" });
+                    setTwoToneEnabled(true);
                   }
                 }}
                 className={`w-full flex items-center justify-between p-3 sm:p-3.5 rounded-xl border-2 text-left transition-all cursor-pointer ${
-                  isTwoTone
+                  twoToneEnabled
                     ? "border-primary-500 bg-primary-50/60 shadow-sm shadow-primary-500/10"
                     : "border-ocean-200 hover:border-ocean-300 bg-white hover:shadow-sm"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full shrink-0 shadow-inner bg-gradient-to-r from-gray-900 via-gray-900 to-white border border-gray-300" />
-                  <span className={`text-sm font-medium ${isTwoTone ? "text-primary-700" : "text-ocean-700"}`}>
+                  <span className={`text-sm font-medium ${twoToneEnabled ? "text-primary-700" : "text-ocean-700"}`}>
                     Two-tone (different interior color)
                   </span>
                 </div>
                 <div
                   className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 shrink-0 ${
-                    isTwoTone ? "bg-primary-500" : "bg-ocean-200"
+                    twoToneEnabled ? "bg-primary-500" : "bg-ocean-200"
                   }`}
                 >
                   <div
                     className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                      isTwoTone ? "translate-x-4" : "translate-x-0"
+                      twoToneEnabled ? "translate-x-4" : "translate-x-0"
                     }`}
                   />
                 </div>
@@ -525,7 +571,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
             </div>
 
             {/* Interior Finish (shown when two-tone) */}
-            {isTwoTone && (
+            {twoToneEnabled && (
               <div>
                 <label className="block text-sm font-semibold text-ocean-800 mb-2.5 sm:mb-3">Interior Finish</label>
                 {errors.interiorFinish && <p className="mb-2.5 sm:mb-3 text-xs text-red-500">{errors.interiorFinish}</p>}

@@ -59,7 +59,7 @@ export default function AdminSidebar() {
       <div className="px-5 py-6 flex items-center justify-between">
         <Link href="/admin" className="flex items-center gap-3">
           <Image
-            src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif"
+            src="/images/scenic-doors-dark-logo.avif"
             alt="Scenic Doors"
             width={140}
             height={38}
@@ -143,7 +143,7 @@ export default function AdminSidebar() {
           <Menu className="w-5 h-5" />
         </button>
         <Image
-          src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif"
+          src="/images/scenic-doors-dark-logo.avif"
           alt="Scenic Doors"
           width={120}
           height={32}
