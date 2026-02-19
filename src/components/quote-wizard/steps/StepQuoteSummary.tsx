@@ -23,8 +23,10 @@ import {
 import type { ConfiguredItem, WizardState, WizardAction } from "@/lib/quote-wizard/types";
 import { calculateQuoteTotals, DELIVERY_COSTS, INSTALLATION_COST, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
 import { getLayoutImageUrl } from "@/lib/quote-wizard/layout-images";
-import { createQuote, sendQuoteToClient } from "@/lib/actions/quotes";
+import { createQuote, sendQuoteToClient, assignQuote, notifyNewQuote } from "@/lib/actions/quotes";
 import { updateLead } from "@/lib/actions/leads";
+import { getNextSalesRep } from "@/lib/actions/admin-users";
+import { scheduleFollowUps } from "@/lib/actions/follow-ups";
 
 interface StepQuoteSummaryProps {
   state: WizardState;
@@ -398,11 +400,37 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
         await updateLead(leadId, { has_quote: true });
       }
 
+      // Auto-assign to next sales rep (round-robin)
+      try {
+        const rep = await getNextSalesRep();
+        if (rep) {
+          await assignQuote(quote.id, rep.id);
+        }
+      } catch {
+        // Don't block the flow if assignment fails
+      }
+
       // Send quote email to client
       try {
         await sendQuoteToClient(quote.id, window.location.origin);
       } catch {
         // Don't block the flow if email fails
+      }
+
+      // Notify admin/sales reps
+      try {
+        await notifyNewQuote(quote.id, window.location.origin);
+      } catch {
+        // Don't block the flow if notification fails
+      }
+
+      // Schedule follow-up emails (3 follow-ups at 4-day intervals)
+      if (leadId) {
+        try {
+          await scheduleFollowUps(leadId, quote.id);
+        } catch {
+          // Don't block the flow if scheduling fails
+        }
       }
 
       dispatch({ type: "SET_QUOTE_ID", payload: quote.id });

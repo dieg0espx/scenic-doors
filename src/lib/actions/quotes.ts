@@ -2,8 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendQuoteEmail } from "@/lib/email";
+import { sendQuoteEmail, sendNewQuoteNotificationEmail } from "@/lib/email";
 import { recordEmailSent } from "@/lib/actions/email-history";
+import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import type { Quote, DashboardMetrics } from "@/lib/types";
 
 export async function createQuote(formData: {
@@ -329,6 +330,75 @@ export async function sendQuoteToClient(id: string, origin: string) {
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/quotes");
+}
+
+export async function notifyNewQuote(quoteId: string, origin: string) {
+  const supabase = await createClient();
+
+  // Fetch quote with assigned rep info
+  const { data: quote, error } = await supabase
+    .from("quotes")
+    .select("*, admin_users(name, email)")
+    .eq("id", quoteId)
+    .single();
+
+  if (error || !quote) {
+    // Fallback without join
+    const { data: fallback } = await supabase
+      .from("quotes")
+      .select("*")
+      .eq("id", quoteId)
+      .single();
+    if (!fallback) return;
+    const emails = await getNotificationEmailsByType("new_quote");
+    if (emails.length === 0) return;
+
+    await sendNewQuoteNotificationEmail(
+      {
+        clientName: fallback.client_name,
+        clientEmail: fallback.client_email,
+        quoteNumber: fallback.quote_number,
+        doorType: fallback.door_type,
+        cost: fallback.grand_total || fallback.cost,
+        assignedRepName: null,
+        adminUrl: `${origin}/admin/quotes/${quoteId}`,
+      },
+      emails
+    );
+    return;
+  }
+
+  // Collect notification recipients: configured emails + assigned rep email
+  const configuredEmails = await getNotificationEmailsByType("new_quote");
+  const repName = quote.admin_users?.name ?? null;
+  const repEmail = quote.admin_users?.email ?? null;
+
+  const allEmails = [...configuredEmails];
+  if (repEmail && !allEmails.includes(repEmail)) {
+    allEmails.push(repEmail);
+  }
+
+  if (allEmails.length === 0) return;
+
+  await sendNewQuoteNotificationEmail(
+    {
+      clientName: quote.client_name,
+      clientEmail: quote.client_email,
+      quoteNumber: quote.quote_number,
+      doorType: quote.door_type,
+      cost: quote.grand_total || quote.cost,
+      assignedRepName: repName,
+      adminUrl: `${origin}/admin/quotes/${quoteId}`,
+    },
+    allEmails
+  );
+
+  await recordEmailSent({
+    quote_id: quoteId,
+    recipient_email: allEmails.join(", "),
+    subject: `New Quote ${quote.quote_number} — ${quote.client_name}`,
+    type: "notification",
+  });
 }
 
 export async function updateQuote(

@@ -102,6 +102,43 @@ export async function deleteAdminUser(id: string): Promise<void> {
   revalidatePath("/admin/users");
 }
 
+export async function getNextSalesRep(): Promise<{ id: string; name: string; email: string | null } | null> {
+  const supabase = await createClient();
+
+  // Get all active sales reps
+  const { data: reps, error } = await supabase
+    .from("admin_users")
+    .select("id, name, email")
+    .eq("role", "sales")
+    .eq("status", "active");
+
+  if (error || !reps || reps.length === 0) return null;
+
+  // Find who was assigned least recently by checking quotes.assigned_date
+  const { data: recentAssignments } = await supabase
+    .from("quotes")
+    .select("assigned_to, assigned_date")
+    .not("assigned_to", "is", null)
+    .order("assigned_date", { ascending: false });
+
+  // Build a map of rep ID → most recent assignment date
+  const lastAssigned = new Map<string, string>();
+  for (const q of recentAssignments ?? []) {
+    if (q.assigned_to && !lastAssigned.has(q.assigned_to)) {
+      lastAssigned.set(q.assigned_to, q.assigned_date ?? "");
+    }
+  }
+
+  // Sort reps: those never assigned first, then by oldest assignment date
+  reps.sort((a, b) => {
+    const aDate = lastAssigned.get(a.id) ?? "";
+    const bDate = lastAssigned.get(b.id) ?? "";
+    return aDate.localeCompare(bDate);
+  });
+
+  return reps[0];
+}
+
 export async function getAdminUserCounts(): Promise<{
   total: number;
   active: number;

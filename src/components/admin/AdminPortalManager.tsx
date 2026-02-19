@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Link2,
   ClipboardCheck,
@@ -17,6 +17,8 @@ import {
   Factory,
   Package,
   MapPin,
+  Upload,
+  X,
 } from "lucide-react";
 import {
   createApprovalDrawing,
@@ -105,22 +107,60 @@ export default function AdminPortalManager({
   }
 
   // ── Photos ──
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoType, setPhotoType] = useState("interior");
   const [photoCaption, setPhotoCaption] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File too large. Maximum size is 10MB");
+      return;
+    }
+    setPhotoFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setPhotoPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  }, []);
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handleFileSelect(file);
+  }
+
+  function clearPhotoSelection() {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
 
   async function handleAddPhoto() {
-    if (!photoUrl.trim()) return;
+    if (!photoFile) return;
     setLoading("photo");
     try {
+      const formData = new FormData();
+      formData.append("file", photoFile);
+
+      const res = await fetch("/api/upload-photo", { method: "POST", body: formData });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Upload failed");
+
       const p = await addQuotePhoto({
         quote_id: quoteId,
-        photo_url: photoUrl,
+        photo_url: result.url,
         photo_type: photoType,
         caption: photoCaption || undefined,
       });
       setPhotos([p, ...photos]);
-      setPhotoUrl("");
+      clearPhotoSelection();
       setPhotoCaption("");
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
@@ -222,9 +262,7 @@ export default function AdminPortalManager({
     }
   }
 
-  const portalUrl = typeof window !== "undefined"
-    ? `${window.location.origin}/portal/${quoteId}`
-    : `/portal/${quoteId}`;
+  const portalUrl = `/portal/${quoteId}`;
 
   return (
     <div className="space-y-3">
@@ -335,13 +373,56 @@ export default function AdminPortalManager({
             </div>
           ))}
           <div className="space-y-2">
-            <Input label="Photo URL" value={photoUrl} onChange={setPhotoUrl} placeholder="https://..." />
+            {/* Drag-and-drop zone */}
+            {!photoPreview ? (
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+                  isDragging
+                    ? "border-violet-400 bg-violet-500/10"
+                    : "border-white/[0.1] hover:border-white/[0.2] bg-white/[0.02]"
+                }`}
+              >
+                <Upload className="w-6 h-6 mx-auto mb-2 text-white/30" />
+                <p className="text-xs text-white/40">
+                  Drag & drop an image here, or click to browse
+                </p>
+                <p className="text-[10px] text-white/20 mt-1">
+                  JPEG, PNG, WebP, AVIF — max 10MB
+                </p>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileSelect(file);
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="relative rounded-xl overflow-hidden bg-white/[0.03]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photoPreview} alt="Preview" className="w-full max-h-48 object-contain" />
+                <button
+                  onClick={clearPhotoSelection}
+                  className="absolute top-2 right-2 p-1 bg-black/60 rounded-full text-white/70 hover:text-white cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                <p className="text-[10px] text-white/30 text-center py-1">{photoFile?.name}</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
-              <Select label="Type" value={photoType} options={["interior", "exterior", "other"]} onChange={setPhotoType} />
+              <Select label="Type" value={photoType} options={["interior", "exterior", "reference", "sketch"]} onChange={setPhotoType} />
               <Input label="Caption" value={photoCaption} onChange={setPhotoCaption} placeholder="Optional" />
             </div>
             <Btn onClick={handleAddPhoto} loading={loading === "photo"} icon={<Plus className="w-3.5 h-3.5" />}>
-              Add Photo
+              Upload Photo
             </Btn>
           </div>
         </div>

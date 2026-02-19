@@ -18,6 +18,18 @@ export async function getNotificationSettings(): Promise<NotificationSettings[]>
   return data ?? [];
 }
 
+export async function getNotificationEmailsByType(type: string): Promise<string[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("notification_settings")
+    .select("emails")
+    .eq("type", type)
+    .single();
+
+  if (error || !data) return [];
+  return data.emails ?? [];
+}
+
 export async function updateNotificationEmails(
   type: string,
   emails: string[]

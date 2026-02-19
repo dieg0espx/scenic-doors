@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Printer,
   Pencil,
   Send,
   Download,
@@ -73,12 +72,6 @@ export default async function QuoteDetailPage({
           <ArrowLeft className="w-4 h-4" /> Back to Quotes
         </Link>
         <div className="flex flex-wrap gap-2">
-          <Link
-            href={`/admin/quotes/${id}/print`}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-colors"
-          >
-            <Printer className="w-3.5 h-3.5" /> Print Preview
-          </Link>
           <Link
             href={`/admin/quotes/${id}/edit`}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium hover:bg-violet-500/15 transition-colors"
