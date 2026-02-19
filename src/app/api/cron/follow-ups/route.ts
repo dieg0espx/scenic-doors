@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendPendingFollowUps } from "@/lib/actions/follow-ups";
+import { sendPendingFollowUps } from "@/lib/cron/process-follow-ups";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
