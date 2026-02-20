@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import {
   DoorOpen,
@@ -8,10 +9,15 @@ import {
   GlassWater,
   Ruler,
   Camera,
+  MapPin,
+  Loader2,
+  Check,
 } from "lucide-react";
+import { updateDeliveryAddress } from "@/lib/actions/quotes";
 import type { QuotePhoto } from "@/lib/types";
 
 interface QuoteData {
+  id: string;
   door_type: string;
   material: string;
   color: string;
@@ -19,6 +25,8 @@ interface QuoteData {
   size: string;
   cost: number;
   notes: string | null;
+  delivery_type: string | null;
+  delivery_address: string | null;
   items: Array<{
     id: string;
     name: string;
@@ -160,6 +168,9 @@ export default function PortalQuoteView({ quote, photos }: PortalQuoteViewProps)
         </div>
       </div>
 
+      {/* Delivery Address */}
+      <DeliveryAddressSection quoteId={quote.id} initialAddress={quote.delivery_address} />
+
       {/* Notes */}
       {quote.notes && (
         <div className="bg-white rounded-xl border border-ocean-200 p-5 sm:p-6">
@@ -214,6 +225,153 @@ export default function PortalQuoteView({ quote, photos }: PortalQuoteViewProps)
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+interface AddressFields {
+  street: string;
+  unit: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+function parseAddress(raw: string | null): AddressFields {
+  if (!raw) return { street: "", unit: "", city: "", state: "", zip: "" };
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && parsed.street !== undefined) return parsed;
+  } catch {
+    // Not JSON — legacy free-text, put it all in street
+  }
+  return { street: raw, unit: "", city: "", state: "", zip: "" };
+}
+
+function formatAddress(fields: AddressFields): string {
+  return JSON.stringify(fields);
+}
+
+function DeliveryAddressSection({ quoteId, initialAddress }: { quoteId: string; initialAddress: string | null }) {
+  const [fields, setFields] = useState<AddressFields>(() => parseAddress(initialAddress));
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const initialFields = parseAddress(initialAddress);
+  const hasChanged = JSON.stringify(fields) !== JSON.stringify(initialFields);
+  const isValid = fields.street.trim() && fields.city.trim() && fields.state.trim() && fields.zip.trim();
+
+  function update(key: keyof AddressFields, value: string) {
+    setFields((prev) => ({ ...prev, [key]: value }));
+    setSaved(false);
+  }
+
+  async function handleSave() {
+    if (!isValid) return;
+    setSaving(true);
+    try {
+      await updateDeliveryAddress(quoteId, formatAddress(fields));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch {
+      alert("Failed to save address. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const inputClass =
+    "w-full px-3 py-2.5 bg-ocean-50 border border-ocean-200 rounded-lg text-ocean-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-400 placeholder-ocean-300";
+
+  return (
+    <div className="bg-white rounded-xl border border-ocean-200 p-5 sm:p-6">
+      <h3 className="text-sm font-semibold text-ocean-900 mb-1 uppercase tracking-wider flex items-center gap-2">
+        <MapPin className="w-4 h-4 text-primary-500" /> Delivery Location
+      </h3>
+      <p className="text-xs text-ocean-400 mb-4">
+        Please provide the address where you&apos;d like the doors delivered.
+      </p>
+
+      <div className="space-y-3">
+        {/* Street */}
+        <div>
+          <label className="block text-xs text-ocean-500 font-medium mb-1">Street Address</label>
+          <input
+            type="text"
+            value={fields.street}
+            onChange={(e) => update("street", e.target.value)}
+            placeholder="123 Main St"
+            className={inputClass}
+          />
+        </div>
+
+        {/* Apt / Unit */}
+        <div>
+          <label className="block text-xs text-ocean-500 font-medium mb-1">
+            Apt / Suite / Unit <span className="text-ocean-300">(optional)</span>
+          </label>
+          <input
+            type="text"
+            value={fields.unit}
+            onChange={(e) => update("unit", e.target.value)}
+            placeholder="Apt 4B"
+            className={inputClass}
+          />
+        </div>
+
+        {/* City + State + ZIP in one row */}
+        <div className="grid grid-cols-5 gap-3">
+          <div className="col-span-2">
+            <label className="block text-xs text-ocean-500 font-medium mb-1">City</label>
+            <input
+              type="text"
+              value={fields.city}
+              onChange={(e) => update("city", e.target.value)}
+              placeholder="Los Angeles"
+              className={inputClass}
+            />
+          </div>
+          <div className="col-span-1">
+            <label className="block text-xs text-ocean-500 font-medium mb-1">State</label>
+            <input
+              type="text"
+              value={fields.state}
+              onChange={(e) => update("state", e.target.value)}
+              placeholder="CA"
+              maxLength={2}
+              className={inputClass}
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-xs text-ocean-500 font-medium mb-1">ZIP Code</label>
+            <input
+              type="text"
+              value={fields.zip}
+              onChange={(e) => update("zip", e.target.value)}
+              placeholder="90001"
+              className={inputClass}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-xs text-ocean-400">
+          {saved && (
+            <span className="text-green-600 flex items-center gap-1">
+              <Check className="w-3.5 h-3.5" /> Address saved
+            </span>
+          )}
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving || !isValid || !hasChanged}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-500 text-white text-sm font-medium hover:bg-primary-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+        >
+          {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <MapPin className="w-3.5 h-3.5" />}
+          {saving ? "Saving..." : "Save Address"}
+        </button>
+      </div>
     </div>
   );
 }

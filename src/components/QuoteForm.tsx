@@ -165,6 +165,70 @@ interface QuoteFormProps {
   adminUsers?: AdminUserOption[];
 }
 
+/* ── Hydrate stored items back to ConfiguredItem[] ──────── */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function hydrateItems(stored: any[]): ConfiguredItem[] {
+  const hydrated = stored.map((item) => {
+    // New format: full ConfiguredItem fields are present
+    if (item.doorTypeSlug) {
+      return {
+        id: item.id || crypto.randomUUID(),
+        doorType: item.doorType || item.name || "",
+        doorTypeSlug: item.doorTypeSlug,
+        systemType: item.systemType || "slider",
+        width: item.width || 0,
+        height: item.height || 0,
+        panelCount: item.panelCount || 0,
+        panelLayout: item.panelLayout || "",
+        roomName: item.roomName || "",
+        exteriorFinish: item.exteriorFinish || "",
+        interiorFinish: item.interiorFinish || "",
+        glassType: item.glassType || "",
+        hardwareFinish: item.hardwareFinish || "",
+        basePrice: item.basePrice || 0,
+        glassPriceModifier: item.glassPriceModifier || 0,
+        itemTotal: item.itemTotal || item.unit_price || 0,
+      } as ConfiguredItem;
+    }
+
+    // Legacy format: reconstruct from name + description
+    const product = PRODUCTS.find((p) => p.name === item.name);
+    const parts = (item.description || "").split(" | ");
+    const dims = (parts[0] || "").match(/(\d+)"\s*x\s*(\d+)"/);
+    const width = dims ? parseInt(dims[1]) : 0;
+    const height = dims ? parseInt(dims[2]) : 0;
+
+    let exteriorFinish = parts[1] || "";
+    let interiorFinish = "";
+    if (exteriorFinish.includes(" / ")) {
+      const [ext, int] = exteriorFinish.split(" / ");
+      exteriorFinish = ext;
+      interiorFinish = int.replace(" interior", "");
+    }
+
+    return {
+      id: item.id || crypto.randomUUID(),
+      doorType: item.name || "",
+      doorTypeSlug: product?.slug || "",
+      systemType: "slider",
+      width,
+      height,
+      panelCount: 0,
+      panelLayout: "",
+      roomName: parts[4] || "",
+      exteriorFinish,
+      interiorFinish,
+      glassType: parts[2] || "",
+      hardwareFinish: parts[3] || "",
+      basePrice: product?.basePrice || 0,
+      glassPriceModifier: GLASS_MODIFIERS[parts[2]] ?? 0,
+      itemTotal: item.unit_price || 0,
+    } as ConfiguredItem;
+  });
+
+  return hydrated.length > 0 ? hydrated : [createEmptyItem()];
+}
+
 /* ── Door Item Card ─────────────────────────────────────── */
 function DoorItemCard({
   item,
@@ -579,13 +643,22 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
   const [leadStatus, setLeadStatus] = useState(initialData?.lead_status || "new");
   const [followUpDate, setFollowUpDate] = useState(initialData?.follow_up_date || "");
 
-  // Door items
-  const [items, setItems] = useState<ConfiguredItem[]>([createEmptyItem()]);
+  // Door items — hydrate from initialData when editing
+  const [items, setItems] = useState<ConfiguredItem[]>(() => {
+    if (initialData?.items && initialData.items.length > 0) {
+      return hydrateItems(initialData.items);
+    }
+    return [createEmptyItem()];
+  });
 
-  // Services
-  const [services, setServices] = useState<ServiceOptions>({
-    deliveryType: "none",
-    includeInstallation: false,
+  // Services — hydrate from initialData when editing
+  const [services, setServices] = useState<ServiceOptions>(() => {
+    if (!initialData) return { deliveryType: "none", includeInstallation: false };
+    const dc = Number(initialData.delivery_cost || 0);
+    const deliveryType: ServiceOptions["deliveryType"] =
+      dc >= 1500 ? "white-glove" : dc >= 800 ? "regular" : "none";
+    const includeInstallation = Number(initialData.installation_cost || 0) > 0;
+    return { deliveryType, includeInstallation };
   });
 
   // Filter clients based on search
@@ -647,12 +720,29 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
 
     const firstItem = items[0];
     const quoteItems = items.map((item) => ({
+      // Display fields (used by portal, PDFs, line-item tables)
       id: item.id,
       name: item.doorType,
       description: `${item.width}" x ${item.height}" | ${item.exteriorFinish}${item.interiorFinish && item.interiorFinish !== item.exteriorFinish ? ` / ${item.interiorFinish} interior` : ""} | ${item.glassType} | ${item.hardwareFinish}${item.roomName ? ` | ${item.roomName}` : ""}`,
       quantity: 1,
       unit_price: item.itemTotal,
       total: item.itemTotal,
+      // Full configuration (used to restore edit form)
+      doorType: item.doorType,
+      doorTypeSlug: item.doorTypeSlug,
+      systemType: item.systemType,
+      width: item.width,
+      height: item.height,
+      panelCount: item.panelCount,
+      panelLayout: item.panelLayout,
+      roomName: item.roomName,
+      exteriorFinish: item.exteriorFinish,
+      interiorFinish: item.interiorFinish,
+      glassType: item.glassType,
+      hardwareFinish: item.hardwareFinish,
+      basePrice: item.basePrice,
+      glassPriceModifier: item.glassPriceModifier,
+      itemTotal: item.itemTotal,
     }));
 
     const notes = (document.getElementById("notes") as HTMLTextAreaElement)?.value || "";

@@ -35,8 +35,8 @@ export async function sendPendingFollowUps(origin: string): Promise<{ sent: numb
         continue;
       }
 
-      // Skip if quote is already converted or closed
-      if (quote.lead_status === "converted" || quote.lead_status === "closed") {
+      // Skip if quote is already converted, closed, or became an order
+      if (["converted", "closed", "order"].includes(quote.lead_status)) {
         await supabase
           .from("follow_up_schedule")
           .update({ status: "cancelled" })

@@ -178,6 +178,8 @@ export interface ApprovalDrawing {
   system_type: string;
   configuration: string;
   additional_notes: string;
+  frame_color: string;
+  hardware_color: string;
   status: string;
   sent_at: string | null;
   signed_at: string | null;
@@ -227,6 +229,17 @@ export interface ShippingUpdate {
   date: string;
   status: string;
   location?: string;
+}
+
+export interface QuoteDocument {
+  id: string;
+  quote_id: string;
+  file_url: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  uploaded_by: string | null;
+  created_at: string;
 }
 
 export interface FollowUpEntry {

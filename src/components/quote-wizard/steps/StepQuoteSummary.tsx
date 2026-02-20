@@ -425,12 +425,10 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
       }
 
       // Schedule follow-up emails (3 follow-ups at 4-day intervals)
-      if (leadId) {
-        try {
-          await scheduleFollowUps(leadId, quote.id);
-        } catch {
-          // Don't block the flow if scheduling fails
-        }
+      try {
+        await scheduleFollowUps(leadId || null, quote.id);
+      } catch {
+        // Don't block the flow if scheduling fails
       }
 
       dispatch({ type: "SET_QUOTE_ID", payload: quote.id });

@@ -26,7 +26,7 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
           <Package className="w-7 h-7 text-sky-400/60" />
         </div>
         <h3 className="text-lg font-semibold text-white/60 mb-1">No orders yet</h3>
-        <p className="text-white/30 text-sm">Orders are created after contract signing.</p>
+        <p className="text-white/30 text-sm">Orders are created when clients sign their approval drawing.</p>
       </div>
     );
   }

@@ -3,16 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Send, Loader2, CheckCircle2 } from "lucide-react";
-import { createAndSendBalanceInvoice } from "@/lib/actions/payments";
+import { createAndSendDepositInvoice } from "@/lib/actions/payments";
 
-export default function SendBalanceButton({
+export default function SendDepositButton({
   quoteId,
-  contractId,
   clientName,
   amount,
 }: {
   quoteId: string;
-  contractId?: string;
   clientName: string;
   amount: number;
 }) {
@@ -25,9 +23,8 @@ export default function SendBalanceButton({
     setLoading(true);
     setError("");
     try {
-      await createAndSendBalanceInvoice({
+      await createAndSendDepositInvoice({
         quoteId,
-        contractId,
         clientName,
         amount,
         origin: window.location.origin,
@@ -35,7 +32,7 @@ export default function SendBalanceButton({
       setSent(true);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send balance invoice");
+      setError(err instanceof Error ? err.message : "Failed to send deposit invoice");
     } finally {
       setLoading(false);
     }
@@ -44,13 +41,16 @@ export default function SendBalanceButton({
   if (sent) {
     return (
       <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium">
-        <CheckCircle2 className="w-4 h-4" /> Balance invoice sent
+        <CheckCircle2 className="w-4 h-4" /> Deposit invoice sent
       </div>
     );
   }
 
   return (
     <div>
+      <p className="text-white/40 text-sm mb-3">
+        Send the 50% deposit invoice (${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}) to the client.
+      </p>
       <button
         onClick={handleSend}
         disabled={loading}
@@ -59,7 +59,7 @@ export default function SendBalanceButton({
         {loading ? (
           <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
         ) : (
-          <><Send className="w-4 h-4" /> Send Balance Invoice</>
+          <><Send className="w-4 h-4" /> Send Deposit Invoice</>
         )}
       </button>
       {error && (

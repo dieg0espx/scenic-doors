@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   FileText,
+  Camera,
   ClipboardCheck,
   CreditCard,
   Truck,
@@ -14,8 +15,10 @@ import { getQuoteById, markQuoteViewed } from "@/lib/actions/quotes";
 import { getApprovalDrawing } from "@/lib/actions/approval-drawings";
 import { getOrderTracking } from "@/lib/actions/order-tracking";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
+import { getPaymentsByQuoteId } from "@/lib/actions/payments";
 import type { ApprovalDrawing, OrderTracking, QuotePhoto } from "@/lib/types";
 import PortalQuoteView from "@/components/portal/PortalQuoteView";
+import PortalPhotos from "@/components/portal/PortalPhotos";
 import PortalApprovalDrawing from "@/components/portal/PortalApprovalDrawing";
 import PortalPayments from "@/components/portal/PortalPayments";
 import PortalTracking from "@/components/portal/PortalTracking";
@@ -34,6 +37,7 @@ interface QuoteData {
   notes: string | null;
   status: string;
   delivery_type: string | null;
+  delivery_address: string | null;
   items: Array<{
     id: string;
     name: string;
@@ -52,6 +56,7 @@ interface QuoteData {
 
 const TABS = [
   { id: "quote", label: "Quote", icon: FileText },
+  { id: "photos", label: "Photos", icon: Camera },
   { id: "approval", label: "Approval Drawing", icon: ClipboardCheck },
   { id: "payments", label: "Payments", icon: CreditCard },
   { id: "tracking", label: "Tracking", icon: Truck },
@@ -63,21 +68,25 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
   const [drawing, setDrawing] = useState<ApprovalDrawing | null>(null);
   const [tracking, setTracking] = useState<OrderTracking | null>(null);
   const [photos, setPhotos] = useState<QuotePhoto[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [payments, setPayments] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("quote");
 
   useEffect(() => {
     async function load() {
       try {
-        const [q, d, t, p] = await Promise.all([
+        const [q, d, t, p, pay] = await Promise.all([
           getQuoteById(quoteId),
           getApprovalDrawing(quoteId).catch(() => null),
           getOrderTracking(quoteId).catch(() => null),
           getQuotePhotos(quoteId).catch(() => []),
+          getPaymentsByQuoteId(quoteId).catch(() => []),
         ]);
         setQuote(q);
         setDrawing(d);
         setTracking(t);
         setPhotos(p);
+        setPayments(pay);
 
         // Track that the client viewed the portal
         if (q) {
@@ -175,11 +184,30 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
         {activeTab === "quote" && (
           <PortalQuoteView quote={quote} photos={photos} />
         )}
+        {activeTab === "photos" && (
+          <PortalPhotos quoteId={quoteId} photos={photos} setPhotos={setPhotos} />
+        )}
         {activeTab === "approval" && (
-          <PortalApprovalDrawing drawing={drawing} quoteName={quote.client_name} quoteId={quoteId} />
+          <PortalApprovalDrawing drawing={drawing} quoteName={quote.client_name} quoteId={quoteId} quoteColor={quote.color} />
         )}
         {activeTab === "payments" && (
-          <PortalPayments tracking={tracking} grandTotal={quote.grand_total} />
+          <PortalPayments
+            tracking={tracking}
+            grandTotal={quote.grand_total}
+            payments={payments}
+            quoteInfo={{
+              quote_number: quote.quote_number,
+              door_type: quote.door_type,
+              cost: Number(quote.grand_total || quote.cost || 0),
+              material: quote.material,
+              color: quote.color,
+              glass_type: quote.glass_type,
+              size: quote.size,
+              client_email: quote.client_email,
+              delivery_type: quote.delivery_type || undefined,
+              delivery_address: quote.delivery_address || undefined,
+            }}
+          />
         )}
         {activeTab === "tracking" && (
           <PortalTracking tracking={tracking} />

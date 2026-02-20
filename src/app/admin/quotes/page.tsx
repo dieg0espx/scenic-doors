@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, FileText } from "lucide-react";
+import { Plus, FileText, DollarSign, TrendingUp, Users, Clock } from "lucide-react";
 import { getQuotesWithFilters } from "@/lib/actions/quotes";
 import QuotesPageClient from "./QuotesPageClient";
 
@@ -26,9 +26,59 @@ export default async function QuotesPage({
     counts[s] = (counts[s] || 0) + 1;
   }
 
+  // Compute summary stats
+  const totalValue = allQuotes.reduce((sum, q) => sum + Number(q.grand_total || q.cost || 0), 0);
+  const hotCount = counts["hot"] || 0;
+  const newThisWeek = allQuotes.filter((q) => {
+    const created = new Date(q.created_at);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    return created >= weekAgo;
+  }).length;
+  const pendingApproval = allQuotes.filter((q) => q.status === "pending_approval").length;
+
+  const stats = [
+    {
+      label: "Total Quotes",
+      value: allQuotes.length.toString(),
+      icon: FileText,
+      color: "text-violet-400",
+      bg: "bg-violet-500/10",
+    },
+    {
+      label: "Pipeline Value",
+      value: `$${totalValue >= 1000 ? `${(totalValue / 1000).toFixed(1)}k` : totalValue.toLocaleString("en-US")}`,
+      icon: DollarSign,
+      color: "text-emerald-400",
+      bg: "bg-emerald-500/10",
+    },
+    {
+      label: "Hot Leads",
+      value: hotCount.toString(),
+      icon: TrendingUp,
+      color: "text-red-400",
+      bg: "bg-red-500/10",
+    },
+    {
+      label: "New This Week",
+      value: newThisWeek.toString(),
+      icon: Users,
+      color: "text-sky-400",
+      bg: "bg-sky-500/10",
+    },
+    ...(pendingApproval > 0 ? [{
+      label: "Pending Approval",
+      value: pendingApproval.toString(),
+      icon: Clock,
+      color: "text-amber-400",
+      bg: "bg-amber-500/10",
+    }] : []),
+  ];
+
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-3 mb-1">
             <FileText className="w-5 h-5 text-violet-400" />
@@ -36,10 +86,7 @@ export default async function QuotesPage({
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white">Quotes</h1>
           <p className="text-white/35 text-sm mt-1.5">
-            Manage customer quotes and lead pipeline.{" "}
-            {allQuotes.length > 0 && (
-              <span className="text-white/50">{allQuotes.length} total</span>
-            )}
+            Manage customer quotes and lead pipeline.
           </p>
         </div>
         <Link
@@ -49,6 +96,24 @@ export default async function QuotesPage({
           <Plus className="w-4 h-4" />
           New Quote
         </Link>
+      </div>
+
+      {/* Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className="rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-7 h-7 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                  <Icon className={`w-3.5 h-3.5 ${stat.color}`} />
+                </div>
+                <span className="text-white/25 text-[11px] uppercase tracking-wider font-medium">{stat.label}</span>
+              </div>
+              <p className="text-xl font-bold text-white">{stat.value}</p>
+            </div>
+          );
+        })}
       </div>
 
       <QuotesPageClient quotes={quotes} counts={counts} />

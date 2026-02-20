@@ -4,6 +4,17 @@ import PrintButton from "./PrintButton";
 
 export const dynamic = "force-dynamic";
 
+function formatDeliveryAddress(raw: string): string {
+  try {
+    const p = JSON.parse(raw);
+    if (p && typeof p === "object" && p.street) {
+      const parts = [p.street, p.unit, p.city, p.state, p.zip].filter(Boolean);
+      return parts.join(", ");
+    }
+  } catch { /* plain text */ }
+  return raw;
+}
+
 export default async function QuotePrintPage({
   params,
 }: {
@@ -157,7 +168,7 @@ export default async function QuotePrintPage({
             <div className="p-section-title">Delivery</div>
             <p style={{ color: "#333", textTransform: "capitalize" }}>
               {quote.delivery_type}
-              {quote.delivery_address && ` — ${quote.delivery_address}`}
+              {quote.delivery_address && ` — ${formatDeliveryAddress(quote.delivery_address)}`}
             </p>
           </div>
         )}

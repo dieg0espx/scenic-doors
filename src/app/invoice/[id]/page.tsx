@@ -66,6 +66,17 @@ function CenteredCard({ children }: { children: React.ReactNode }) {
   );
 }
 
+function formatDeliveryAddress(raw: string): string {
+  try {
+    const p = JSON.parse(raw);
+    if (p && typeof p === "object" && p.street) {
+      const parts = [p.street, p.unit, p.city, p.state, p.zip].filter(Boolean);
+      return parts.join(", ");
+    }
+  } catch { /* plain text */ }
+  return raw;
+}
+
 export default function PublicInvoicePage() {
   const params = useParams();
   const [payment, setPayment] = useState<Payment | null>(null);
@@ -256,7 +267,7 @@ export default function PublicInvoicePage() {
               </div>
               <p className="text-white font-medium text-sm">
                 {payment.quotes.delivery_type === "delivery" && payment.quotes.delivery_address
-                  ? payment.quotes.delivery_address
+                  ? formatDeliveryAddress(payment.quotes.delivery_address)
                   : payment.quotes.delivery_type === "pickup"
                     ? "Client will pick up"
                     : "Address not specified"}

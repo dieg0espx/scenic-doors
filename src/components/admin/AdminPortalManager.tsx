@@ -2,83 +2,98 @@
 
 import { useState, useRef, useCallback } from "react";
 import {
-  Link2,
   ClipboardCheck,
   Camera,
-  Truck,
   ChevronDown,
   ChevronUp,
   Plus,
   Trash2,
   Send,
-  CheckCircle2,
   Loader2,
   Calendar,
-  Factory,
-  Package,
-  MapPin,
   Upload,
+  Download,
   X,
 } from "lucide-react";
 import {
   createApprovalDrawing,
   sendApprovalDrawing,
 } from "@/lib/actions/approval-drawings";
-import {
-  createOrderTracking,
-  updateOrderStage,
-  markDepositPaid,
-  addShippingUpdate,
-} from "@/lib/actions/order-tracking";
+import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
+import ApprovalDrawingEditor from "@/components/admin/ApprovalDrawingEditor";
 import { addQuotePhoto, deleteQuotePhoto } from "@/lib/actions/quote-photos";
 import { scheduleFollowUps } from "@/lib/actions/follow-ups";
-import type { ApprovalDrawing, OrderTracking, QuotePhoto, FollowUpEntry } from "@/lib/types";
+import type { ApprovalDrawing, QuotePhoto, FollowUpEntry } from "@/lib/types";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type QuoteItem = Record<string, any>;
+
+const FOLLOW_UP_MESSAGES: Record<number, { subject: string; body: string }> = {
+  1: {
+    subject: "Had a chance to review your quote?",
+    body: "We wanted to check in and see if you've had a chance to review your door quote. We're here to answer any questions you might have about the project.",
+  },
+  2: {
+    subject: "Just checking in on your door project",
+    body: "We noticed you haven't had a chance to respond to your quote yet. We understand these decisions take time — just wanted to make sure you have everything you need.",
+  },
+  3: {
+    subject: "Final follow-up on your Scenic Doors quote",
+    body: "This is our final follow-up regarding your door quote. If your plans have changed, no worries at all. If you'd still like to move forward, we're ready when you are.",
+  },
+};
 
 interface AdminPortalManagerProps {
   quoteId: string;
   quoteName: string;
-  grandTotal: number;
+  quoteColor?: string;
+  quoteItems?: QuoteItem[];
   drawing: ApprovalDrawing | null;
-  tracking: OrderTracking | null;
   photos: QuotePhoto[];
   followUps: FollowUpEntry[];
-  leadId: string | null;
-  portalStage: string;
+}
+
+function deriveSlideDirection(item: QuoteItem): string {
+  const layout = (item.panelLayout || "").toLowerCase();
+  if (layout.includes("+") || layout.includes("center") || layout.includes("split")) return "bi-part";
+  if (layout.includes("right") || layout.endsWith("r")) return "right";
+  return "left";
 }
 
 export default function AdminPortalManager({
   quoteId,
   quoteName,
-  grandTotal,
+  quoteColor,
+  quoteItems = [],
   drawing: initialDrawing,
-  tracking: initialTracking,
   photos: initialPhotos,
   followUps: initialFollowUps,
-  leadId,
-  portalStage,
 }: AdminPortalManagerProps) {
   const [drawing, setDrawing] = useState(initialDrawing);
-  const [tracking, setTracking] = useState(initialTracking);
   const [photos, setPhotos] = useState(initialPhotos);
-  const [followUps] = useState(initialFollowUps);
+  const [followUps, setFollowUps] = useState(initialFollowUps);
   const [openSection, setOpenSection] = useState<string | null>("portal");
   const [loading, setLoading] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   function toggleSection(s: string) {
     setOpenSection(openSection === s ? null : s);
   }
 
   // ── Approval Drawing ──
+  // Pre-populate from first quote item when no drawing exists
+  const firstItem = quoteItems[0];
+
   const [adForm, setAdForm] = useState({
-    overall_width: drawing?.overall_width || 0,
-    overall_height: drawing?.overall_height || 0,
-    panel_count: drawing?.panel_count || 0,
-    slide_direction: drawing?.slide_direction || "left",
+    overall_width: drawing?.overall_width || firstItem?.width || 0,
+    overall_height: drawing?.overall_height || firstItem?.height || 0,
+    panel_count: drawing?.panel_count || firstItem?.panelCount || 0,
+    slide_direction: drawing?.slide_direction || (firstItem ? deriveSlideDirection(firstItem) : "left"),
     in_swing: drawing?.in_swing || "interior",
-    system_type: drawing?.system_type || "",
-    configuration: drawing?.configuration || "",
+    system_type: drawing?.system_type || firstItem?.doorType || "",
+    configuration: drawing?.configuration || firstItem?.panelLayout || "",
     additional_notes: drawing?.additional_notes || "",
+    frame_color: drawing?.frame_color || firstItem?.exteriorFinish || quoteColor || "Black",
+    hardware_color: drawing?.hardware_color || firstItem?.hardwareFinish || "Black",
   });
 
   async function handleCreateDrawing() {
@@ -101,6 +116,29 @@ export default function AdminPortalManager({
       setDrawing({ ...drawing, status: "sent", sent_at: new Date().toISOString() });
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setLoading(null);
+    }
+  }
+
+  async function handleDownloadDrawingPdf() {
+    if (!drawing) return;
+    setLoading("download-drawing");
+    try {
+      const doc = await generateApprovalDrawingPdf({
+        overall_width: drawing.overall_width,
+        overall_height: drawing.overall_height,
+        panel_count: drawing.panel_count,
+        slide_direction: drawing.slide_direction,
+        in_swing: drawing.in_swing,
+        frame_color: quoteColor,
+        customer_name: drawing.customer_name,
+        signature_data: drawing.signature_data,
+        signed_at: drawing.signed_at,
+      });
+      doc.save(`Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
+    } catch {
+      alert("Failed to generate PDF");
     } finally {
       setLoading(null);
     }
@@ -179,127 +217,8 @@ export default function AdminPortalManager({
     }
   }
 
-  // ── Order Tracking ──
-  async function handleCreateTracking() {
-    setLoading("tracking");
-    setError(null);
-    try {
-      const t = await createOrderTracking(quoteId, grandTotal);
-      setTracking(t);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to initialize tracking");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  async function handleMarkDeposit(num: 1 | 2) {
-    if (!tracking) return;
-    if (!confirm(`Mark deposit ${num} as paid?`)) return;
-    setLoading(`deposit-${num}`);
-    try {
-      await markDepositPaid(tracking.id, quoteId, num);
-      setTracking({
-        ...tracking,
-        [`deposit_${num}_paid`]: true,
-        [`deposit_${num}_paid_at`]: new Date().toISOString(),
-        stage: num === 1 ? "manufacturing" : "shipping",
-      } as OrderTracking);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  async function handleAdvanceStage(stage: string) {
-    if (!tracking) return;
-    setLoading("stage");
-    try {
-      await updateOrderStage(tracking.id, quoteId, stage);
-      setTracking({ ...tracking, stage });
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  // ── Shipping Update ──
-  const [shipStatus, setShipStatus] = useState("");
-  const [shipLocation, setShipLocation] = useState("");
-
-  async function handleAddShipUpdate() {
-    if (!tracking || !shipStatus.trim()) return;
-    setLoading("ship-update");
-    try {
-      const update = { date: new Date().toISOString(), status: shipStatus, location: shipLocation || undefined };
-      await addShippingUpdate(tracking.id, quoteId, update);
-      setTracking({
-        ...tracking,
-        shipping_updates: [...(tracking.shipping_updates || []), update],
-      });
-      setShipStatus("");
-      setShipLocation("");
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  // ── Follow-ups ──
-  async function handleScheduleFollowUps() {
-    if (!leadId) return;
-    setLoading("followups");
-    try {
-      await scheduleFollowUps(leadId, quoteId);
-      window.location.reload();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed");
-    } finally {
-      setLoading(null);
-    }
-  }
-
-  const portalUrl = `/portal/${quoteId}`;
-
   return (
     <div className="space-y-3">
-      {/* Portal Link */}
-      <Section
-        title="Client Portal"
-        icon={<Link2 className="w-4 h-4 text-violet-400" />}
-        isOpen={openSection === "portal"}
-        onToggle={() => toggleSection("portal")}
-        badge={portalStage}
-      >
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={portalUrl}
-              readOnly
-              className="flex-1 px-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-lg text-white/60 text-xs font-mono"
-            />
-            <button
-              onClick={() => navigator.clipboard.writeText(portalUrl)}
-              className="px-3 py-2 bg-violet-500/10 border border-violet-500/20 rounded-lg text-violet-300 text-xs font-medium hover:bg-violet-500/15 transition-colors cursor-pointer"
-            >
-              Copy
-            </button>
-          </div>
-          <a
-            href={portalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-block text-xs text-violet-400 hover:text-violet-300"
-          >
-            Open portal in new tab &rarr;
-          </a>
-        </div>
-      </Section>
-
       {/* Approval Drawing */}
       <Section
         title="Approval Drawing"
@@ -310,41 +229,98 @@ export default function AdminPortalManager({
       >
         {!drawing ? (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Width (in)" type="number" value={adForm.overall_width} onChange={(v) => setAdForm({ ...adForm, overall_width: Number(v) })} />
-              <Input label="Height (in)" type="number" value={adForm.overall_height} onChange={(v) => setAdForm({ ...adForm, overall_height: Number(v) })} />
-              <Input label="Panel Count" type="number" value={adForm.panel_count} onChange={(v) => setAdForm({ ...adForm, panel_count: Number(v) })} />
-              <Select label="Slide Direction" value={adForm.slide_direction} options={["left", "right", "bi-part"]} onChange={(v) => setAdForm({ ...adForm, slide_direction: v })} />
-              <Select label="In-Swing" value={adForm.in_swing} options={["interior", "exterior"]} onChange={(v) => setAdForm({ ...adForm, in_swing: v })} />
-              <Input label="System Type" value={adForm.system_type} onChange={(v) => setAdForm({ ...adForm, system_type: v })} />
+            {/* Document Preview Card — same layout as editor */}
+            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-gray-900 text-white px-5 py-3 text-center">
+                <h3 className="text-sm font-bold tracking-wider">
+                  SCENIC DOORS &ndash; SLIDE &amp; STACK APPROVAL
+                </h3>
+              </div>
+              <div className="p-5 space-y-5">
+                {/* Door Diagram — only shown once panels are set */}
+                {adForm.panel_count > 0 && (
+                  <>
+                    <p className="text-center text-xs font-bold text-gray-600 uppercase tracking-widest">
+                      Outside View
+                    </p>
+                    <div className="bg-[#3a3a40] rounded-lg p-[6px] shadow-inner">
+                      <div className="bg-[#44444a] rounded p-[4px]">
+                        <div className="flex gap-[3px]">
+                          {Array.from({ length: adForm.panel_count }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="flex-1 relative overflow-hidden rounded-sm"
+                              style={{ backgroundColor: "#c6daea", aspectRatio: "1 / 2.2", minHeight: 120 }}
+                            >
+                              <div className="absolute inset-x-0 top-0" style={{ height: "8%", backgroundColor: "#bcd0e4" }} />
+                              <div
+                                className="absolute inset-0"
+                                style={{
+                                  background: adForm.slide_direction === "right"
+                                    ? "linear-gradient(to bottom left, transparent calc(50% - 0.5px), #94a5b6 calc(50% - 0.5px), #94a5b6 calc(50% + 0.5px), transparent calc(50% + 0.5px))"
+                                    : "linear-gradient(to bottom right, transparent calc(50% - 0.5px), #94a5b6 calc(50% - 0.5px), #94a5b6 calc(50% + 0.5px), transparent calc(50% + 0.5px))",
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Spec Fields */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <CreateSpecInput label="Overall Width" suffix='"' type="number" value={adForm.overall_width} onChange={(v) => setAdForm({ ...adForm, overall_width: Number(v) || 0 })} />
+                    <CreateSpecInput label="Overall Height" suffix='"' type="number" value={adForm.overall_height} onChange={(v) => setAdForm({ ...adForm, overall_height: Number(v) || 0 })} />
+                  </div>
+
+                  <CreateSpecInput label="Number of Panels" type="number" value={adForm.panel_count} onChange={(v) => setAdForm({ ...adForm, panel_count: Number(v) || 0 })} />
+
+                  <CreateRadioRow label="Opening Direction">
+                    <CreateRadio label="Slides Left" checked={adForm.slide_direction === "left"} onChange={() => setAdForm({ ...adForm, slide_direction: "left" })} />
+                    <CreateRadio label="Slides Right" checked={adForm.slide_direction === "right"} onChange={() => setAdForm({ ...adForm, slide_direction: "right" })} />
+                    <CreateRadio label="Bi-Part" checked={adForm.slide_direction === "bi-part"} onChange={() => setAdForm({ ...adForm, slide_direction: "bi-part" })} />
+                  </CreateRadioRow>
+
+                  <CreateRadioRow label="Swing Direction">
+                    <CreateRadio label="In-Swing" checked={adForm.in_swing === "interior"} onChange={() => setAdForm({ ...adForm, in_swing: "interior" })} />
+                    <CreateRadio label="Out-Swing" checked={adForm.in_swing === "exterior"} onChange={() => setAdForm({ ...adForm, in_swing: "exterior" })} />
+                  </CreateRadioRow>
+
+                  <CreateRadioRow label="Frame Color">
+                    <CreateRadio label="Black" checked={adForm.frame_color === "Black"} onChange={() => setAdForm({ ...adForm, frame_color: "Black" })} />
+                    <CreateRadio label="White" checked={adForm.frame_color === "White"} onChange={() => setAdForm({ ...adForm, frame_color: "White" })} />
+                    <CreateRadio label="Bronze" checked={adForm.frame_color === "Bronze"} onChange={() => setAdForm({ ...adForm, frame_color: "Bronze" })} />
+                  </CreateRadioRow>
+
+                  <CreateRadioRow label="Hardware Color">
+                    <CreateRadio label="Black" checked={adForm.hardware_color === "Black"} onChange={() => setAdForm({ ...adForm, hardware_color: "Black" })} />
+                    <CreateRadio label="White" checked={adForm.hardware_color === "White"} onChange={() => setAdForm({ ...adForm, hardware_color: "White" })} />
+                    <CreateRadio label="Silver" checked={adForm.hardware_color === "Silver"} onChange={() => setAdForm({ ...adForm, hardware_color: "Silver" })} />
+                  </CreateRadioRow>
+
+                  <CreateSpecInput label="System Type" value={adForm.system_type} onChange={(v) => setAdForm({ ...adForm, system_type: v })} />
+                  <CreateSpecInput label="Configuration" value={adForm.configuration} onChange={(v) => setAdForm({ ...adForm, configuration: v })} />
+                  <CreateSpecInput label="Additional Notes" value={adForm.additional_notes} onChange={(v) => setAdForm({ ...adForm, additional_notes: v })} />
+                </div>
+              </div>
             </div>
-            <Input label="Configuration" value={adForm.configuration} onChange={(v) => setAdForm({ ...adForm, configuration: v })} />
-            <Input label="Additional Notes" value={adForm.additional_notes} onChange={(v) => setAdForm({ ...adForm, additional_notes: v })} />
+
             <Btn onClick={handleCreateDrawing} loading={loading === "drawing"} icon={<Plus className="w-3.5 h-3.5" />}>
               Create Approval Drawing
             </Btn>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <Stat label="Width" value={`${drawing.overall_width}"`} />
-              <Stat label="Height" value={`${drawing.overall_height}"`} />
-              <Stat label="Panels" value={String(drawing.panel_count)} />
-              <Stat label="Direction" value={drawing.slide_direction} />
-              <Stat label="Status" value={drawing.status} />
-              {drawing.signed_at && <Stat label="Signed" value={new Date(drawing.signed_at).toLocaleDateString()} />}
-            </div>
-            {drawing.status === "draft" && (
-              <Btn onClick={handleSendDrawing} loading={loading === "send-drawing"} icon={<Send className="w-3.5 h-3.5" />}>
-                Send to Client
-              </Btn>
-            )}
-            {drawing.status === "signed" && (
-              <div className="flex items-center gap-2 text-xs text-emerald-400">
-                <CheckCircle2 className="w-4 h-4" /> Signed by {drawing.customer_name}
-              </div>
-            )}
-          </div>
+          <ApprovalDrawingEditor
+            drawing={drawing}
+            quoteId={quoteId}
+            quoteName={quoteName}
+            onDrawingUpdate={(updated) => setDrawing(updated)}
+            onSend={handleSendDrawing}
+            sendLoading={loading === "send-drawing"}
+          />
         )}
       </Section>
 
@@ -428,80 +404,6 @@ export default function AdminPortalManager({
         </div>
       </Section>
 
-      {/* Order Tracking */}
-      <Section
-        title="Order Tracking"
-        icon={<Truck className="w-4 h-4 text-emerald-400" />}
-        isOpen={openSection === "tracking"}
-        onToggle={() => toggleSection("tracking")}
-        badge={tracking?.stage || "none"}
-      >
-        {!tracking ? (
-          <div className="space-y-2">
-            {error && (
-              <div className="text-xs text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2">
-                {error}
-              </div>
-            )}
-            <Btn onClick={handleCreateTracking} loading={loading === "tracking"} icon={<Plus className="w-3.5 h-3.5" />}>
-              Initialize Order Tracking
-            </Btn>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <Stat label="Stage" value={tracking.stage.replace(/_/g, " ")} />
-              <Stat label="Deposit 1" value={tracking.deposit_1_paid ? "Paid" : "Pending"} />
-              <Stat label="Deposit 2" value={tracking.deposit_2_paid ? "Paid" : "Pending"} />
-              {tracking.tracking_number && <Stat label="Tracking" value={tracking.tracking_number} />}
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {!tracking.deposit_1_paid && (
-                <Btn onClick={() => handleMarkDeposit(1)} loading={loading === "deposit-1"} icon={<CheckCircle2 className="w-3.5 h-3.5" />} variant="green">
-                  Mark Deposit 1 Paid
-                </Btn>
-              )}
-              {tracking.deposit_1_paid && tracking.stage === "manufacturing" && (
-                <Btn onClick={() => handleAdvanceStage("deposit_2_pending")} loading={loading === "stage"} icon={<Factory className="w-3.5 h-3.5" />}>
-                  Manufacturing Complete
-                </Btn>
-              )}
-              {!tracking.deposit_2_paid && tracking.deposit_1_paid && tracking.stage === "deposit_2_pending" && (
-                <Btn onClick={() => handleMarkDeposit(2)} loading={loading === "deposit-2"} icon={<CheckCircle2 className="w-3.5 h-3.5" />} variant="green">
-                  Mark Deposit 2 Paid
-                </Btn>
-              )}
-              {tracking.stage === "shipping" && (
-                <Btn onClick={() => handleAdvanceStage("delivered")} loading={loading === "stage"} icon={<Package className="w-3.5 h-3.5" />}>
-                  Mark Delivered
-                </Btn>
-              )}
-            </div>
-
-            {/* Shipping Updates */}
-            {(tracking.stage === "shipping" || tracking.shipping_updates?.length > 0) && (
-              <div className="border-t border-white/[0.06] pt-3 space-y-2">
-                <p className="text-[11px] text-white/25 uppercase tracking-wider font-medium">Shipping Updates</p>
-                {tracking.shipping_updates?.map((u, i) => (
-                  <div key={i} className="flex items-start gap-2 text-xs">
-                    <MapPin className="w-3 h-3 text-white/20 mt-0.5 shrink-0" />
-                    <span className="text-white/50">{u.status} {u.location && `— ${u.location}`}</span>
-                  </div>
-                ))}
-                <div className="grid grid-cols-2 gap-2">
-                  <Input label="Status" value={shipStatus} onChange={setShipStatus} placeholder="On vessel..." />
-                  <Input label="Location" value={shipLocation} onChange={setShipLocation} placeholder="Long Beach, CA" />
-                </div>
-                <Btn onClick={handleAddShipUpdate} loading={loading === "ship-update"} icon={<Plus className="w-3.5 h-3.5" />}>
-                  Add Update
-                </Btn>
-              </div>
-            )}
-          </div>
-        )}
-      </Section>
-
       {/* Follow-ups */}
       <Section
         title="Follow-up Schedule"
@@ -511,30 +413,60 @@ export default function AdminPortalManager({
         badge={`${followUps.filter((f) => f.status === "pending").length} pending`}
       >
         <div className="space-y-2">
-          {followUps.map((f) => (
-            <div key={f.id} className="flex items-center justify-between text-xs bg-white/[0.03] rounded-lg px-3 py-2">
-              <div>
-                <span className="text-white/50">#{f.sequence_number} — </span>
-                <span className="text-white/70">
-                  {new Date(f.scheduled_for).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </span>
+          {followUps.map((f) => {
+            const msg = FOLLOW_UP_MESSAGES[f.sequence_number] || FOLLOW_UP_MESSAGES[1];
+            return (
+              <div key={f.id} className="bg-white/[0.03] rounded-lg px-3 py-2.5 space-y-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-white/40 font-mono">#{f.sequence_number}</span>
+                    <span className="text-white/70 font-medium">
+                      {new Date(f.scheduled_for).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                    {f.status === "sent" && f.sent_at && (
+                      <span className="text-white/30">
+                        sent {new Date(f.sent_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                    f.status === "sent" ? "bg-green-400/10 text-green-300" :
+                    f.status === "cancelled" ? "bg-red-400/10 text-red-300" :
+                    "bg-amber-400/10 text-amber-300"
+                  }`}>
+                    {f.status}
+                  </span>
+                </div>
+                <p className="text-[11px] text-white/50 font-medium">{msg.subject}</p>
+                <p className="text-[10px] text-white/25 leading-relaxed">{msg.body}</p>
               </div>
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                f.status === "sent" ? "bg-green-400/10 text-green-300" :
-                f.status === "cancelled" ? "bg-red-400/10 text-red-300" :
-                "bg-amber-400/10 text-amber-300"
-              }`}>
-                {f.status}
-              </span>
+            );
+          })}
+          {followUps.filter((f) => f.status === "pending").length === 0 && (
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-white/25">
+                {followUps.length === 0
+                  ? "Follow-ups are scheduled automatically when the quote is created."
+                  : "All follow-ups have been sent or cancelled."}
+              </p>
+              <Btn
+                onClick={async () => {
+                  setLoading("reschedule");
+                  try {
+                    const newFollowUps = await scheduleFollowUps(null, quoteId);
+                    setFollowUps(newFollowUps);
+                  } catch (err) {
+                    alert(err instanceof Error ? err.message : "Failed to schedule");
+                  } finally {
+                    setLoading(null);
+                  }
+                }}
+                loading={loading === "reschedule"}
+                icon={<Calendar className="w-3.5 h-3.5" />}
+              >
+                Re-schedule
+              </Btn>
             </div>
-          ))}
-          {followUps.length === 0 && leadId && (
-            <Btn onClick={handleScheduleFollowUps} loading={loading === "followups"} icon={<Plus className="w-3.5 h-3.5" />}>
-              Schedule Follow-ups (every 4 days)
-            </Btn>
-          )}
-          {!leadId && (
-            <p className="text-xs text-white/25">No lead linked — follow-ups require a lead ID</p>
           )}
         </div>
       </Section>
@@ -635,15 +567,6 @@ function Select({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-white/[0.03] rounded-lg px-2.5 py-2">
-      <p className="text-[9px] text-white/25 uppercase tracking-wider">{label}</p>
-      <p className="text-white/60 font-medium capitalize">{value}</p>
-    </div>
-  );
-}
-
 function Btn({
   onClick,
   loading,
@@ -669,6 +592,67 @@ function Btn({
     >
       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : icon}
       {children}
+    </button>
+  );
+}
+
+// ── Create-form helpers (white card context) ──
+
+function CreateSpecInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  suffix,
+}: {
+  label: string;
+  value: string | number;
+  onChange: (v: string) => void;
+  type?: string;
+  suffix?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">{label}</label>
+      <div className="relative">
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-blue-400"
+        />
+        {suffix && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">{suffix}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CreateRadioRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <span className="block text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1.5">{label}</span>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+function CreateRadio({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+        checked
+          ? "bg-blue-100 border-blue-300 text-blue-800"
+          : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+      }`}
+    >
+      <span className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${checked ? "border-blue-500" : "border-gray-300"}`}>
+        {checked && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+      </span>
+      {label}
     </button>
   );
 }

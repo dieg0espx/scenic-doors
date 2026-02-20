@@ -20,6 +20,17 @@ async function fetchImageAsPngBase64(url: string): Promise<string> {
   });
 }
 
+function formatDeliveryAddress(raw: string): string {
+  try {
+    const p = JSON.parse(raw);
+    if (p && typeof p === "object" && p.street) {
+      const parts = [p.street, p.unit, p.city, p.state, p.zip].filter(Boolean);
+      return parts.join(", ");
+    }
+  } catch { /* plain text */ }
+  return raw;
+}
+
 interface OrderData {
   order_number: string;
   client_name: string;
@@ -144,7 +155,7 @@ export async function generateOrderPdf(order: OrderData) {
       value:
         order.quote.delivery_type === "pickup"
           ? "Client Pickup"
-          : `Delivery to: ${order.quote.delivery_address || "TBD"}`,
+          : `Delivery to: ${order.quote.delivery_address ? formatDeliveryAddress(order.quote.delivery_address) : "TBD"}`,
     });
   }
 

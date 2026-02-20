@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { sendQuoteEmail, sendNewQuoteNotificationEmail, sendInternalNotificationEmail, sendQuoteApprovedEmail } from "@/lib/email";
 import { recordEmailSent } from "@/lib/actions/email-history";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
+import { scheduleFollowUps } from "@/lib/actions/follow-ups";
 import type { Quote, DashboardMetrics } from "@/lib/types";
 
 export async function createQuote(formData: {
@@ -117,6 +118,14 @@ export async function createQuote(formData: {
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Auto-schedule follow-up emails (3 follow-ups at 4-day intervals)
+  try {
+    await scheduleFollowUps(formData.lead_id || null, data.id);
+  } catch {
+    // Don't fail quote creation if follow-up scheduling fails
+  }
+
   revalidatePath("/admin/quotes");
   revalidatePath("/admin/clients");
   return data;
@@ -158,6 +167,9 @@ export async function getQuotesWithFilters(filters?: {
     // lead_status and follow_up_date are from migration 008 — skip if safeOnly
     if (!safeOnly && filters?.lead_status && filters.lead_status !== "all") {
       q = q.eq("lead_status", filters.lead_status);
+    } else if (!safeOnly) {
+      // Exclude orders from the quotes list — they belong on the Orders page
+      q = q.neq("lead_status", "order");
     }
     if (filters?.search) {
       const s = `%${filters.search}%`;
@@ -577,7 +589,43 @@ export async function updateQuote(
     .eq("id", id);
 
   if (error) throw new Error(error.message);
+
+  // Sync approval drawing if one exists and isn't already signed
+  if (formData.items) {
+    try {
+      const items = JSON.parse(formData.items);
+      if (items.length > 0) {
+        const firstItem = items[0];
+        const { data: drawing } = await supabase
+          .from("approval_drawings")
+          .select("id, status")
+          .eq("quote_id", id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (drawing && drawing.status !== "signed") {
+          const drawingUpdates: Record<string, unknown> = {
+            updated_at: new Date().toISOString(),
+          };
+          if (firstItem.width) drawingUpdates.overall_width = firstItem.width;
+          if (firstItem.height) drawingUpdates.overall_height = firstItem.height;
+          if (firstItem.panelCount) drawingUpdates.panel_count = firstItem.panelCount;
+          if (firstItem.panelLayout) drawingUpdates.configuration = firstItem.panelLayout;
+
+          await supabase
+            .from("approval_drawings")
+            .update(drawingUpdates)
+            .eq("id", drawing.id);
+        }
+      }
+    } catch {
+      // Don't fail the quote update if drawing sync fails
+    }
+  }
+
   revalidatePath("/admin/quotes");
+  revalidatePath(`/admin/quotes/${id}`);
 }
 
 export async function markQuoteViewed(id: string) {
@@ -599,6 +647,24 @@ export async function markQuoteViewed(id: string) {
       })
       .eq("id", id);
   }
+}
+
+export async function updateDeliveryAddress(
+  quoteId: string,
+  address: string
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("quotes")
+    .update({
+      delivery_address: address,
+      delivery_type: "delivery",
+    })
+    .eq("id", quoteId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/portal/${quoteId}`);
+  revalidatePath(`/admin/quotes/${quoteId}`);
 }
 
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
