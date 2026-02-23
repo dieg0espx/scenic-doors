@@ -114,6 +114,7 @@ export interface Quote {
   grand_total: number;
   follow_up_date: string | null;
   lead_id: string | null;
+  shared_with: string[];
   portal_stage: string;
   // Joined relations (optional)
   quote_notes?: QuoteNote[];

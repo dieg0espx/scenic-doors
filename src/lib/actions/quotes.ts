@@ -38,6 +38,7 @@ export async function createQuote(formData: {
   follow_up_date?: string;
   lead_id?: string;
   created_by?: string;
+  shared_with?: string[];
 }) {
   const supabase = await createClient();
 
@@ -113,6 +114,7 @@ export async function createQuote(formData: {
       follow_up_date: formData.follow_up_date || null,
       lead_id: formData.lead_id || null,
       created_by: formData.created_by || null,
+      shared_with: formData.shared_with || [],
     })
     .select()
     .single();
@@ -202,6 +204,79 @@ export async function getQuotesWithFilters(filters?: {
     if (fbErr) throw new Error(fbErr.message);
     return (fallback ?? []) as Quote[];
   }
+  return (data ?? []) as Quote[];
+}
+
+export async function getQuotesForUser(
+  userId: string,
+  userName: string,
+  role: string,
+  filters?: {
+    lead_status?: string;
+    search?: string;
+    sort?: string;
+    due_today?: boolean;
+  }
+): Promise<Quote[]> {
+  // Admin sees everything
+  if (role === "admin") {
+    return getQuotesWithFilters(filters);
+  }
+
+  // Sales rep sees own + assigned + shared quotes
+  const supabase = await createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = supabase
+    .from("quotes")
+    .select("*, quote_notes(id), quote_tasks(id), admin_users(name)")
+    .or(`assigned_to.eq.${userId},created_by.eq.${userName},shared_with.cs.{${userId}}`);
+
+  if (filters?.lead_status && filters.lead_status !== "all") {
+    query = query.eq("lead_status", filters.lead_status);
+  } else {
+    query = query.neq("lead_status", "order");
+  }
+
+  if (filters?.search) {
+    const s = `%${filters.search}%`;
+    query = query.or(
+      `client_name.ilike.${s},client_email.ilike.${s},quote_number.ilike.${s}`
+    );
+  }
+
+  if (filters?.due_today) {
+    const today = new Date().toISOString().split("T")[0];
+    query = query.eq("follow_up_date", today);
+  }
+
+  if (filters?.sort === "oldest") {
+    query = query.order("created_at", { ascending: true });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    // Fallback: query without joins
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let fallbackQuery: any = supabase
+      .from("quotes")
+      .select("*")
+      .or(`assigned_to.eq.${userId},created_by.eq.${userName},shared_with.cs.{${userId}}`);
+
+    if (filters?.sort === "oldest") {
+      fallbackQuery = fallbackQuery.order("created_at", { ascending: true });
+    } else {
+      fallbackQuery = fallbackQuery.order("created_at", { ascending: false });
+    }
+
+    const { data: fallback, error: fbErr } = await fallbackQuery;
+    if (fbErr) throw new Error(fbErr.message);
+    return (fallback ?? []) as Quote[];
+  }
+
   return (data ?? []) as Quote[];
 }
 
@@ -555,6 +630,7 @@ export async function updateQuote(
     tax?: number;
     grand_total?: number;
     follow_up_date?: string;
+    shared_with?: string[];
   }
 ) {
   const supabase = await createClient();
@@ -585,6 +661,7 @@ export async function updateQuote(
       tax: formData.tax,
       grand_total: formData.grand_total,
       follow_up_date: formData.follow_up_date || null,
+      shared_with: formData.shared_with,
     })
     .eq("id", id);
 
@@ -667,6 +744,24 @@ export async function updateDeliveryAddress(
   revalidatePath(`/admin/quotes/${quoteId}`);
 }
 
+export async function getQuotesByLeadId(leadId: string): Promise<Quote[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    // Graceful fallback if lead_id column doesn't exist
+    if (error.message.includes("column") || error.message.includes("schema")) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return (data ?? []) as Quote[];
+}
+
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
   const supabase = await createClient();
 
@@ -713,4 +808,19 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     conversionRate,
     averageOrderVolume,
   };
+}
+
+export async function updateQuoteSharedWith(
+  quoteId: string,
+  userIds: string[]
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("quotes")
+    .update({ shared_with: userIds })
+    .eq("id", quoteId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+  revalidatePath("/admin/quotes");
 }

@@ -25,6 +25,8 @@ import {
   Move,
   Wrench,
   Paperclip,
+  UserPlus,
+  Users,
 } from "lucide-react";
 import { getQuoteDetail } from "@/lib/actions/quotes";
 import { getEmailHistory } from "@/lib/actions/email-history";
@@ -33,9 +35,15 @@ import { getQuotePhotos } from "@/lib/actions/quote-photos";
 import { getQuoteDocuments } from "@/lib/actions/quote-documents";
 import DocumentUploader from "@/components/admin/DocumentUploader";
 import { getFollowUps } from "@/lib/actions/follow-ups";
+import { getQuoteNotes } from "@/lib/actions/quote-notes";
+import { getQuoteTasks } from "@/lib/actions/quote-tasks";
+import { getAdminUsers } from "@/lib/actions/admin-users";
+import { getCurrentAdminUser } from "@/lib/auth";
 import QuoteDetailClient from "./QuoteDetailClient";
 import AdminPortalManager from "@/components/admin/AdminPortalManager";
+import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
 import PortalLinkBar from "@/components/admin/PortalLinkBar";
+import QuoteShareCard from "@/components/admin/QuoteShareCard";
 
 export const dynamic = "force-dynamic";
 
@@ -76,16 +84,32 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [quote, emails, drawing, photos, followUps, documents] = await Promise.all([
+  const [quote, emails, drawing, photos, followUps, documents, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
     getQuoteDetail(id),
     getEmailHistory(id),
     getApprovalDrawing(id).catch(() => null),
     getQuotePhotos(id).catch(() => []),
     getFollowUps(id).catch(() => []),
     getQuoteDocuments(id).catch(() => []),
+    getQuoteNotes(id).catch(() => []),
+    getQuoteTasks(id).catch(() => []),
+    getAdminUsers(),
+    getCurrentAdminUser(),
   ]);
 
   if (!quote) redirect("/admin/quotes");
+
+  const isAdmin = currentAdminUser?.role === "admin";
+  const salesReps = allAdminUsers
+    .filter((u) => u.role === "sales" && u.status === "active")
+    .map((u) => ({ id: u.id, name: u.name }));
+
+  // Resolve shared_with IDs to names for display
+  const sharedWithIds: string[] = quote.shared_with || [];
+  const sharedWithNames = sharedWithIds
+    .map((uid: string) => allAdminUsers.find((u) => u.id === uid)?.name)
+    .filter(Boolean) as string[];
+  const assignedRepName = quote.admin_users?.name || allAdminUsers.find((u) => u.id === quote.assigned_to)?.name || null;
 
   const total = Number(quote.grand_total || quote.cost || 0);
   const leadStatus = quote.lead_status || "new";
@@ -184,11 +208,20 @@ export default async function QuoteDetailPage({
           <ArrowLeft className="w-4 h-4" /> Back to Quotes
         </Link>
         <div className="flex flex-wrap gap-2">
+          {quote.lead_id && (
+            <Link
+              href={`/admin/leads/${quote.lead_id}`}
+              className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs font-medium hover:bg-teal-500/15 transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">View Lead</span>
+            </Link>
+          )}
           <Link
             href={`/admin/quotes/${id}/edit`}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium hover:bg-violet-500/15 transition-colors"
+            title="Edit quote"
+            className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium hover:bg-violet-500/15 transition-colors"
           >
-            <Pencil className="w-3.5 h-3.5" /> Edit
+            <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
           </Link>
           <QuoteDetailClient quoteId={id} quoteEmail={quote.client_email} quoteStatus={quote.status} />
         </div>
@@ -196,15 +229,15 @@ export default async function QuoteDetailPage({
 
       {/* ── Header Card ── */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] mb-6 overflow-hidden">
-        <div className="p-5 sm:p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-                <FileText className="w-6 h-6 text-violet-400" />
+            <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-violet-400" />
               </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">{quote.quote_number}</h1>
-                <p className="text-white/35 text-sm mt-0.5">
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-white truncate">{quote.quote_number}</h1>
+                <p className="text-white/35 text-xs sm:text-sm mt-0.5 truncate">
                   Created{" "}
                   {new Date(quote.created_at).toLocaleDateString("en-US", {
                     month: "long",
@@ -226,15 +259,41 @@ export default async function QuoteDetailPage({
             </div>
           </div>
 
+          {/* Assigned & Shared With preview */}
+          {(assignedRepName || sharedWithNames.length > 0) && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {assignedRepName && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-400/10 text-violet-300 text-xs font-medium">
+                  <User className="w-3 h-3" />
+                  {assignedRepName}
+                </span>
+              )}
+              {sharedWithNames.length > 0 && (
+                <>
+                  {assignedRepName && <span className="text-white/15 text-xs">shared with</span>}
+                  {sharedWithNames.map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-400/10 text-teal-300 text-xs font-medium"
+                    >
+                      <Users className="w-3 h-3" />
+                      {name}
+                    </span>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+
           {/* Pending Approval Banner */}
           {quote.status === "pending_approval" && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3 flex items-center gap-3 mb-4">
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-3 sm:px-4 py-2.5 sm:py-3 flex items-center gap-3 mb-4">
               <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
                 <Clock className="w-4 h-4 text-amber-400" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-semibold text-amber-300">Pending Approval</p>
-                <p className="text-xs text-amber-300/60">
+                <p className="text-xs text-amber-300/60 truncate sm:whitespace-normal">
                   The client has accepted this quote. Review and approve or decline.
                 </p>
               </div>
@@ -247,14 +306,14 @@ export default async function QuoteDetailPage({
       </div>
 
       {/* ── Two-Column Layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mb-6">
 
         {/* ── LEFT COLUMN ── */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-7 space-y-4 sm:space-y-6">
 
           {/* Customer Info */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
               <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
                 <User className="w-4 h-4 text-violet-400" />
               </div>
@@ -265,7 +324,7 @@ export default async function QuoteDetailPage({
                 </span>
               )}
             </div>
-            <div className="p-5 sm:p-6">
+            <div className="p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-sky-500/20 flex items-center justify-center text-white font-bold text-sm">
                   {quote.client_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
@@ -294,16 +353,16 @@ export default async function QuoteDetailPage({
 
           {/* Door Specifications */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                 <DoorOpen className="w-4 h-4 text-amber-400" />
               </div>
               <h2 className="text-base font-semibold text-white">Door Specifications</h2>
             </div>
-            <div className="p-5 sm:p-6">
+            <div className="p-4 sm:p-6">
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {specs.map(({ label, value, icon: Icon }) => (
-                  <div key={label} className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-3">
+                  <div key={label} className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-2.5 sm:p-3">
                     <div className="flex items-center gap-2 mb-1">
                       <Icon className="w-3.5 h-3.5 text-white/20" />
                       <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">{label}</p>
@@ -318,7 +377,7 @@ export default async function QuoteDetailPage({
           {/* Line Items */}
           {Array.isArray(quote.items) && quote.items.length > 0 && (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-              <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
                     <Hash className="w-4 h-4 text-sky-400" />
@@ -331,26 +390,26 @@ export default async function QuoteDetailPage({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-white/[0.02]">
-                      <th className="text-left px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Item</th>
-                      <th className="text-right px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Qty</th>
-                      <th className="text-right px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Price</th>
-                      <th className="text-right px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Total</th>
+                      <th className="text-left px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Item</th>
+                      <th className="text-right px-2 sm:px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Qty</th>
+                      <th className="text-right px-2 sm:px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold hidden sm:table-cell">Price</th>
+                      <th className="text-right px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.04]">
                     {quote.items.map((item: { id?: string; name: string; quantity: number; unit_price: number; total: number; description?: string }, idx: number) => (
                       <tr key={item.id || idx} className="hover:bg-white/[0.01] transition-colors">
-                        <td className="px-5 py-3 text-white/70">
-                          {item.name}
+                        <td className="px-3 sm:px-5 py-3 text-white/70">
+                          <span className="line-clamp-2 sm:line-clamp-none">{item.name}</span>
                           {item.description && (
-                            <p className="text-white/25 text-xs mt-0.5">{item.description}</p>
+                            <p className="text-white/25 text-xs mt-0.5 hidden sm:block">{item.description}</p>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-right text-white/50">{item.quantity}</td>
-                        <td className="px-4 py-3 text-right text-white/50">
+                        <td className="px-2 sm:px-4 py-3 text-right text-white/50">{item.quantity}</td>
+                        <td className="px-2 sm:px-4 py-3 text-right text-white/50 hidden sm:table-cell">
                           ${Number(item.unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="px-5 py-3 text-right text-white font-medium">
+                        <td className="px-3 sm:px-5 py-3 text-right text-white font-medium">
                           ${Number(item.total).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
@@ -363,7 +422,7 @@ export default async function QuoteDetailPage({
 
           {/* Notes */}
           {quote.notes && (
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5 sm:p-6">
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-6">
               <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-2">Notes</p>
               <p className="text-sm text-white/50 leading-relaxed">{quote.notes}</p>
             </div>
@@ -371,17 +430,17 @@ export default async function QuoteDetailPage({
         </div>
 
         {/* ── RIGHT COLUMN (sidebar) ── */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-4 sm:space-y-6">
 
           {/* Pricing Card */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
               <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <DollarSign className="w-4 h-4 text-emerald-400" />
               </div>
               <h2 className="text-base font-semibold text-white">Pricing</h2>
             </div>
-            <div className="p-5 sm:p-6">
+            <div className="p-4 sm:p-6">
               {/* Grand Total - prominent */}
               <div className="text-center mb-5 pb-5 border-b border-white/[0.06]">
                 <p className="text-white/30 text-[11px] uppercase tracking-wider font-medium mb-1">Grand Total</p>
@@ -423,13 +482,13 @@ export default async function QuoteDetailPage({
           {/* Delivery Info */}
           {quote.delivery_type && (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-              <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
                 <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
                   <Truck className="w-4 h-4 text-sky-400" />
                 </div>
                 <h2 className="text-base font-semibold text-white">Delivery</h2>
               </div>
-              <div className="p-5 sm:p-6">
+              <div className="p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-2">
                   {quote.delivery_type === "delivery" ? (
                     <Truck className="w-4 h-4 text-sky-400" />
@@ -450,9 +509,18 @@ export default async function QuoteDetailPage({
             </div>
           )}
 
+          {/* Shared With (admin only) */}
+          {isAdmin && (
+            <QuoteShareCard
+              quoteId={id}
+              salesReps={salesReps}
+              initialSharedWith={quote.shared_with || []}
+            />
+          )}
+
           {/* Email History */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
                   <Send className="w-4 h-4 text-sky-400" />
@@ -463,12 +531,12 @@ export default async function QuoteDetailPage({
             </div>
             <div className="divide-y divide-white/[0.04]">
               {emails.length === 0 ? (
-                <div className="px-5 py-6 text-center">
+                <div className="px-4 sm:px-5 py-6 text-center">
                   <p className="text-white/25 text-sm">No emails sent yet</p>
                 </div>
               ) : (
                 emails.slice(0, 5).map((e) => (
-                  <div key={e.id} className="px-5 py-3 flex items-center gap-3">
+                  <div key={e.id} className="px-4 sm:px-5 py-3 flex items-center gap-3">
                     <div className="w-7 h-7 rounded-lg bg-sky-500/[0.06] flex items-center justify-center shrink-0">
                       <Mail className="w-3.5 h-3.5 text-sky-400/60" />
                     </div>
@@ -487,7 +555,7 @@ export default async function QuoteDetailPage({
                 ))
               )}
               {emails.length > 5 && (
-                <div className="px-5 py-2.5 text-center">
+                <div className="px-4 sm:px-5 py-2.5 text-center">
                   <span className="text-white/20 text-[11px]">+{emails.length - 5} more</span>
                 </div>
               )}
@@ -496,7 +564,7 @@ export default async function QuoteDetailPage({
 
           {/* Attachments */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
               <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
                 <Paperclip className="w-4 h-4 text-violet-400" />
               </div>
@@ -505,11 +573,20 @@ export default async function QuoteDetailPage({
                 <span className="text-white/20 text-xs font-medium ml-auto">{documents.length}</span>
               )}
             </div>
-            <div className="p-5 sm:p-6">
+            <div className="p-4 sm:p-6">
               <DocumentUploader quoteId={id} initialDocuments={documents} />
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Notes & Tasks (full-width) ── */}
+      <div className="mb-6">
+        <QuoteNotesAndTasks
+          quoteId={id}
+          initialNotes={notes}
+          initialTasks={tasks}
+        />
       </div>
 
       {/* ── Portal Management (full-width) ── */}

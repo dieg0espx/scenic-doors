@@ -20,6 +20,7 @@ export default function QuoteSearchBar({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [sortOpen, setSortOpen] = useState(false);
 
   function handleSearch(value: string) {
     setSearch(value);
@@ -73,60 +74,73 @@ export default function QuoteSearchBar({
       <div className="flex gap-2 flex-wrap">
         <button
           onClick={onExportCSV}
-          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-all cursor-pointer"
+          title="Export CSV"
+          className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-all cursor-pointer"
         >
-          <Download className="w-3.5 h-3.5" /> Export CSV
+          <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Export CSV</span>
         </button>
 
         <button
           onClick={onToggleColumns}
-          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-all cursor-pointer"
+          title="Customize columns"
+          className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-all cursor-pointer"
         >
-          <SlidersHorizontal className="w-3.5 h-3.5" /> Customize
+          <SlidersHorizontal className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Customize</span>
         </button>
 
         <button
           onClick={toggleDueToday}
-          className={`inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
+          title="Due Today"
+          className={`inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer ${
             isDueToday
               ? "bg-amber-500/10 border-amber-500/30 text-amber-300"
               : "bg-white/[0.03] border-white/[0.08] text-white/50 hover:bg-white/[0.06] hover:text-white/80"
           }`}
         >
-          <Calendar className="w-3.5 h-3.5" /> Due Today
+          <Calendar className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Due Today</span>
         </button>
 
         <button
           onClick={onToggleExpandAll}
-          className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-all cursor-pointer"
+          title={expandAll ? "Collapse All" : "Expand All"}
+          className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-all cursor-pointer"
         >
-          <ChevronsUpDown className="w-3.5 h-3.5" /> {expandAll ? "Collapse All" : "Expand All"}
+          <ChevronsUpDown className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{expandAll ? "Collapse All" : "Expand All"}</span>
         </button>
 
         {/* Sort dropdown */}
-        <div className="relative group">
-          <button className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-all cursor-pointer">
+        <div className="relative">
+          <button
+            onClick={() => setSortOpen(!sortOpen)}
+            title="Sort order"
+            className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-all cursor-pointer"
+          >
             <ChevronDown className="w-3.5 h-3.5" />
-            {currentSort === "newest" ? "Newest First" : "Oldest First"}
+            <span className="hidden sm:inline">{currentSort === "newest" ? "Newest First" : "Oldest First"}</span>
           </button>
-          <div className="absolute right-0 mt-1 w-36 rounded-xl border border-white/[0.08] bg-[#161b22] shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20">
-            <button
-              onClick={() => handleSortChange("newest")}
-              className={`w-full px-3 py-2 text-left text-xs rounded-t-xl transition-colors cursor-pointer ${
-                currentSort === "newest" ? "text-violet-300 bg-violet-500/10" : "text-white/50 hover:bg-white/[0.04]"
-              }`}
-            >
-              Newest First
-            </button>
-            <button
-              onClick={() => handleSortChange("oldest")}
-              className={`w-full px-3 py-2 text-left text-xs rounded-b-xl transition-colors cursor-pointer ${
-                currentSort === "oldest" ? "text-violet-300 bg-violet-500/10" : "text-white/50 hover:bg-white/[0.04]"
-              }`}
-            >
-              Oldest First
-            </button>
-          </div>
+          {sortOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setSortOpen(false)} />
+              <div className="absolute right-0 mt-1 w-36 rounded-xl border border-white/[0.08] bg-[#161b22] shadow-xl z-20">
+                <button
+                  onClick={() => { handleSortChange("newest"); setSortOpen(false); }}
+                  className={`w-full px-3 py-2 text-left text-xs rounded-t-xl transition-colors cursor-pointer ${
+                    currentSort === "newest" ? "text-violet-300 bg-violet-500/10" : "text-white/50 hover:bg-white/[0.04]"
+                  }`}
+                >
+                  Newest First
+                </button>
+                <button
+                  onClick={() => { handleSortChange("oldest"); setSortOpen(false); }}
+                  className={`w-full px-3 py-2 text-left text-xs rounded-b-xl transition-colors cursor-pointer ${
+                    currentSort === "oldest" ? "text-violet-300 bg-violet-500/10" : "text-white/50 hover:bg-white/[0.04]"
+                  }`}
+                >
+                  Oldest First
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

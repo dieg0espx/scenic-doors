@@ -191,11 +191,11 @@ export default function NotificationSettingsComponent({ settings, users }: Props
 
         return (
           <div key={s.type} className={`rounded-2xl border ${c.border} ${c.bg}`}>
-            <div className="px-5 py-4 border-b border-white/[0.06]">
+            <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-white/[0.06]">
               <h3 className="text-sm font-semibold text-white">{config.label}</h3>
               <p className="text-white/35 text-xs mt-0.5">{config.description}</p>
             </div>
-            <div className="p-5 space-y-3">
+            <div className="p-4 sm:p-5 space-y-3">
               {/* User tags */}
               <div className="flex flex-wrap gap-2">
                 {emails.map((email) => (
@@ -234,7 +234,7 @@ export default function NotificationSettingsComponent({ settings, users }: Props
       <button
         onClick={handleSave}
         disabled={saving}
-        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white text-sm font-medium transition-all shadow-lg shadow-violet-500/25 cursor-pointer disabled:opacity-50"
+        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white text-sm font-medium transition-all shadow-lg shadow-violet-500/25 cursor-pointer disabled:opacity-50"
       >
         <Save className="w-4 h-4" />
         {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}

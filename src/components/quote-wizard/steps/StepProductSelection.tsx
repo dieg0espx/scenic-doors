@@ -85,16 +85,16 @@ export default function StepProductSelection({ dispatch }: StepProductSelectionP
       )}
 
       {/* Mobile: horizontal scroll cards. Desktop: grid */}
-      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-1 px-1 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-5 sm:overflow-visible sm:pb-0 scrollbar-hide">
+      <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-4 -mx-3 px-3 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-5 sm:overflow-visible sm:pb-0 scrollbar-hide">
         {PRODUCTS.map((product) => {
           const hasAnimation = !!ANIMATION_MAP[product.slug];
           return (
             <div
               key={product.slug}
-              className="flex flex-col bg-white rounded-xl border border-ocean-200 overflow-hidden hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-200 snap-center shrink-0 w-[280px] sm:w-auto"
+              className="flex flex-col bg-white rounded-xl border border-ocean-200 overflow-hidden hover:border-primary-400 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-200 snap-center shrink-0 w-[80vw] min-w-[260px] max-w-[320px] sm:w-auto sm:min-w-0 sm:max-w-none"
             >
               {/* Image area */}
-              <div className="relative h-40 sm:h-48">
+              <div className="relative h-36 sm:h-48">
                 <Image
                   src={product.image}
                   alt={product.name}

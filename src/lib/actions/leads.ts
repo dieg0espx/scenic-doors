@@ -142,6 +142,7 @@ export async function updateLead(
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/leads/" + id);
 }
 
 export async function deleteLead(id: string): Promise<void> {

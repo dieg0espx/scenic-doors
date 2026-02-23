@@ -239,6 +239,15 @@ img[data-loading="true"] {
   }
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Custom scrollbar for admin dropdowns */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

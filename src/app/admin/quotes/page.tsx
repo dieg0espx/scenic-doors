@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Plus, FileText, DollarSign, TrendingUp, Users, Clock } from "lucide-react";
-import { getQuotesWithFilters } from "@/lib/actions/quotes";
+import { getQuotesForUser } from "@/lib/actions/quotes";
+import { getAdminUsers } from "@/lib/actions/admin-users";
+import { getCurrentAdminUser } from "@/lib/auth";
 import QuotesPageClient from "./QuotesPageClient";
 
 export const dynamic = "force-dynamic";
@@ -11,15 +13,29 @@ export default async function QuotesPage({
   searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
   const params = await searchParams;
-  const quotes = await getQuotesWithFilters({
+  const [adminUser, allAdminUsers] = await Promise.all([
+    getCurrentAdminUser(),
+    getAdminUsers(),
+  ]);
+  const userId = adminUser?.id ?? "";
+  const userName = adminUser?.name ?? "";
+  const userRole = adminUser?.role ?? "sales";
+
+  // Build ID→name map for shared_with display
+  const userNameMap: Record<string, string> = {};
+  for (const u of allAdminUsers) {
+    userNameMap[u.id] = u.name;
+  }
+
+  const quotes = await getQuotesForUser(userId, userName, userRole, {
     lead_status: params.status || "all",
     search: params.search,
     sort: params.sort,
     due_today: params.due_today === "true",
   });
 
-  // Count quotes by lead_status
-  const allQuotes = await getQuotesWithFilters();
+  // Count quotes by lead_status (scoped to user's visible quotes)
+  const allQuotes = await getQuotesForUser(userId, userName, userRole);
   const counts: Record<string, number> = {};
   for (const q of allQuotes) {
     const s = q.lead_status || "new";
@@ -116,7 +132,7 @@ export default async function QuotesPage({
         })}
       </div>
 
-      <QuotesPageClient quotes={quotes} counts={counts} />
+      <QuotesPageClient quotes={quotes} counts={counts} userNameMap={userNameMap} />
     </div>
   );
 }

@@ -328,7 +328,7 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg cursor-pointer"
+          className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 sm:py-4 px-6 rounded-lg transition-colors text-base sm:text-lg cursor-pointer"
         >
           {isSubmitting ? (
             <>
@@ -337,7 +337,8 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
             </>
           ) : (
             <>
-              Continue to Product Selection
+              <span className="sm:hidden">Continue</span>
+              <span className="hidden sm:inline">Continue to Product Selection</span>
               <ArrowRight className="w-5 h-5" />
             </>
           )}

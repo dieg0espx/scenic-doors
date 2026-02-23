@@ -192,31 +192,31 @@ function UserCard({ user, stats, onRefresh }: { user: AdminUser; stats?: { quote
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
+        className="w-full flex items-center justify-between gap-2 px-4 sm:px-5 py-4 cursor-pointer hover:bg-white/[0.02] transition-colors"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
             <span className="text-violet-400 font-bold text-sm">{user.name.charAt(0)}</span>
           </div>
-          <div className="text-left">
-            <p className="text-white font-medium text-sm">{user.name}</p>
-            {user.email && <p className="text-white/30 text-xs">{user.email}</p>}
+          <div className="text-left min-w-0">
+            <p className="text-white font-medium text-sm truncate">{user.name}</p>
+            {user.email && <p className="text-white/30 text-xs truncate hidden sm:block">{user.email}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-2.5 py-1 rounded-lg text-[11px] font-medium ${roleColors[user.role] || roleColors.sales}`}>
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-[11px] font-medium ${roleColors[user.role] || roleColors.sales}`}>
             {roleLabel(user.role)}
           </span>
-          <span className={`px-2.5 py-1 rounded-lg text-[11px] font-medium capitalize ${statusColors[user.status] || statusColors.active}`}>
+          <span className={`hidden sm:inline-flex px-2.5 py-1 rounded-lg text-[11px] font-medium capitalize ${statusColors[user.status] || statusColors.active}`}>
             {user.status}
           </span>
-          <ChevronDown className={`w-4 h-4 text-white/25 transition-transform ml-1 ${expanded ? "rotate-180" : ""}`} />
+          <ChevronDown className={`w-4 h-4 text-white/25 transition-transform ${expanded ? "rotate-180" : ""}`} />
         </div>
       </button>
 
       {/* Expanded Body */}
       {expanded && (
-        <div className="border-t border-white/[0.06] px-5 py-5 space-y-4">
+        <div className="border-t border-white/[0.06] px-4 sm:px-5 py-4 sm:py-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Name */}
             <div>
@@ -330,7 +330,7 @@ function UserCard({ user, stats, onRefresh }: { user: AdminUser; stats?: { quote
           )}
 
           {/* Actions */}
-          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/[0.04]">
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/[0.04] [&>button]:py-2.5 [&>button]:sm:py-2">
             {hasChanges && (
               <button
                 type="button"
@@ -383,11 +383,11 @@ function UserCard({ user, stats, onRefresh }: { user: AdminUser; stats?: { quote
 
           {/* Password input */}
           {showPasswordInput && (
-            <div className="flex items-center gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
               <input
                 type="password"
-                className={inputClass + " max-w-xs"}
-                placeholder="Enter new password (min 6 chars)"
+                className={inputClass + " sm:max-w-xs"}
+                placeholder="New password (min 6 chars)"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAssignPassword())}
@@ -446,7 +446,7 @@ export default function UsersList({ users, userStats = {} }: Props) {
 
   if (users.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/[0.08] p-12 text-center">
+      <div className="rounded-2xl border border-dashed border-white/[0.08] p-8 sm:p-12 text-center">
         <div className="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
           <Users className="w-7 h-7 text-violet-400/60" />
         </div>
@@ -470,26 +470,28 @@ export default function UsersList({ users, userStats = {} }: Props) {
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white text-sm placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/40 transition-all"
           />
         </div>
-        <CustomSelect
-          value={roleFilter}
-          onChange={setRoleFilter}
-          options={[{ value: "all", label: "All Roles" }, ...roles.map((r) => ({ value: r, label: roleLabel(r) }))]}
-          className="w-40"
-        />
-        <CustomSelect
-          value={statusFilter}
-          onChange={setStatusFilter}
-          options={[{ value: "all", label: "All Status" }, ...statuses.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]}
-          className="w-40"
-        />
+        <div className="flex gap-2 flex-1 sm:flex-initial">
+          <CustomSelect
+            value={roleFilter}
+            onChange={setRoleFilter}
+            options={[{ value: "all", label: "All Roles" }, ...roles.map((r) => ({ value: r, label: roleLabel(r) }))]}
+            className="flex-1 sm:flex-initial sm:w-40"
+          />
+          <CustomSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[{ value: "all", label: "All Status" }, ...statuses.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))]}
+            className="flex-1 sm:flex-initial sm:w-40"
+          />
+        </div>
       </div>
 
       {/* Summary badges */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-white/40">
-          Showing {filtered.length} of {users.length} user{users.length !== 1 ? "s" : ""}
+          {filtered.length} of {users.length} user{users.length !== 1 ? "s" : ""}
         </span>
-        <div className="flex flex-wrap gap-1.5 ml-auto">
+        <div className="flex flex-wrap gap-1.5 sm:ml-auto">
           {Object.entries(roleCounts).map(([role, count]) => (
             <span key={role} className={`px-2 py-0.5 rounded-lg text-[10px] font-medium ${roleColors[role] || roleColors.sales}`}>
               {count} {roleLabel(role)}

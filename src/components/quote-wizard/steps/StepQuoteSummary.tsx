@@ -186,13 +186,13 @@ function ItemCard({
             <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-ocean-400 shrink-0" />
           )}
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5 sm:gap-x-6 sm:gap-y-2">
           <div>
             <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Dimensions</p>
             <p className="text-xs sm:text-sm font-semibold text-ocean-800">{item.width}&quot; W &times; {item.height}&quot; H</p>
           </div>
           {configCode && (
-            <div>
+            <div className="hidden sm:block">
               <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Configuration</p>
               <p className="text-xs sm:text-sm font-semibold text-ocean-800 font-mono">{configCode}</p>
             </div>
@@ -201,7 +201,7 @@ function ItemCard({
             <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Colors</p>
             <p className="text-xs sm:text-sm font-semibold text-ocean-800">{item.exteriorFinish}</p>
           </div>
-          <div>
+          <div className="ml-auto">
             <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Price</p>
             <p className="text-xs sm:text-sm font-bold text-primary-600">${item.itemTotal.toLocaleString()}</p>
           </div>
@@ -224,25 +224,22 @@ function ItemCard({
               <PanelDiagram item={item} />
             </div>
 
-            {configCode && (
-              <p className="text-xs sm:text-sm text-ocean-500 font-mono mb-2">{configCode} configuration</p>
-            )}
           </div>
 
           {/* System Type + Actions */}
           <div className="p-4 sm:p-6 border-b border-ocean-100">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 mb-3">
               <h4 className="font-bold text-ocean-900 text-sm sm:text-base">System Type: {systemName}</h4>
               <div className="flex gap-2">
                 <button
                   onClick={() => dispatch({ type: "DUPLICATE_ITEM", payload: index })}
-                  className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-ocean-700 bg-white border border-ocean-200 rounded-lg hover:bg-ocean-50 transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-ocean-700 bg-white border border-ocean-200 rounded-lg hover:bg-ocean-50 transition-colors cursor-pointer"
                 >
                   <Copy className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Duplicate
                 </button>
                 <button
                   onClick={() => dispatch({ type: "REMOVE_ITEM", payload: index })}
-                  className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                  className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Remove
                 </button>
@@ -303,7 +300,7 @@ function ItemCard({
                   <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-ocean-500">Interior</span>
                     <span className="font-medium text-ocean-800">
-                      {item.exteriorFinish === "Two-tone" && item.interiorFinish ? item.interiorFinish : "Not selected"}
+                      {item.interiorFinish ? item.interiorFinish : "Same as exterior"}
                     </span>
                   </div>
                 </div>
@@ -575,22 +572,24 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
               }
               className="w-full p-4 sm:p-5 text-left cursor-pointer hover:bg-ocean-50/30 transition-colors"
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5 sm:gap-3">
-                  <Wrench className={`w-4 h-4 sm:w-5 sm:h-5 ${services.includeInstallation ? "text-primary-500" : "text-ocean-400"}`} />
-                  <div>
-                    <h4 className="font-bold text-sm sm:text-base text-ocean-900">
+              <div className="flex items-start sm:items-center justify-between gap-3">
+                <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
+                  <Wrench className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0 ${services.includeInstallation ? "text-primary-500" : "text-ocean-400"}`} />
+                  <div className="min-w-0">
+                    <h4 className="font-bold text-sm sm:text-base text-ocean-900 leading-tight">
                       Professional Weatherproofing & Installation
                     </h4>
-                    {services.includeInstallation && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-600 mt-0.5">
-                        <Check className="w-3 h-3" /> Included
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs sm:text-sm font-bold text-primary-600">${INSTALLATION_COST.toLocaleString()}</span>
+                      {services.includeInstallation && (
+                        <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-green-600">
+                          <Check className="w-3 h-3" /> Included
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <span className="text-sm sm:text-base font-bold text-primary-600">${INSTALLATION_COST.toLocaleString()}</span>
+                <div className="shrink-0">
                   <div
                     className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
                       services.includeInstallation ? "bg-primary-500" : "bg-ocean-200"
@@ -690,7 +689,7 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
         )}
       </button>
 
-      <div className="text-center mt-4">
+      <div className="text-center mt-4 pb-6 sm:pb-0">
         <button
           onClick={() => dispatch({ type: "RESET" })}
           className="text-xs sm:text-sm text-ocean-400 hover:text-ocean-600 transition-colors cursor-pointer"

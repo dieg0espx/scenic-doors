@@ -210,12 +210,12 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
       {/* ═══════════════════════════════════════════════════ */}
       {/*  Section Stepper                                   */}
       {/* ═══════════════════════════════════════════════════ */}
-      <div className="relative flex items-start justify-between mb-6 sm:mb-10 px-1 sm:px-2">
+      <div className="relative flex items-start justify-between mb-6 sm:mb-10 px-0 sm:px-2">
         {/* Connecting line */}
-        <div className="absolute top-3 sm:top-4 left-[calc(12.5%+12px)] sm:left-[calc(12.5%+16px)] right-[calc(12.5%+12px)] sm:right-[calc(12.5%+16px)] h-0.5 bg-ocean-200" />
+        <div className="absolute top-3 sm:top-4 left-[calc(12.5%+10px)] sm:left-[calc(12.5%+16px)] right-[calc(12.5%+10px)] sm:right-[calc(12.5%+16px)] h-0.5 bg-ocean-200" />
         <div
-          className="absolute top-3 sm:top-4 left-[calc(12.5%+12px)] sm:left-[calc(12.5%+16px)] h-0.5 bg-primary-500 transition-all duration-500"
-          style={{ width: `${(sectionDone.filter(Boolean).length / 4) * 100}%`, maxWidth: "calc(75% - 32px)" }}
+          className="absolute top-3 sm:top-4 left-[calc(12.5%+10px)] sm:left-[calc(12.5%+16px)] h-0.5 bg-primary-500 transition-all duration-500"
+          style={{ width: `${(sectionDone.filter(Boolean).length / 4) * 100}%`, maxWidth: "calc(75% - 24px)" }}
         />
         {sectionTitles.map((title, i) => (
           <div key={i} className="relative flex flex-col items-center w-1/4">
@@ -226,11 +226,11 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
             }`}>
               {sectionDone[i] ? <Check className="w-3 h-3 sm:w-4 sm:h-4" /> : i + 1}
             </div>
-            <p className="text-[9px] sm:text-[11px] font-medium text-ocean-600 text-center mt-1.5 sm:mt-2 whitespace-pre-line leading-tight">
+            <p className="text-[10px] sm:text-[11px] font-medium text-ocean-600 text-center mt-1 sm:mt-2 whitespace-pre-line leading-tight">
               {title}
             </p>
             {sectionValues[i] && (
-              <p className="hidden sm:block text-[10px] text-primary-600 font-semibold mt-0.5 text-center truncate max-w-[90px]">
+              <p className="text-[9px] sm:text-[10px] text-primary-600 font-semibold mt-0.5 text-center truncate max-w-[70px] sm:max-w-[90px]">
                 {sectionValues[i]}
               </p>
             )}
@@ -338,7 +338,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                   Usable opening = width &minus; {config.usableOpeningOffset}&quot;. Per-panel must be {config.panelMinWidth}&quot;&ndash;{config.panelMaxWidth}&quot;.
                 </p>
                 {availablePanelCounts.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 sm:gap-3">
+                  <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
                     {availablePanelCounts.map((opt) => {
                       const isSelected = item.panelCount === opt.count;
                       return (
@@ -764,17 +764,17 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
       )}
 
       {/* ── Actions ── */}
-      <div className="mt-4 sm:mt-6 flex flex-col-reverse sm:flex-row gap-3 sm:gap-4">
+      <div className="mt-5 sm:mt-6 flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pb-4 sm:pb-0">
         <button
           onClick={() => dispatch({ type: "SET_STEP", payload: 2 })}
-          className="group px-5 py-3 sm:py-3.5 rounded-xl border border-ocean-200 text-ocean-600 font-medium hover:bg-ocean-50 hover:border-ocean-300 transition-all cursor-pointer flex items-center justify-center sm:justify-start gap-2"
+          className="group px-5 py-3.5 sm:py-3.5 rounded-xl border border-ocean-200 text-ocean-600 font-medium hover:bg-ocean-50 hover:border-ocean-300 transition-all cursor-pointer flex items-center justify-center sm:justify-start gap-2"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           Back
         </button>
         <button
           onClick={handleSave}
-          className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 text-white font-bold py-3 sm:py-3.5 px-6 rounded-xl transition-all text-base sm:text-lg cursor-pointer shadow-lg shadow-primary-600/25 hover:shadow-xl hover:shadow-primary-500/30 active:scale-[0.99]"
+          className="flex-1 flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 text-white font-bold py-3.5 sm:py-3.5 px-6 rounded-xl transition-all text-base sm:text-lg cursor-pointer shadow-lg shadow-primary-600/25 hover:shadow-xl hover:shadow-primary-500/30 active:scale-[0.99]"
         >
           Save Configuration
           <ArrowRight className="w-5 h-5" />

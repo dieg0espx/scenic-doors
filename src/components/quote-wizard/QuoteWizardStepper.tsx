@@ -41,7 +41,7 @@ export default function QuoteWizardStepper({ currentStep }: QuoteWizardStepperPr
 
             {i < STEPS.length - 1 && (
               <div
-                className={`w-6 sm:w-14 h-0.5 mx-0.5 sm:mx-1 transition-colors ${
+                className={`w-8 sm:w-14 h-0.5 mx-0.5 sm:mx-1 transition-colors ${
                   currentStep > stepNum ? "bg-primary-500" : "bg-ocean-200"
                 }`}
               />

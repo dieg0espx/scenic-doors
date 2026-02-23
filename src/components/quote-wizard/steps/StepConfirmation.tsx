@@ -29,16 +29,16 @@ const NEXT_STEPS = [
 
 export default function StepConfirmation({ contact, dispatch }: StepConfirmationProps) {
   return (
-    <div className="max-w-2xl mx-auto text-center">
+    <div className="max-w-2xl mx-auto text-center px-1 sm:px-0">
       {/* Animated Checkmark */}
       <motion.div
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.1 }}
-        className="mb-6"
+        className="mb-5 sm:mb-6"
       >
-        <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-10 h-10 text-green-500" />
+        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-8 h-8 sm:w-10 sm:h-10 text-green-500" />
         </div>
       </motion.div>
 
@@ -53,7 +53,7 @@ export default function StepConfirmation({ contact, dispatch }: StepConfirmation
         <p className="text-ocean-500 mb-2">
           Thank you, {contact.firstName}! Your quote has been saved.
         </p>
-        <p className="text-ocean-400 text-sm mb-10">
+        <p className="text-ocean-400 text-sm mb-6 sm:mb-10">
           A copy will be sent to <span className="font-medium text-ocean-600">{contact.email}</span>
         </p>
       </motion.div>

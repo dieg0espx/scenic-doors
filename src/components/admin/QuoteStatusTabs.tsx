@@ -42,7 +42,7 @@ export default function QuoteStatusTabs({ counts }: Props) {
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 sm:flex-wrap sm:overflow-visible scrollbar-hide">
       {TABS.map((tab) => {
         const isActive = current === tab.key;
         const count = tab.key === "all"
@@ -53,7 +53,7 @@ export default function QuoteStatusTabs({ counts }: Props) {
           <button
             key={tab.key}
             onClick={() => handleClick(tab.key)}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+            className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
               isActive
                 ? `${tabColors[tab.key]} ring-1 ring-white/10`
                 : "bg-white/[0.03] text-white/35 hover:bg-white/[0.06] hover:text-white/60"

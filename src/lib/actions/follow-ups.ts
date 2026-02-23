@@ -95,6 +95,44 @@ export async function markFollowUpSent(id: string, quoteId: string): Promise<voi
   revalidatePath(`/admin/quotes/${quoteId}`);
 }
 
+export async function getFollowUpsByLeadId(leadId: string): Promise<FollowUpEntry[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("follow_up_schedule")
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("scheduled_for", { ascending: true });
+
+  if (error) {
+    if (error.message.includes("column") || error.message.includes("schema")) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return data ?? [];
+}
+
+export async function getFollowUpsDueToday(): Promise<FollowUpEntry[]> {
+  const supabase = await createClient();
+  const today = new Date();
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+  const { data, error } = await supabase
+    .from("follow_up_schedule")
+    .select("*")
+    .eq("status", "pending")
+    .lte("scheduled_for", endOfDay.toISOString())
+    .order("scheduled_for", { ascending: true });
+
+  if (error) {
+    if (error.message.includes("column") || error.message.includes("schema")) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return data ?? [];
+}
+
 export async function getPendingFollowUps(): Promise<FollowUpEntry[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

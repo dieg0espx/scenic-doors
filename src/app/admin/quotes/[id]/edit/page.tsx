@@ -3,14 +3,16 @@ import { FileText } from "lucide-react";
 import { getQuoteById } from "@/lib/actions/quotes";
 import { getClients } from "@/lib/actions/clients";
 import { getAdminUsers } from "@/lib/actions/admin-users";
+import { getCurrentAdminUser } from "@/lib/auth";
 import QuoteForm from "@/components/QuoteForm";
 
 export default async function EditQuotePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [quote, clients, adminUsers] = await Promise.all([
+  const [quote, clients, adminUsers, adminUser] = await Promise.all([
     getQuoteById(id),
     getClients(),
     getAdminUsers(),
+    getCurrentAdminUser(),
   ]);
 
   if (!quote) {
@@ -30,7 +32,7 @@ export default async function EditQuotePage({ params }: { params: Promise<{ id: 
         </p>
       </div>
 
-      <QuoteForm initialData={quote} clients={clients} adminUsers={adminUsers} />
+      <QuoteForm initialData={quote} clients={clients} adminUsers={adminUsers} userRole={adminUser?.role} />
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {

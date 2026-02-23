@@ -35,14 +35,14 @@ export default function MarketingCharts({
       {/* Charts grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue by Source - Pie */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Revenue by Source</h3>
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
+          <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">Revenue by Source</h3>
           {revenueBySource.length === 0 ? (
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-48 sm:h-64 flex items-center justify-center">
               <p className="text-white/25 text-sm">No data yet</p>
             </div>
           ) : (
-            <div className="h-64">
+            <div className="h-48 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -51,7 +51,7 @@ export default function MarketingCharts({
                     nameKey="source"
                     cx="50%"
                     cy="50%"
-                    outerRadius={80}
+                    outerRadius={70}
                     label={(props: PieLabelRenderProps) =>
                       `${props.name || ""} (${((props.percent as number) * 100).toFixed(0)}%)`
                     }
@@ -85,14 +85,14 @@ export default function MarketingCharts({
         </div>
 
         {/* Leads Over Time - Line */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5">
-          <h3 className="text-sm font-semibold text-white mb-4">Leads Over Time (30 days)</h3>
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
+          <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">Leads Over Time (30 days)</h3>
           {leadsOverTime.every((d) => d.count === 0) ? (
-            <div className="h-64 flex items-center justify-center">
+            <div className="h-48 sm:h-64 flex items-center justify-center">
               <p className="text-white/25 text-sm">No data yet</p>
             </div>
           ) : (
-            <div className="h-64">
+            <div className="h-48 sm:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={leadsOverTime}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
@@ -131,31 +131,33 @@ export default function MarketingCharts({
       {/* Performance by Source Table */}
       {revenueBySource.length > 0 && (
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-          <div className="px-5 py-4 border-b border-white/[0.06]">
+          <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-white/[0.06]">
             <h3 className="text-sm font-semibold text-white">Performance by Source</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-white/[0.02]">
-                  <th className="text-left px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Source</th>
-                  <th className="text-right px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Leads</th>
-                  <th className="text-right px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Revenue</th>
-                  <th className="text-right px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Avg per Lead</th>
+                  <th className="text-left px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Source</th>
+                  <th className="text-right px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Leads</th>
+                  <th className="text-right px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Revenue</th>
+                  <th className="text-right px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold hidden sm:table-cell">Avg/Lead</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
                 {revenueBySource.map((s, i) => (
                   <tr key={s.source} className="hover:bg-white/[0.02]">
-                    <td className="px-5 py-3 text-white/70 font-medium flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
-                      {s.source}
+                    <td className="px-3 sm:px-5 py-3 text-white/70 font-medium">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                        <span className="truncate">{s.source}</span>
+                      </div>
                     </td>
-                    <td className="px-5 py-3 text-right text-white/50">{s.count}</td>
-                    <td className="px-5 py-3 text-right text-white font-medium">
+                    <td className="px-3 sm:px-5 py-3 text-right text-white/50">{s.count}</td>
+                    <td className="px-3 sm:px-5 py-3 text-right text-white font-medium">
                       ${s.revenue.toLocaleString("en-US", { minimumFractionDigits: 0 })}
                     </td>
-                    <td className="px-5 py-3 text-right text-white/40">
+                    <td className="px-3 sm:px-5 py-3 text-right text-white/40 hidden sm:table-cell">
                       ${s.count > 0 ? (s.revenue / s.count).toLocaleString("en-US", { minimumFractionDigits: 0 }) : "0"}
                     </td>
                   </tr>
@@ -167,10 +169,10 @@ export default function MarketingCharts({
       )}
 
       {/* Conversion Funnel */}
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-5">
-        <h3 className="text-sm font-semibold text-white mb-4">Conversion Funnel</h3>
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-5">
+        <h3 className="text-sm font-semibold text-white mb-3 sm:mb-4">Conversion Funnel</h3>
         {conversionFunnel.every((s) => s.count === 0) ? (
-          <div className="py-8 text-center">
+          <div className="py-6 sm:py-8 text-center">
             <p className="text-white/25 text-sm">No data yet</p>
           </div>
         ) : (
@@ -182,8 +184,8 @@ export default function MarketingCharts({
                 <YAxis
                   type="category"
                   dataKey="stage"
-                  tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }}
-                  width={100}
+                  tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
+                  width={80}
                 />
                 <Tooltip
                   contentStyle={{

@@ -2,12 +2,30 @@ import { FileText } from "lucide-react";
 import QuoteForm from "@/components/QuoteForm";
 import { getClients } from "@/lib/actions/clients";
 import { getAdminUsers } from "@/lib/actions/admin-users";
+import { getCurrentAdminUser } from "@/lib/auth";
 
-export default async function NewQuotePage() {
-  const [clients, adminUsers] = await Promise.all([
+export default async function NewQuotePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | undefined }>;
+}) {
+  const [clients, adminUsers, params, adminUser] = await Promise.all([
     getClients(),
     getAdminUsers(),
+    searchParams,
+    getCurrentAdminUser(),
   ]);
+
+  const leadId = params.leadId;
+  const prefill = leadId
+    ? {
+        client_name: params.name || "",
+        client_email: params.email || "",
+        customer_phone: params.phone || "",
+        customer_zip: params.zip || "",
+        customer_type: params.customerType || "homeowner",
+      }
+    : undefined;
 
   return (
     <div>
@@ -22,7 +40,14 @@ export default async function NewQuotePage() {
         </p>
       </div>
 
-      <QuoteForm clients={clients} adminUsers={adminUsers} />
+      <QuoteForm
+        clients={clients}
+        adminUsers={adminUsers}
+        prefill={prefill}
+        leadId={leadId}
+        createdBy={adminUser?.name}
+        userRole={adminUser?.role}
+      />
 
       {/* Custom scrollbar for dropdowns */}
       <style>{`

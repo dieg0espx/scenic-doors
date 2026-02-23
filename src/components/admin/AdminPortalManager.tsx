@@ -231,12 +231,12 @@ export default function AdminPortalManager({
           <div className="space-y-3">
             {/* Document Preview Card — same layout as editor */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-gray-900 text-white px-5 py-3 text-center">
+              <div className="bg-gray-900 text-white px-4 sm:px-5 py-3 text-center">
                 <h3 className="text-sm font-bold tracking-wider">
                   SCENIC DOORS &ndash; SLIDE &amp; STACK APPROVAL
                 </h3>
               </div>
-              <div className="p-5 space-y-5">
+              <div className="p-4 sm:p-5 space-y-4 sm:space-y-5">
                 {/* Door Diagram — only shown once panels are set */}
                 {adForm.panel_count > 0 && (
                   <>
@@ -495,7 +495,7 @@ function Section({
     <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] overflow-hidden">
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-5 py-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer"
+        className="w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 hover:bg-white/[0.02] transition-colors cursor-pointer"
       >
         <div className="w-7 h-7 rounded-lg bg-white/[0.06] flex items-center justify-center shrink-0">
           {icon}
@@ -508,7 +508,7 @@ function Section({
         )}
         {isOpen ? <ChevronUp className="w-4 h-4 text-white/30" /> : <ChevronDown className="w-4 h-4 text-white/30" />}
       </button>
-      {isOpen && <div className="px-5 pb-4">{children}</div>}
+      {isOpen && <div className="px-4 sm:px-5 pb-4">{children}</div>}
     </div>
   );
 }
