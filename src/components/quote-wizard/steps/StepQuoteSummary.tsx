@@ -19,11 +19,12 @@ import {
   ClipboardCheck,
   Trash,
   GraduationCap,
+  Package,
 } from "lucide-react";
 import type { ConfiguredItem, WizardState, WizardAction } from "@/lib/quote-wizard/types";
 import { calculateQuoteTotals, DELIVERY_COSTS, INSTALLATION_COST, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
 import { getLayoutImageUrl } from "@/lib/quote-wizard/layout-images";
-import { createQuote, sendQuoteToClient, assignQuote, notifyNewQuote } from "@/lib/actions/quotes";
+import { createQuote, sendQuoteToClient, assignQuote, notifyNewQuote, sendEstimateConfirmation } from "@/lib/actions/quotes";
 import { updateLead } from "@/lib/actions/leads";
 import { getNextSalesRep } from "@/lib/actions/admin-users";
 import { scheduleFollowUps } from "@/lib/actions/follow-ups";
@@ -258,7 +259,7 @@ function ItemCard({
                 <button
                   onClick={() => {
                     dispatch({ type: "EDIT_ITEM", payload: index });
-                    dispatch({ type: "SET_STEP", payload: 3 });
+                    dispatch({ type: "SET_STEP", payload: 4 });
                   }}
                   className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors cursor-pointer"
                 >
@@ -361,36 +362,62 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
 
     try {
       const firstItem = items[0];
-      const quoteItems = items.map((item) => ({
-        id: item.id,
-        name: item.doorType,
-        description: `${item.width}" x ${item.height}" | ${item.exteriorFinish}${item.exteriorFinish === "Two-tone" && item.interiorFinish ? ` / ${item.interiorFinish} interior` : ""} | ${item.glassType} | ${item.hardwareFinish}${item.roomName ? ` | ${item.roomName}` : ""}`,
-        quantity: 1,
-        unit_price: item.itemTotal,
-        total: item.itemTotal,
-      }));
+      const isMedium = state.intentLevel === "medium";
+
+      const quoteItems = isMedium
+        ? items.map((item) => ({
+            id: item.id,
+            name: item.doorType,
+            description: [
+              state.generalPreferences.approximateSize && `Size: ${state.generalPreferences.approximateSize}`,
+              state.generalPreferences.colorPreference && `Color: ${state.generalPreferences.colorPreference}`,
+              state.generalPreferences.glassPreference && `Glass: ${state.generalPreferences.glassPreference}`,
+            ].filter(Boolean).join(" | "),
+            quantity: 1,
+            unit_price: item.basePrice,
+            total: item.basePrice,
+          }))
+        : items.map((item) => ({
+            id: item.id,
+            name: item.doorType,
+            description: `${item.width}" x ${item.height}" | ${item.exteriorFinish}${item.exteriorFinish === "Two-tone" && item.interiorFinish ? ` / ${item.interiorFinish} interior` : ""} | ${item.glassType} | ${item.hardwareFinish}${item.roomName ? ` | ${item.roomName}` : ""}`,
+            quantity: 1,
+            unit_price: item.itemTotal,
+            total: item.itemTotal,
+          }));
+
+      const mediumNotes = isMedium
+        ? [
+            state.generalPreferences.approximateSize && `Approximate size: ${state.generalPreferences.approximateSize}`,
+            state.generalPreferences.colorPreference && `Color preference: ${state.generalPreferences.colorPreference}`,
+            state.generalPreferences.glassPreference && `Glass preference: ${state.generalPreferences.glassPreference}`,
+            state.generalPreferences.projectNotes && `Notes: ${state.generalPreferences.projectNotes}`,
+          ].filter(Boolean).join("\n")
+        : undefined;
 
       const quote = await createQuote({
         client_name: `${contact.firstName} ${contact.lastName}`,
         client_email: contact.email,
         door_type: firstItem.doorType,
         material: "Aluminum",
-        color: firstItem.exteriorFinish,
-        glass_type: firstItem.glassType,
-        size: `${firstItem.width}" x ${firstItem.height}"`,
-        cost: totals.grandTotal,
+        color: isMedium ? (state.generalPreferences.colorPreference || "TBD") : firstItem.exteriorFinish,
+        glass_type: isMedium ? (state.generalPreferences.glassPreference || "TBD") : firstItem.glassType,
+        size: isMedium ? (state.generalPreferences.approximateSize || "TBD") : `${firstItem.width}" x ${firstItem.height}"`,
+        cost: isMedium ? firstItem.basePrice : totals.grandTotal,
         customer_type: contact.customerType,
         customer_phone: contact.phone,
         customer_zip: contact.zip,
         lead_status: "new",
         lead_id: leadId || undefined,
         items: JSON.stringify(quoteItems),
-        subtotal: totals.subtotal,
-        installation_cost: totals.installationCost,
-        delivery_cost: totals.deliveryCost,
-        tax: totals.tax,
-        grand_total: totals.grandTotal,
-        delivery_type: services.deliveryType === "none" ? "pickup" : "delivery",
+        subtotal: isMedium ? firstItem.basePrice : totals.subtotal,
+        installation_cost: isMedium ? 0 : totals.installationCost,
+        delivery_cost: isMedium ? 0 : totals.deliveryCost,
+        tax: isMedium ? 0 : totals.tax,
+        grand_total: isMedium ? firstItem.basePrice : totals.grandTotal,
+        delivery_type: isMedium ? "pickup" : (services.deliveryType === "none" ? "pickup" : "delivery"),
+        intent_level: state.intentLevel || "full",
+        notes: mediumNotes,
       });
 
       if (leadId) {
@@ -407,9 +434,13 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
         // Don't block the flow if assignment fails
       }
 
-      // Send quote email to client
+      // Send email to client — medium gets confirmation, full gets portal link
       try {
-        await sendQuoteToClient(quote.id, window.location.origin);
+        if (isMedium) {
+          await sendEstimateConfirmation(quote.id);
+        } else {
+          await sendQuoteToClient(quote.id, window.location.origin);
+        }
       } catch {
         // Don't block the flow if email fails
       }
@@ -429,7 +460,7 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
       }
 
       dispatch({ type: "SET_QUOTE_ID", payload: quote.id });
-      dispatch({ type: "SET_STEP", payload: 5 });
+      dispatch({ type: "SET_STEP", payload: 6 });
     } catch (err) {
       dispatch({
         type: "SET_ERROR",
@@ -447,224 +478,309 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
     });
   }
 
+  const isMedium = state.intentLevel === "medium";
+
   return (
-    <div className="max-w-4xl mx-auto px-1 sm:px-0">
+    <div className={`mx-auto px-1 sm:px-0 ${isMedium ? "max-w-2xl" : "max-w-4xl"}`}>
       {/* Header */}
-      <div className="text-center mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-heading font-bold text-ocean-900 mb-2">
-          Your Quote Summary
+      <div className="text-center mb-5 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-heading font-bold text-ocean-900 mb-1.5 sm:mb-2">
+          {isMedium ? "Review Your Estimate Request" : "Your Quote Summary"}
         </h2>
         <p className="text-sm sm:text-base text-ocean-500">
-          Review your selections below. You can go back to make changes.
+          {isMedium
+            ? "Confirm your selections and we\u2019ll prepare a tailored estimate."
+            : "Review your selections below. You can go back to make changes."}
         </p>
       </div>
 
-      {/* ── Quote Items ── */}
-      <div className="mb-6 sm:mb-8">
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg">
-            Quote Items ({items.length})
-          </h3>
-          <button
-            onClick={() => {
-              dispatch({ type: "ADD_ANOTHER_ITEM" });
-              dispatch({ type: "SET_STEP", payload: 2 });
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            Add Another Item
-          </button>
-        </div>
-        <p className="text-xs sm:text-sm text-ocean-400 mb-3 sm:mb-4">
-          Select an item below to view its details, or add another item to your quote.
-        </p>
-        <div className="space-y-3 sm:space-y-4">
-          {items.map((item, i) => (
-            <ItemCard key={item.id} item={item} index={i} dispatch={dispatch} />
-          ))}
-        </div>
-      </div>
+      {/* ── Medium Tier: compact summary ── */}
+      {isMedium ? (
+        <>
+          {/* Selection card */}
+          <div className="bg-white rounded-xl sm:rounded-2xl border border-ocean-200 p-4 sm:p-6 shadow-sm mb-4 sm:mb-5">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="font-heading font-bold text-ocean-900 text-sm sm:text-base">
+                {items[0]?.doorType}
+              </h3>
+              <button
+                onClick={() => dispatch({ type: "SET_STEP", payload: 4 })}
+                className="flex items-center gap-1 text-xs sm:text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3 h-3" /> Edit
+              </button>
+            </div>
 
-      {/* ── Services ── */}
-      <div className="mb-6 sm:mb-8">
-        <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg mb-4 sm:mb-5">Services</h3>
+            {/* Preferences as compact rows */}
+            <div className="space-y-2 text-xs sm:text-sm">
+              {state.generalPreferences.approximateSize && (
+                <div className="flex justify-between">
+                  <span className="text-ocean-500">Approximate Size</span>
+                  <span className="font-medium text-ocean-800 capitalize">{state.generalPreferences.approximateSize.replace("-", " ")}</span>
+                </div>
+              )}
+              {state.generalPreferences.colorPreference && (
+                <div className="flex justify-between">
+                  <span className="text-ocean-500">Color Preference</span>
+                  <span className="font-medium text-ocean-800 capitalize">{state.generalPreferences.colorPreference.replace("-", " ")}</span>
+                </div>
+              )}
+              {state.generalPreferences.glassPreference && (
+                <div className="flex justify-between">
+                  <span className="text-ocean-500">Glass Type</span>
+                  <span className="font-medium text-ocean-800 capitalize">{state.generalPreferences.glassPreference.replace("-", " ")}</span>
+                </div>
+              )}
+            </div>
 
-        {/* Delivery Options */}
-        <div className="mb-5 sm:mb-6">
-          <p className="text-sm font-semibold text-ocean-700 mb-3">Delivery Options</p>
-          <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
-            {/* Regular Delivery */}
-            <button
-              onClick={() => toggleDelivery("regular")}
-              className={`text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
-                services.deliveryType === "regular"
-                  ? "border-primary-500 bg-primary-50/60 shadow-sm"
-                  : "border-ocean-200 hover:border-ocean-300 bg-white"
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h4 className="font-bold text-sm sm:text-base text-ocean-900">Regular Delivery</h4>
-                  <p className="text-xs text-ocean-500 mt-0.5">Curbside delivery only.</p>
-                </div>
-                <span className="text-sm sm:text-base font-bold text-primary-600 shrink-0">
-                  ${DELIVERY_COSTS.regular.toLocaleString()}
-                </span>
-              </div>
-              <div className="space-y-1.5 mt-3">
-                {REGULAR_DELIVERY_ITEMS.map((item) => (
-                  <div key={item.text} className="flex items-center gap-2 text-xs sm:text-sm text-ocean-500">
-                    <X className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
-                    {item.text}
-                  </div>
-                ))}
-              </div>
-            </button>
-
-            {/* White Glove */}
-            <button
-              onClick={() => toggleDelivery("white-glove")}
-              className={`text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
-                services.deliveryType === "white-glove"
-                  ? "border-primary-500 bg-primary-50/60 shadow-sm"
-                  : "border-ocean-200 hover:border-ocean-300 bg-white"
-              }`}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h4 className="font-bold text-sm sm:text-base text-ocean-900">White Glove</h4>
-                  <p className="text-xs text-ocean-500 mt-0.5">Full-service delivery.</p>
-                </div>
-                <span className="text-sm sm:text-base font-bold text-primary-600 shrink-0">
-                  ${DELIVERY_COSTS["white-glove"].toLocaleString()}
-                </span>
-              </div>
-              <div className="space-y-1.5 mt-3">
-                {WHITE_GLOVE_ITEMS.map((item) => (
-                  <div key={item.text} className="flex items-center gap-2 text-xs sm:text-sm text-ocean-700">
-                    <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-500 shrink-0" />
-                    {item.text}
-                  </div>
-                ))}
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Installation */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-ocean-700">Installation Service</p>
-          </div>
-          <div className={`rounded-xl sm:rounded-2xl border-2 transition-all overflow-hidden ${
-            services.includeInstallation
-              ? "border-primary-500 bg-white"
-              : "border-ocean-200 bg-white"
-          }`}>
-            {/* Toggle header */}
-            <button
-              onClick={() =>
-                dispatch({
-                  type: "SET_SERVICES",
-                  payload: { includeInstallation: !services.includeInstallation },
-                })
-              }
-              className="w-full p-4 sm:p-5 text-left cursor-pointer hover:bg-ocean-50/30 transition-colors"
-            >
-              <div className="flex items-start sm:items-center justify-between gap-3">
-                <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
-                  <Wrench className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0 ${services.includeInstallation ? "text-primary-500" : "text-ocean-400"}`} />
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-sm sm:text-base text-ocean-900 leading-tight">
-                      Professional Weatherproofing & Installation
-                    </h4>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs sm:text-sm font-bold text-primary-600">${INSTALLATION_COST.toLocaleString()}</span>
-                      {services.includeInstallation && (
-                        <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-green-600">
-                          <Check className="w-3 h-3" /> Included
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <div className="shrink-0">
-                  <div
-                    className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
-                      services.includeInstallation ? "bg-primary-500" : "bg-ocean-200"
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                        services.includeInstallation ? "translate-x-4" : "translate-x-0"
-                      }`}
-                    />
-                  </div>
-                </div>
-              </div>
-            </button>
-
-            {/* Expanded installation details */}
-            {services.includeInstallation && (
-              <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-ocean-100">
-                <p className="text-xs sm:text-sm text-ocean-500 mt-3 mb-4">
-                  Complete professional installation with weatherproofing, sealing, and quality inspection.
-                </p>
-                <div className="space-y-4">
-                  {INSTALLATION_FEATURES.map((feature) => {
-                    const Icon = feature.icon;
-                    return (
-                      <div key={feature.title} className="flex gap-3">
-                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 mt-0.5">
-                          <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-500" />
-                        </div>
-                        <div>
-                          <p className="text-xs sm:text-sm font-semibold text-ocean-800">{feature.title}</p>
-                          <p className="text-[11px] sm:text-xs text-ocean-500 leading-relaxed mt-0.5">{feature.desc}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+            {state.generalPreferences.projectNotes && (
+              <div className="mt-3 pt-3 border-t border-ocean-100">
+                <p className="text-[10px] sm:text-xs font-semibold text-ocean-400 uppercase tracking-wider mb-1">Project Notes</p>
+                <p className="text-xs sm:text-sm text-ocean-600 leading-relaxed">{state.generalPreferences.projectNotes}</p>
               </div>
             )}
-          </div>
-        </div>
-      </div>
 
-      {/* ── Total Quote Estimate ── */}
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-ocean-200 p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
-        <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg mb-4">Total Quote Estimate</h3>
-        <div className="space-y-2 sm:space-y-2.5 text-sm">
-          <div className="flex justify-between text-ocean-600">
-            <span>All Items Subtotal</span>
-            <span className="font-medium">${totals.subtotal.toLocaleString()}</span>
-          </div>
-          {totals.installationCost > 0 && (
-            <div className="flex justify-between text-ocean-600">
-              <span>Installation</span>
-              <span className="font-medium">${totals.installationCost.toLocaleString()}</span>
+            {/* Estimated price */}
+            <div className="mt-3 pt-3 border-t border-ocean-100 flex justify-between items-center">
+              <span className="text-xs sm:text-sm text-ocean-500">Estimated Starting Price</span>
+              <span className="text-sm sm:text-base font-bold text-primary-600">~${items[0]?.basePrice.toLocaleString()}</span>
             </div>
-          )}
-          {totals.deliveryCost > 0 && (
-            <div className="flex justify-between text-ocean-600">
-              <span>Delivery</span>
-              <span className="font-medium">${totals.deliveryCost.toLocaleString()}</span>
+          </div>
+
+          {/* Available services — informational only */}
+          <div className="bg-ocean-50/60 rounded-xl sm:rounded-2xl p-3.5 sm:p-5 mb-5 sm:mb-6">
+            <p className="text-[10px] sm:text-xs font-semibold text-ocean-500 uppercase tracking-wider mb-2.5">
+              Available Add-On Services
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5">
+                <Package className="w-4 h-4 text-ocean-400 shrink-0" />
+                <span className="text-xs sm:text-sm text-ocean-600">
+                  <span className="font-medium text-ocean-700">Delivery</span> &mdash; Regular (${DELIVERY_COSTS.regular.toLocaleString()}) or White Glove (${DELIVERY_COSTS["white-glove"].toLocaleString()})
+                </span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Wrench className="w-4 h-4 text-ocean-400 shrink-0" />
+                <span className="text-xs sm:text-sm text-ocean-600">
+                  <span className="font-medium text-ocean-700">Professional Installation</span> &mdash; ${INSTALLATION_COST.toLocaleString()}
+                </span>
+              </div>
             </div>
-          )}
-          <div className="flex justify-between text-ocean-600">
-            <span>Estimated Tax (8%)</span>
-            <span className="font-medium">${totals.tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <p className="text-[10px] sm:text-xs text-ocean-400 mt-2">
+              We&apos;ll discuss service options when we follow up with your estimate.
+            </p>
           </div>
-          <div className="flex justify-between pt-3 border-t border-ocean-200 text-base sm:text-lg font-bold text-ocean-900">
-            <span>Grand Total</span>
-            <span className="text-primary-600">
-              ${totals.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-            </span>
+        </>
+      ) : (
+        /* ── Full Tier: detailed items ── */
+        <>
+          <div className="mb-6 sm:mb-8">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg">
+                Quote Items ({items.length})
+              </h3>
+              <button
+                onClick={() => {
+                  dispatch({ type: "ADD_ANOTHER_ITEM" });
+                  dispatch({ type: "SET_STEP", payload: 3 });
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Add Another Item
+              </button>
+            </div>
+            <p className="text-xs sm:text-sm text-ocean-400 mb-3 sm:mb-4">
+              Select an item below to view its details, or add another item to your quote.
+            </p>
+            <div className="space-y-3 sm:space-y-4">
+              {items.map((item, i) => (
+                <ItemCard key={item.id} item={item} index={i} dispatch={dispatch} />
+              ))}
+            </div>
           </div>
-        </div>
-      </div>
+
+          {/* ── Services (full tier only) ── */}
+          <div className="mb-6 sm:mb-8">
+            <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg mb-4 sm:mb-5">Services</h3>
+
+            {/* Delivery Options */}
+            <div className="mb-5 sm:mb-6">
+              <p className="text-sm font-semibold text-ocean-700 mb-3">Delivery Options</p>
+              <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Regular Delivery */}
+                <button
+                  onClick={() => toggleDelivery("regular")}
+                  className={`text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                    services.deliveryType === "regular"
+                      ? "border-primary-500 bg-primary-50/60 shadow-sm"
+                      : "border-ocean-200 hover:border-ocean-300 bg-white"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 className="font-bold text-sm sm:text-base text-ocean-900">Regular Delivery</h4>
+                      <p className="text-xs text-ocean-500 mt-0.5">Curbside delivery only.</p>
+                    </div>
+                    <span className="text-sm sm:text-base font-bold text-primary-600 shrink-0">
+                      ${DELIVERY_COSTS.regular.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 mt-3">
+                    {REGULAR_DELIVERY_ITEMS.map((item) => (
+                      <div key={item.text} className="flex items-center gap-2 text-xs sm:text-sm text-ocean-500">
+                        <X className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-red-400 shrink-0" />
+                        {item.text}
+                      </div>
+                    ))}
+                  </div>
+                </button>
+
+                {/* White Glove */}
+                <button
+                  onClick={() => toggleDelivery("white-glove")}
+                  className={`text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                    services.deliveryType === "white-glove"
+                      ? "border-primary-500 bg-primary-50/60 shadow-sm"
+                      : "border-ocean-200 hover:border-ocean-300 bg-white"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h4 className="font-bold text-sm sm:text-base text-ocean-900">White Glove</h4>
+                      <p className="text-xs text-ocean-500 mt-0.5">Full-service delivery.</p>
+                    </div>
+                    <span className="text-sm sm:text-base font-bold text-primary-600 shrink-0">
+                      ${DELIVERY_COSTS["white-glove"].toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 mt-3">
+                    {WHITE_GLOVE_ITEMS.map((item) => (
+                      <div key={item.text} className="flex items-center gap-2 text-xs sm:text-sm text-ocean-700">
+                        <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-green-500 shrink-0" />
+                        {item.text}
+                      </div>
+                    ))}
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Installation */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-ocean-700">Installation Service</p>
+              </div>
+              <div className={`rounded-xl sm:rounded-2xl border-2 transition-all overflow-hidden ${
+                services.includeInstallation
+                  ? "border-primary-500 bg-white"
+                  : "border-ocean-200 bg-white"
+              }`}>
+                {/* Toggle header */}
+                <button
+                  onClick={() =>
+                    dispatch({
+                      type: "SET_SERVICES",
+                      payload: { includeInstallation: !services.includeInstallation },
+                    })
+                  }
+                  className="w-full p-4 sm:p-5 text-left cursor-pointer hover:bg-ocean-50/30 transition-colors"
+                >
+                  <div className="flex items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
+                      <Wrench className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0 ${services.includeInstallation ? "text-primary-500" : "text-ocean-400"}`} />
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-sm sm:text-base text-ocean-900 leading-tight">
+                          Professional Weatherproofing & Installation
+                        </h4>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs sm:text-sm font-bold text-primary-600">${INSTALLATION_COST.toLocaleString()}</span>
+                          {services.includeInstallation && (
+                            <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-green-600">
+                              <Check className="w-3 h-3" /> Included
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <div
+                        className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
+                          services.includeInstallation ? "bg-primary-500" : "bg-ocean-200"
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                            services.includeInstallation ? "translate-x-4" : "translate-x-0"
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Expanded installation details */}
+                {services.includeInstallation && (
+                  <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-ocean-100">
+                    <p className="text-xs sm:text-sm text-ocean-500 mt-3 mb-4">
+                      Complete professional installation with weatherproofing, sealing, and quality inspection.
+                    </p>
+                    <div className="space-y-4">
+                      {INSTALLATION_FEATURES.map((feature) => {
+                        const Icon = feature.icon;
+                        return (
+                          <div key={feature.title} className="flex gap-3">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 mt-0.5">
+                              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-500" />
+                            </div>
+                            <div>
+                              <p className="text-xs sm:text-sm font-semibold text-ocean-800">{feature.title}</p>
+                              <p className="text-[11px] sm:text-xs text-ocean-500 leading-relaxed mt-0.5">{feature.desc}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Total Quote Estimate (full tier only) ── */}
+          <div className="bg-white rounded-xl sm:rounded-2xl border border-ocean-200 p-4 sm:p-6 mb-6 sm:mb-8 shadow-sm">
+            <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg mb-4">Total Quote Estimate</h3>
+            <div className="space-y-2 sm:space-y-2.5 text-sm">
+              <div className="flex justify-between text-ocean-600">
+                <span>All Items Subtotal</span>
+                <span className="font-medium">${totals.subtotal.toLocaleString()}</span>
+              </div>
+              {totals.installationCost > 0 && (
+                <div className="flex justify-between text-ocean-600">
+                  <span>Installation</span>
+                  <span className="font-medium">${totals.installationCost.toLocaleString()}</span>
+                </div>
+              )}
+              {totals.deliveryCost > 0 && (
+                <div className="flex justify-between text-ocean-600">
+                  <span>Delivery</span>
+                  <span className="font-medium">${totals.deliveryCost.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-ocean-600">
+                <span>Estimated Tax (8%)</span>
+                <span className="font-medium">${totals.tax.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between pt-3 border-t border-ocean-200 text-base sm:text-lg font-bold text-ocean-900">
+                <span>Grand Total</span>
+                <span className="text-primary-600">
+                  ${totals.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Error */}
       {state.error && (
@@ -677,24 +793,24 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
       <button
         onClick={handleSubmit}
         disabled={isSubmitting || items.length === 0}
-        className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 sm:py-4 px-6 rounded-xl transition-all text-base sm:text-lg cursor-pointer shadow-lg shadow-primary-600/25 hover:shadow-xl hover:shadow-primary-500/30 active:scale-[0.99]"
+        className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold py-3.5 sm:py-4 px-6 rounded-xl transition-all text-sm sm:text-lg cursor-pointer shadow-lg shadow-primary-600/25 hover:shadow-xl hover:shadow-primary-500/30 active:scale-[0.99]"
       >
         {isSubmitting ? (
           <>
             <Loader2 className="w-5 h-5 animate-spin" />
-            Submitting Quote...
+            {isMedium ? "Submitting..." : "Submitting Quote..."}
           </>
         ) : (
-          "Save & Email Quote"
+          isMedium ? "Submit Estimate Request" : "Save & Email Quote"
         )}
       </button>
 
-      <div className="text-center mt-4 pb-6 sm:pb-0">
+      <div className="text-center mt-3 sm:mt-4 pb-6 sm:pb-0">
         <button
-          onClick={() => dispatch({ type: "RESET" })}
+          onClick={() => dispatch({ type: "SET_STEP", payload: isMedium ? 4 : 3 })}
           className="text-xs sm:text-sm text-ocean-400 hover:text-ocean-600 transition-colors cursor-pointer"
         >
-          Start New Quote
+          &larr; Back
         </button>
       </div>
     </div>

@@ -188,7 +188,7 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
           <PortalPhotos quoteId={quoteId} photos={photos} setPhotos={setPhotos} />
         )}
         {activeTab === "approval" && (
-          <PortalApprovalDrawing drawing={drawing} quoteName={quote.client_name} quoteId={quoteId} quoteColor={quote.color} />
+          <PortalApprovalDrawing drawing={drawing} quoteName={quote.client_name} quoteId={quoteId} quoteColor={quote.color} portalStage={quote.portal_stage} />
         )}
         {activeTab === "payments" && (
           <PortalPayments
@@ -231,6 +231,7 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
 
 const STAGES = [
   { key: "quote_sent", label: "Quote" },
+  { key: "drawing_requested", label: "Drawing Requested" },
   { key: "approval_pending", label: "Approval" },
   { key: "approval_signed", label: "Signed" },
   { key: "deposit_1_pending", label: "Deposit" },

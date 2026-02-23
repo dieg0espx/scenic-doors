@@ -260,6 +260,59 @@ export async function sendApprovalDrawing(id: string, quoteId: string): Promise<
   revalidatePath(`/admin/quotes/${quoteId}`);
 }
 
+export async function requestApprovalDrawing(quoteId: string): Promise<void> {
+  const supabase = await createClient();
+
+  // Update portal stage to indicate drawing was requested
+  const { error } = await supabase
+    .from("quotes")
+    .update({ portal_stage: "drawing_requested", last_activity_at: new Date().toISOString() })
+    .eq("id", quoteId);
+
+  if (error) throw new Error(error.message);
+
+  // Notify admin team
+  try {
+    const { data: quote } = await supabase
+      .from("quotes")
+      .select("quote_number, client_name, client_email, door_type, grand_total, cost")
+      .eq("id", quoteId)
+      .single();
+
+    if (quote) {
+      const emails = await getNotificationEmailsByType("new_quote");
+      if (emails.length > 0) {
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        const total = Number(quote.grand_total || quote.cost || 0).toLocaleString("en-US", { minimumFractionDigits: 2 });
+        await sendInternalNotificationEmail(
+          {
+            heading: `Approval Drawing Requested — ${quote.quote_number}`,
+            headingColor: "#d97706",
+            headingBg: "#fffbeb",
+            headingBorder: "#fef3c7",
+            message: `${quote.client_name} has reviewed their quote and is requesting an approval drawing. Please prepare the drawing and send it for their review.`,
+            details: [
+              { label: "Quote", value: quote.quote_number },
+              { label: "Client", value: quote.client_name },
+              { label: "Email", value: quote.client_email },
+              { label: "Door Type", value: quote.door_type },
+              { label: "Total", value: `$${total}` },
+            ],
+            adminUrl: `${origin}/admin/quotes/${quoteId}`,
+            ctaLabel: "Create Approval Drawing",
+          },
+          emails
+        );
+      }
+    }
+  } catch {
+    // Don't fail the request if notification fails
+  }
+
+  revalidatePath(`/admin/quotes/${quoteId}`);
+  revalidatePath(`/portal/${quoteId}`);
+}
+
 export async function signApprovalDrawing(
   id: string,
   customerName: string,

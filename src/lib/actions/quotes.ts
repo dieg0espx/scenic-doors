@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendQuoteEmail, sendNewQuoteNotificationEmail, sendInternalNotificationEmail, sendQuoteApprovedEmail } from "@/lib/email";
+import { sendQuoteEmail, sendNewQuoteNotificationEmail, sendInternalNotificationEmail, sendQuoteApprovedEmail, sendEstimateConfirmationEmail } from "@/lib/email";
 import { recordEmailSent } from "@/lib/actions/email-history";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import { scheduleFollowUps } from "@/lib/actions/follow-ups";
@@ -39,6 +39,7 @@ export async function createQuote(formData: {
   lead_id?: string;
   created_by?: string;
   shared_with?: string[];
+  intent_level?: string;
 }) {
   const supabase = await createClient();
 
@@ -115,6 +116,7 @@ export async function createQuote(formData: {
       lead_id: formData.lead_id || null,
       created_by: formData.created_by || null,
       shared_with: formData.shared_with || [],
+      intent_level: formData.intent_level || "full",
     })
     .select()
     .single();
@@ -157,6 +159,7 @@ export async function getQuotes() {
 
 export async function getQuotesWithFilters(filters?: {
   lead_status?: string;
+  intent_level?: string;
   search?: string;
   sort?: string;
   due_today?: boolean;
@@ -168,10 +171,30 @@ export async function getQuotesWithFilters(filters?: {
     let q = query;
     // lead_status and follow_up_date are from migration 008 — skip if safeOnly
     if (!safeOnly && filters?.lead_status && filters.lead_status !== "all") {
-      q = q.eq("lead_status", filters.lead_status);
+      const statuses = filters.lead_status.split(",").filter(Boolean);
+      if (statuses.length === 1) {
+        q = q.eq("lead_status", statuses[0]);
+      } else {
+        q = q.in("lead_status", statuses);
+      }
     } else if (!safeOnly) {
       // Exclude orders from the quotes list — they belong on the Orders page
       q = q.neq("lead_status", "order");
+    }
+    if (!safeOnly && filters?.intent_level && filters.intent_level !== "all") {
+      const intents = filters.intent_level.split(",").filter(Boolean);
+      const includesFull = intents.includes("full");
+      const others = intents.filter((i) => i !== "full");
+      if (includesFull && others.length > 0) {
+        // "full" includes rows with NULL intent_level (legacy quotes)
+        q = q.or(`intent_level.in.(${intents.join(",")}),intent_level.is.null`);
+      } else if (includesFull) {
+        q = q.or("intent_level.eq.full,intent_level.is.null");
+      } else if (others.length === 1) {
+        q = q.eq("intent_level", others[0]);
+      } else {
+        q = q.in("intent_level", others);
+      }
     }
     if (filters?.search) {
       const s = `%${filters.search}%`;
@@ -213,6 +236,7 @@ export async function getQuotesForUser(
   role: string,
   filters?: {
     lead_status?: string;
+    intent_level?: string;
     search?: string;
     sort?: string;
     due_today?: boolean;
@@ -233,9 +257,29 @@ export async function getQuotesForUser(
     .or(`assigned_to.eq.${userId},created_by.eq.${userName},shared_with.cs.{${userId}}`);
 
   if (filters?.lead_status && filters.lead_status !== "all") {
-    query = query.eq("lead_status", filters.lead_status);
+    const statuses = filters.lead_status.split(",").filter(Boolean);
+    if (statuses.length === 1) {
+      query = query.eq("lead_status", statuses[0]);
+    } else {
+      query = query.in("lead_status", statuses);
+    }
   } else {
     query = query.neq("lead_status", "order");
+  }
+
+  if (filters?.intent_level && filters.intent_level !== "all") {
+    const intents = filters.intent_level.split(",").filter(Boolean);
+    const includesFull = intents.includes("full");
+    const others = intents.filter((i) => i !== "full");
+    if (includesFull && others.length > 0) {
+      query = query.or(`intent_level.in.(${intents.join(",")}),intent_level.is.null`);
+    } else if (includesFull) {
+      query = query.or("intent_level.eq.full,intent_level.is.null");
+    } else if (others.length === 1) {
+      query = query.eq("intent_level", others[0]);
+    } else {
+      query = query.in("intent_level", others);
+    }
   }
 
   if (filters?.search) {
@@ -456,7 +500,7 @@ export async function updateQuoteLeadStatus(
   const supabase = await createClient();
   const { error } = await supabase
     .from("quotes")
-    .update({ lead_status })
+    .update({ lead_status, last_activity_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
@@ -468,11 +512,13 @@ export async function assignQuote(
   assignedTo: string
 ) {
   const supabase = await createClient();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("quotes")
     .update({
       assigned_to: assignedTo,
-      assigned_date: new Date().toISOString(),
+      assigned_date: now,
+      last_activity_at: now,
     })
     .eq("id", id);
 
@@ -500,7 +546,7 @@ export async function sendQuoteToClient(id: string, origin: string) {
 
   if (fetchError || !quote) throw new Error("Quote not found");
 
-  // Send the email
+  // Send the email — link to client portal instead of quote acceptance page
   await sendQuoteEmail({
     clientName: quote.client_name,
     clientEmail: quote.client_email,
@@ -511,7 +557,7 @@ export async function sendQuoteToClient(id: string, origin: string) {
     glassType: quote.glass_type,
     size: quote.size,
     cost: quote.cost,
-    quoteUrl: `${origin}/quote/${quote.id}`,
+    quoteUrl: `${origin}/portal/${quote.id}`,
     deliveryType: quote.delivery_type,
     deliveryAddress: quote.delivery_address,
   });
@@ -525,9 +571,10 @@ export async function sendQuoteToClient(id: string, origin: string) {
   });
 
   // Update status to sent
+  const sentNow = new Date().toISOString();
   const { error } = await supabase
     .from("quotes")
-    .update({ status: "sent", sent_at: new Date().toISOString() })
+    .update({ status: "sent", sent_at: sentNow, last_activity_at: sentNow })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
@@ -823,4 +870,29 @@ export async function updateQuoteSharedWith(
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/quotes/${quoteId}`);
   revalidatePath("/admin/quotes");
+}
+
+export async function sendEstimateConfirmation(quoteId: string) {
+  const supabase = await createClient();
+  const { data: quote, error } = await supabase
+    .from("quotes")
+    .select("client_name, client_email, quote_number, door_type")
+    .eq("id", quoteId)
+    .single();
+
+  if (error || !quote) return;
+
+  await sendEstimateConfirmationEmail({
+    clientName: quote.client_name,
+    clientEmail: quote.client_email,
+    quoteNumber: quote.quote_number,
+    doorType: quote.door_type,
+  });
+
+  await recordEmailSent({
+    quote_id: quoteId,
+    recipient_email: quote.client_email,
+    subject: `We Received Your Inquiry — ${quote.quote_number}`,
+    type: "confirmation",
+  });
 }

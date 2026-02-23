@@ -36,7 +36,7 @@ export default function StepProductSelection({ dispatch }: StepProductSelectionP
       type: "SELECT_PRODUCT",
       payload: { doorType: name, doorTypeSlug: slug, basePrice },
     });
-    dispatch({ type: "SET_STEP", payload: 3 });
+    dispatch({ type: "SET_STEP", payload: 4 });
   }
 
   return (
@@ -102,9 +102,6 @@ export default function StepProductSelection({ dispatch }: StepProductSelectionP
                   className="object-contain"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs sm:text-sm font-semibold text-ocean-900">
-                  From ${product.basePrice.toLocaleString()}
-                </div>
               </div>
 
               {/* Info */}

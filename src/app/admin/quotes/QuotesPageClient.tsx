@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import type { Quote } from "@/lib/types";
 import { exportToCSV } from "@/lib/utils/csv-export";
-import QuoteStatusTabs from "@/components/admin/QuoteStatusTabs";
 import QuoteSearchBar from "@/components/admin/QuoteSearchBar";
 import ExpandableQuoteCard from "@/components/admin/ExpandableQuoteCard";
 import ColumnSelectorModal, {
@@ -14,12 +13,13 @@ import { FileText } from "lucide-react";
 interface Props {
   quotes: Quote[];
   counts: Record<string, number>;
+  intentCounts: Record<string, number>;
   userNameMap?: Record<string, string>;
 }
 
 const STORAGE_KEY = "scenic-quote-columns";
 
-export default function QuotesPageClient({ quotes, counts, userNameMap = {} }: Props) {
+export default function QuotesPageClient({ quotes, counts, intentCounts, userNameMap = {} }: Props) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expandAll, setExpandAll] = useState(false);
   const [showColumnModal, setShowColumnModal] = useState(false);
@@ -83,9 +83,9 @@ export default function QuotesPageClient({ quotes, counts, userNameMap = {} }: P
 
   return (
     <div className="space-y-4">
-      <QuoteStatusTabs counts={counts} />
-
       <QuoteSearchBar
+        statusCounts={counts}
+        intentCounts={intentCounts}
         onExportCSV={handleExportCSV}
         onToggleColumns={() => setShowColumnModal(true)}
         expandAll={expandAll}

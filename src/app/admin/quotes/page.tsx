@@ -29,6 +29,7 @@ export default async function QuotesPage({
 
   const quotes = await getQuotesForUser(userId, userName, userRole, {
     lead_status: params.status || "all",
+    intent_level: params.intent || "all",
     search: params.search,
     sort: params.sort,
     due_today: params.due_today === "true",
@@ -37,9 +38,12 @@ export default async function QuotesPage({
   // Count quotes by lead_status (scoped to user's visible quotes)
   const allQuotes = await getQuotesForUser(userId, userName, userRole);
   const counts: Record<string, number> = {};
+  const intentCounts: Record<string, number> = {};
   for (const q of allQuotes) {
     const s = q.lead_status || "new";
     counts[s] = (counts[s] || 0) + 1;
+    const intent = q.intent_level || "full";
+    intentCounts[intent] = (intentCounts[intent] || 0) + 1;
   }
 
   // Compute summary stats
@@ -132,7 +136,7 @@ export default async function QuotesPage({
         })}
       </div>
 
-      <QuotesPageClient quotes={quotes} counts={counts} userNameMap={userNameMap} />
+      <QuotesPageClient quotes={quotes} counts={counts} intentCounts={intentCounts} userNameMap={userNameMap} />
     </div>
   );
 }

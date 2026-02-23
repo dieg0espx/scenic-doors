@@ -95,10 +95,10 @@ export async function sendQuoteEmail(data: QuoteEmailData) {
       <!-- CTA Button -->
       <div style="padding:0 32px 32px;text-align:center;">
         <a href="${data.quoteUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
-          View Full Quote
+          View Your Quote
         </a>
         <p style="margin:16px 0 0;font-size:12px;color:#a1a1aa;">
-          You can accept or decline this quote from the link above.
+          View your quote details, upload site photos, and request an approval drawing from your client portal.
         </p>
       </div>
     </div>
@@ -982,13 +982,96 @@ export async function sendShippingNotificationEmail(data: ShippingNotificationEm
   });
 }
 
+interface EstimateConfirmationData {
+  clientName: string;
+  clientEmail: string;
+  quoteNumber: string;
+  doorType: string;
+}
+
+export async function sendEstimateConfirmationEmail(data: EstimateConfirmationData) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:#f0fdf4;border-bottom:1px solid #dcfce7;padding:20px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:#16a34a;">We Received Your Request!</p>
+      </div>
+
+      <div style="padding:24px 32px;">
+        <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.clientName},</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#71717a;line-height:1.6;">
+          Thank you for your interest in Scenic Doors! We\u2019ve received your inquiry and a member of our team will reach out to you shortly to discuss your project.
+        </p>
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:20px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#a1a1aa;width:120px;">Reference</td>
+              <td style="padding:6px 0;font-size:13px;color:#18181b;font-weight:500;">${data.quoteNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#a1a1aa;">Product</td>
+              <td style="padding:6px 0;font-size:13px;color:#18181b;font-weight:500;">${data.doorType}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Contact info -->
+      <div style="padding:0 32px 32px;">
+        <div style="background:#f5f3ff;border-radius:12px;border:1px solid #ede9fe;padding:20px;">
+          <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#7c3aed;">Want to get in touch sooner?</p>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#71717a;width:60px;">Phone</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">
+                <a href="tel:818-427-6690" style="color:#7c3aed;text-decoration:none;">818-427-6690</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#71717a;">Email</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">
+                <a href="mailto:info@scenicdoors.com" style="color:#7c3aed;text-decoration:none;">info@scenicdoors.com</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: data.clientEmail,
+    subject: `We Received Your Inquiry \u2014 ${data.quoteNumber} | Scenic Doors`,
+    html,
+  });
+}
+
 interface FollowUpEmailData {
   clientName: string;
   clientEmail: string;
   quoteNumber: string;
   doorType: string;
   sequenceNumber: number;
-  quoteUrl: string;
+  quoteUrl: string | null;
 }
 
 const followUpMessages: Record<number, { subject: string; heading: string; body: string }> = {
@@ -1049,14 +1132,23 @@ export async function sendFollowUpEmail(data: FollowUpEmailData) {
         </div>
       </div>
 
-      <div style="padding:0 32px 32px;text-align:center;">
+      ${data.quoteUrl ? `<div style="padding:0 32px 32px;text-align:center;">
         <a href="${data.quoteUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
           View Your Quote
         </a>
         <p style="margin:16px 0 0;font-size:12px;color:#a1a1aa;">
-          You can review, accept, or decline your quote from the link above.
+          View your quote and project details from the link above.
         </p>
-      </div>
+      </div>` : `<div style="padding:0 32px 32px;">
+        <div style="background:#f5f3ff;border-radius:12px;border:1px solid #ede9fe;padding:20px;text-align:center;">
+          <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#7c3aed;">Ready to move forward? Get in touch!</p>
+          <p style="margin:0;font-size:13px;color:#71717a;">
+            <a href="tel:818-427-6690" style="color:#7c3aed;text-decoration:none;font-weight:500;">818-427-6690</a>
+            &nbsp;&bull;&nbsp;
+            <a href="mailto:info@scenicdoors.com" style="color:#7c3aed;text-decoration:none;font-weight:500;">info@scenicdoors.com</a>
+          </p>
+        </div>
+      </div>`}
     </div>
 
     <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">

@@ -7,8 +7,9 @@ import {
   Clock,
   Loader2,
   Download,
+  ClipboardCheck,
 } from "lucide-react";
-import { signApprovalDrawing } from "@/lib/actions/approval-drawings";
+import { signApprovalDrawing, requestApprovalDrawing } from "@/lib/actions/approval-drawings";
 import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
 import SlideStackDoorAnimation from "@/components/SlideStackDoorAnimation";
 import type { ApprovalDrawing } from "@/lib/types";
@@ -18,11 +19,14 @@ interface PortalApprovalDrawingProps {
   quoteName: string;
   quoteId: string;
   quoteColor?: string;
+  portalStage?: string;
 }
 
-export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quoteColor }: PortalApprovalDrawingProps) {
+export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quoteColor, portalStage }: PortalApprovalDrawingProps) {
   const [signing, setSigning] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [requested, setRequested] = useState(portalStage === "drawing_requested");
   const [showSignPad, setShowSignPad] = useState(false);
   const [customerName, setCustomerName] = useState(quoteName);
   const [signatureData, setSignatureData] = useState<string | null>(null);
@@ -55,16 +59,61 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
     }
   }
 
+  async function handleRequestDrawing() {
+    setRequesting(true);
+    try {
+      await requestApprovalDrawing(quoteId);
+      setRequested(true);
+    } catch {
+      alert("Failed to submit request. Please try again.");
+    } finally {
+      setRequesting(false);
+    }
+  }
+
   if (!drawing) {
+    // Drawing already requested — show waiting state
+    if (requested) {
+      return (
+        <div className="bg-white rounded-xl border border-ocean-200 p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+            <Clock className="w-7 h-7 text-amber-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-ocean-900 mb-2">Approval Drawing Requested</h3>
+          <p className="text-ocean-500 text-sm max-w-md mx-auto">
+            We&apos;ve received your request! Our team is preparing your approval drawing. You&apos;ll receive an email notification when it&apos;s ready for review.
+          </p>
+        </div>
+      );
+    }
+
+    // No drawing yet, no request — show CTA to request one
     return (
       <div className="bg-white rounded-xl border border-ocean-200 p-8 text-center">
-        <div className="w-14 h-14 rounded-full bg-ocean-100 flex items-center justify-center mx-auto mb-4">
-          <Clock className="w-7 h-7 text-ocean-400" />
+        <div className="w-14 h-14 rounded-full bg-primary-100 flex items-center justify-center mx-auto mb-4">
+          <ClipboardCheck className="w-7 h-7 text-primary-500" />
         </div>
-        <h3 className="text-lg font-semibold text-ocean-900 mb-2">Approval Drawing Pending</h3>
-        <p className="text-ocean-500 text-sm max-w-md mx-auto">
-          Your approval drawing is being prepared by our team. You&apos;ll receive an email notification when it&apos;s ready for review.
+        <h3 className="text-lg font-semibold text-ocean-900 mb-2">Request Approval Drawing</h3>
+        <p className="text-ocean-500 text-sm max-w-md mx-auto mb-5">
+          Ready to move forward? Request an approval drawing so our team can prepare a detailed diagram of your door configuration for your review and sign-off.
         </p>
+        <button
+          onClick={handleRequestDrawing}
+          disabled={requesting}
+          className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 text-white font-semibold px-8 py-3 rounded-lg transition-colors cursor-pointer"
+        >
+          {requesting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Requesting...
+            </>
+          ) : (
+            <>
+              <ClipboardCheck className="w-4 h-4" />
+              Request Approval Drawing
+            </>
+          )}
+        </button>
       </div>
     );
   }

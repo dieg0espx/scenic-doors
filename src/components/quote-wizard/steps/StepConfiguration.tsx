@@ -143,7 +143,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
       payload: { panelCount: panels, glassPriceModifier: glassMod, itemTotal: updatedItem.itemTotal },
     });
     dispatch({ type: "SAVE_CURRENT_ITEM" });
-    dispatch({ type: "SET_STEP", payload: 4 });
+    dispatch({ type: "SET_STEP", payload: 5 });
   }
 
   const availablePanelCounts = config.hasPanelCount
@@ -197,7 +197,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
               {config.displayName}
             </h2>
             <button
-              onClick={() => dispatch({ type: "SET_STEP", payload: 2 })}
+              onClick={() => dispatch({ type: "SET_STEP", payload: 3 })}
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm text-white/70 hover:text-white font-medium transition-colors cursor-pointer"
             >
               <RefreshCw className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -766,7 +766,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
       {/* ── Actions ── */}
       <div className="mt-5 sm:mt-6 flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 pb-4 sm:pb-0">
         <button
-          onClick={() => dispatch({ type: "SET_STEP", payload: 2 })}
+          onClick={() => dispatch({ type: "SET_STEP", payload: 3 })}
           className="group px-5 py-3.5 sm:py-3.5 rounded-xl border border-ocean-200 text-ocean-600 font-medium hover:bg-ocean-50 hover:border-ocean-300 transition-all cursor-pointer flex items-center justify-center sm:justify-start gap-2"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />

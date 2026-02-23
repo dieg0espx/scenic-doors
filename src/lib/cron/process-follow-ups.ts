@@ -23,7 +23,7 @@ export async function sendPendingFollowUps(origin: string): Promise<{ sent: numb
       // Fetch the related quote
       const { data: quote } = await supabase
         .from("quotes")
-        .select("id, client_name, client_email, quote_number, door_type, lead_status")
+        .select("id, client_name, client_email, quote_number, door_type, lead_status, intent_level")
         .eq("id", followUp.quote_id)
         .single();
 
@@ -44,14 +44,15 @@ export async function sendPendingFollowUps(origin: string): Promise<{ sent: numb
         continue;
       }
 
-      // Send the follow-up email
+      // Send the follow-up email — full tier links to portal, browse/medium links to contact
+      const isFullTier = quote.intent_level === "full" || !quote.intent_level;
       await sendFollowUpEmail({
         clientName: quote.client_name,
         clientEmail: quote.client_email,
         quoteNumber: quote.quote_number,
         doorType: quote.door_type,
         sequenceNumber: followUp.sequence_number,
-        quoteUrl: `${origin}/quote/${quote.id}`,
+        quoteUrl: isFullTier ? `${origin}/portal/${quote.id}` : null,
       });
 
       // Mark as sent

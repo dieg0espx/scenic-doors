@@ -36,6 +36,13 @@ export async function createQuoteNote(
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Reset aging timer — adding a note counts as admin activity
+  await supabase
+    .from("quotes")
+    .update({ last_activity_at: new Date().toISOString() })
+    .eq("id", quoteId);
+
   revalidatePath(`/admin/quotes/${quoteId}`);
   return data;
 }

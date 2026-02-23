@@ -116,6 +116,8 @@ export interface Quote {
   lead_id: string | null;
   shared_with: string[];
   portal_stage: string;
+  intent_level?: string;
+  last_activity_at: string | null;
   // Joined relations (optional)
   quote_notes?: QuoteNote[];
   quote_tasks?: QuoteTask[];

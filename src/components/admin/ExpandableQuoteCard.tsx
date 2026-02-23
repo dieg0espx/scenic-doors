@@ -96,9 +96,18 @@ export default function ExpandableQuoteCard({
             <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${sc.bg} ${sc.text}`}>
               {leadStatus.charAt(0).toUpperCase() + leadStatus.slice(1)}
             </span>
-            {visibleColumns.has("type") && quote.customer_type && (
-              <span className={`hidden sm:inline-flex shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${customerTypeBadge[quote.customer_type] || customerTypeBadge.residential}`}>
-                {quote.customer_type}
+            {quote.intent_level && quote.intent_level !== "full" && (
+              <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                quote.intent_level === "browse"
+                  ? "bg-sky-400/10 text-sky-300"
+                  : "bg-amber-400/10 text-amber-300"
+              }`}>
+                {quote.intent_level === "browse" ? "Price Inquiry" : "General Estimate"}
+              </span>
+            )}
+            {quote.portal_stage === "drawing_requested" && (
+              <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-400/15 text-orange-300 animate-pulse">
+                Drawing Requested
               </span>
             )}
           </div>
