@@ -24,6 +24,22 @@ const specifications = [
   { label: "Water Penetration", value: "≥ 450", unit: "Pa" },
 ];
 
+const detailedSpecifications = [
+  { label: "Product Name", value: "Scenic Horizontal Fold-Up Window" },
+  { label: "Open Style", value: "Two-Panel Horizontal Fold-Up System" },
+  { label: "Thermal Insulation", value: "U ≤ 0.387 BTU/hr·ft²·°F" },
+  { label: "Acoustic Performance", value: "≤ 45 dB" },
+  { label: "Air Tightness", value: "≤ 0.4 m³/(m²·h)" },
+  { label: "Wind Load Resistance", value: "≥ 2.8 KPa" },
+  { label: "Water Penetration", value: "≥ 450 Pa" },
+  { label: "Window Standard", value: "NFRC, CSA, CE" },
+  { label: "Glass Standard", value: "IGCC / SGCC / CE" },
+  { label: "Warranty", value: "15 Years" },
+  { label: "Application", value: "Residential, Commercial" },
+  { label: "Performance", value: "Thermal Broken" },
+  { label: "Main Market", value: "USA, Canada, Europe" },
+];
+
 const engineeringFeatures = [
   {
     icon: Shield,
@@ -147,6 +163,7 @@ export default function FoldUpWindowsPage() {
             tertiaryAlt: "Wall of lift-up windows",
           }}
           specifications={specifications}
+          detailedSpecifications={detailedSpecifications}
           engineeringFeatures={engineeringFeatures}
           gallery={gallery}
           galleryAltPrefix="Fold-Up Window"

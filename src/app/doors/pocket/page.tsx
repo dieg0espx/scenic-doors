@@ -17,6 +17,29 @@ const features = [
   "Multiple screen options available",
 ];
 
+const specifications = [
+  { label: "Thermal Insulation", value: "U ≤ 0.387", unit: "BTU/hr·ft²·°F" },
+  { label: "Acoustic Performance", value: "≤ 45", unit: "dB" },
+  { label: "Wind Load Resistance", value: "≥ 2.8", unit: "KPa" },
+  { label: "Water Penetration", value: "≥ 450", unit: "Pa" },
+];
+
+const detailedSpecifications = [
+  { label: "Product Name", value: "Scenic Pocket Door System" },
+  { label: "Open Style", value: "1-4 Panels, Concealed Pocket System" },
+  { label: "Thermal Insulation", value: "U ≤ 0.387 BTU/hr·ft²·°F" },
+  { label: "Acoustic Performance", value: "≤ 45 dB" },
+  { label: "Air Tightness", value: "≤ 0.4 m³/(m²·h)" },
+  { label: "Wind Load Resistance", value: "≥ 2.8 KPa" },
+  { label: "Water Penetration", value: "≥ 450 Pa" },
+  { label: "Window Standard", value: "NFRC, CSA, CE" },
+  { label: "Glass Standard", value: "IGCC / SGCC / CE" },
+  { label: "Warranty", value: "10 Years" },
+  { label: "Application", value: "Residential, Commercial" },
+  { label: "Performance", value: "Thermal Broken" },
+  { label: "Main Market", value: "USA, Canada, Europe" },
+];
+
 const engineeringFeatures = [
   {
     icon: Eye,
@@ -139,6 +162,8 @@ export default function PocketDoorsPage() {
             tertiary: gallery[3],
             tertiaryAlt: "Pocket door luxury home",
           }}
+          specifications={specifications}
+          detailedSpecifications={detailedSpecifications}
           engineeringFeatures={engineeringFeatures}
           gallery={gallery}
           galleryAltPrefix="Pocket Patio Door"

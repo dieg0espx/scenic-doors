@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, LucideIcon } from "lucide-react";
 import Image from "next/image";
+import SpecificationsTable, { SpecificationRow } from "@/components/SpecificationsTable";
 
 interface Tab {
   id: string;
@@ -57,6 +58,7 @@ export interface ProductTabsProps {
 
   // Specifications tab
   specifications?: Specification[];
+  detailedSpecifications?: SpecificationRow[];
   engineeringFeatures?: EngineeringFeature[];
   certifications?: {
     title: string;
@@ -97,6 +99,7 @@ export default function ProductTabs({
   features,
   featuredImages,
   specifications,
+  detailedSpecifications,
   engineeringFeatures,
   certifications,
   gallery,
@@ -225,6 +228,33 @@ export default function ProductTabs({
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3 }}
           >
+            {/* Detailed Specifications Table */}
+            {detailedSpecifications && detailedSpecifications.length > 0 && (
+              <section className="py-24 bg-white">
+                <div className="section-container max-w-5xl">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                    className="text-center mb-12"
+                  >
+                    <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
+                      Specifications
+                    </span>
+                    <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-4">
+                      Product Details
+                    </h2>
+                    <p className="text-ocean-600 max-w-2xl mx-auto">
+                      Comprehensive specifications for your reference
+                    </p>
+                  </motion.div>
+
+                  <SpecificationsTable specifications={detailedSpecifications} />
+                </div>
+              </section>
+            )}
+
             {/* Engineering Features */}
             {engineeringFeatures && engineeringFeatures.length > 0 && (
               <section className="py-24 bg-primary-800">

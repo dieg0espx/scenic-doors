@@ -25,6 +25,22 @@ const specifications = [
   { label: "Water Penetration", value: "≥ 450", unit: "Pa" },
 ];
 
+const detailedSpecifications = [
+  { label: "Product Name", value: "Scenic Multi-Slide Patio Door" },
+  { label: "Open Style", value: "XO, OX, OXO, OXXO, XX, XXX, XXXX, XXXXXX, OXXXXO" },
+  { label: "Thermal Insulation", value: "U ≤ 0.387 BTU/hr·ft²·°F" },
+  { label: "Acoustic Performance", value: "≤ 45 dB" },
+  { label: "Air Tightness", value: "≤ 0.4 m³/(m²·h)" },
+  { label: "Wind Load Resistance", value: "≥ 2.8 KPa" },
+  { label: "Water Penetration", value: "≥ 450 Pa" },
+  { label: "Window Standard", value: "NFRC, CSA, CE" },
+  { label: "Glass Standard", value: "IGCC / SGCC / CE" },
+  { label: "Warranty", value: "10 Years" },
+  { label: "Application", value: "Residential, Commercial" },
+  { label: "Performance", value: "Thermal Broken" },
+  { label: "Main Market", value: "USA, Canada, Europe" },
+];
+
 const engineeringFeatures = [
   {
     icon: Shield,
@@ -161,6 +177,7 @@ export default function MultiSlideDoorsPage() {
             tertiaryAlt: "Multi-slide view of ocean",
           }}
           specifications={specifications}
+          detailedSpecifications={detailedSpecifications}
           engineeringFeatures={engineeringFeatures}
           gallery={gallery}
           galleryAltPrefix="Multi-Slide Patio Door"
