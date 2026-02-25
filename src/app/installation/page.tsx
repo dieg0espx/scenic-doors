@@ -155,21 +155,6 @@ export default function InstallationPage() {
               </p>
             </motion.div>
 
-            {/* Installation Team Image */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="relative aspect-[16/7] overflow-hidden rounded-lg shadow-xl mb-16"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=1200&h=600&fit=crop"
-                alt="Professional installation team working on door installation"
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
-
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
               {whyChooseUs.map((item, index) => (
                 <motion.div
@@ -214,6 +199,36 @@ export default function InstallationPage() {
               </p>
             </motion.div>
 
+            {/* Installation Images */}
+            <div className="grid md:grid-cols-2 gap-6 mb-16">
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-lg"
+              >
+                <img
+                  src="/images/products/multi-slide/opening-door.avif"
+                  alt="Professional installation team at work"
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-lg"
+              >
+                <img
+                  src="/images/products/ultra-slim/corner-garden.avif"
+                  alt="Completed door installation"
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
               {installationProcess.map((item, index) => (
                 <motion.div
@@ -249,21 +264,6 @@ export default function InstallationPage() {
         {/* Services Included */}
         <section className="py-24 bg-primary-800">
           <div className="section-container">
-            {/* Craftsman Image */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="relative aspect-[16/7] overflow-hidden rounded-lg shadow-xl mb-16"
-            >
-              <img
-                src="https://images.unsplash.com/photo-1504148455328-c376907d081c?w=1200&h=600&fit=crop"
-                alt="Expert craftsman installing premium door hardware"
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
-
             <div className="grid lg:grid-cols-2 gap-16 items-center">
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
