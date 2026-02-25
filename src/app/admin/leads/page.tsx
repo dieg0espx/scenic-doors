@@ -1,14 +1,21 @@
 import { UserPlus, Users, FileText, CalendarPlus, AlertTriangle } from "lucide-react";
-import { getLeads, getLeadMetrics } from "@/lib/actions/leads";
+import { getLeadsForUser, getLeadMetricsForUser } from "@/lib/actions/leads";
 import { getFollowUpsDueToday } from "@/lib/actions/follow-ups";
+import { getCurrentAdminUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import LeadsList from "@/components/admin/LeadsList";
 
 export const dynamic = "force-dynamic";
 
 export default async function LeadsPage() {
+  const currentUser = await getCurrentAdminUser();
+  if (!currentUser) redirect("/login");
+
+  const isAdmin = currentUser.role === "admin";
+
   const [leads, metrics, followUpsDueToday] = await Promise.all([
-    getLeads(),
-    getLeadMetrics(),
+    getLeadsForUser(currentUser.id, currentUser.role),
+    getLeadMetricsForUser(currentUser.id, currentUser.role),
     getFollowUpsDueToday().catch(() => []),
   ]);
 
@@ -81,7 +88,7 @@ export default async function LeadsPage() {
         })}
       </div>
 
-      <LeadsList leads={leads} needsAttentionIds={needsAttentionIds} />
+      <LeadsList leads={leads} needsAttentionIds={needsAttentionIds} isAdmin={isAdmin} />
     </div>
   );
 }

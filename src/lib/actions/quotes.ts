@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendQuoteEmail, sendNewQuoteNotificationEmail, sendInternalNotificationEmail, sendQuoteApprovedEmail, sendEstimateConfirmationEmail } from "@/lib/email";
+import { sendSlackNotification } from "@/lib/slack";
 import { recordEmailSent } from "@/lib/actions/email-history";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import { scheduleFollowUps } from "@/lib/actions/follow-ups";
@@ -418,6 +419,37 @@ export async function updateQuoteStatus(
     } catch {
       // Don't fail the status update if notification fails
     }
+
+    // Slack notification
+    try {
+      const { data: sq } = await supabase
+        .from("quotes")
+        .select("quote_number, client_name, door_type, grand_total, cost")
+        .eq("id", id)
+        .single();
+      if (sq) {
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        const slackTotal = Number(sq.grand_total || sq.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+        await sendSlackNotification({
+          heading: status === "pending_approval"
+            ? `Quote ${sq.quote_number} Awaiting Approval`
+            : `Quote ${sq.quote_number} Declined`,
+          message: status === "pending_approval"
+            ? `*${sq.client_name}* has accepted their quote and is awaiting your approval.`
+            : `*${sq.client_name}* has declined their quote.`,
+          color: status === "pending_approval" ? "#d97706" : "#dc2626",
+          details: [
+            { label: "Quote", value: sq.quote_number },
+            { label: "Client", value: sq.client_name },
+            { label: "Door Type", value: sq.door_type },
+            { label: "Total", value: `$${slackTotal}` },
+          ],
+          adminUrl: `${origin}/admin/quotes/${id}`,
+        });
+      }
+    } catch {
+      // Don't fail status update if Slack fails
+    }
   }
 }
 
@@ -490,6 +522,25 @@ export async function approveQuote(id: string) {
     }
   } catch {
     // Don't fail the approval if notification fails
+  }
+
+  // Slack notification for approval
+  try {
+    const total = Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+    await sendSlackNotification({
+      heading: `Quote ${quote.quote_number} Approved`,
+      message: `Quote for *${quote.client_name}* has been approved. Contract link sent to client.`,
+      color: "#16a34a",
+      details: [
+        { label: "Quote", value: quote.quote_number },
+        { label: "Client", value: quote.client_name },
+        { label: "Door Type", value: quote.door_type },
+        { label: "Total", value: `$${total}` },
+      ],
+      adminUrl: `${origin}/admin/quotes/${id}`,
+    });
+  } catch {
+    // Don't fail approval if Slack fails
   }
 }
 
@@ -648,6 +699,26 @@ export async function notifyNewQuote(quoteId: string, origin: string) {
     subject: `New Quote ${quote.quote_number} — ${quote.client_name}`,
     type: "notification",
   });
+
+  // Slack notification
+  try {
+    const total = Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+    await sendSlackNotification({
+      heading: `New Quote ${quote.quote_number}`,
+      message: `A new quote has been created for *${quote.client_name}*.`,
+      color: "#7c3aed",
+      details: [
+        { label: "Client", value: quote.client_name },
+        { label: "Email", value: quote.client_email },
+        { label: "Door Type", value: quote.door_type },
+        { label: "Total", value: `$${total}` },
+        ...(repName ? [{ label: "Assigned To", value: repName }] : []),
+      ],
+      adminUrl: `${origin}/admin/quotes/${quoteId}`,
+    });
+  } catch {
+    // Don't fail if Slack notification fails
+  }
 }
 
 export async function updateQuote(

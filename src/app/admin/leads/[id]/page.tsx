@@ -16,7 +16,10 @@ import {
 import { getLeadById } from "@/lib/actions/leads";
 import { getQuotesByLeadId } from "@/lib/actions/quotes";
 import { getFollowUpsByLeadId } from "@/lib/actions/follow-ups";
+import { getAdminUsers } from "@/lib/actions/admin-users";
+import { getCurrentAdminUser } from "@/lib/auth";
 import LeadDetailClient from "@/components/admin/LeadDetailClient";
+import LeadShareCard from "@/components/admin/LeadShareCard";
 
 export const dynamic = "force-dynamic";
 
@@ -42,13 +45,28 @@ export default async function LeadDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [lead, quotes, followUps] = await Promise.all([
+  const currentUser = await getCurrentAdminUser();
+  if (!currentUser) redirect("/login");
+
+  const isAdmin = currentUser.role === "admin";
+
+  const [lead, quotes, followUps, allUsers] = await Promise.all([
     getLeadById(id),
     getQuotesByLeadId(id).catch(() => []),
     getFollowUpsByLeadId(id).catch(() => []),
+    isAdmin ? getAdminUsers() : Promise.resolve([]),
   ]);
 
   if (!lead) redirect("/admin/leads");
+
+  // Sales reps can only access leads shared with them
+  if (!isAdmin && !(lead.shared_with ?? []).includes(currentUser.id)) {
+    redirect("/admin/leads");
+  }
+
+  const salesReps = allUsers
+    .filter((u) => u.role === "sales" && u.status === "active")
+    .map((u) => ({ id: u.id, name: u.name }));
 
   const sc = statusConfig[lead.status] || statusConfig.new;
 
@@ -244,6 +262,15 @@ export default async function LeadDetailPage({
             initialStatus={lead.status}
             initialNotes={lead.notes || ""}
           />
+
+          {/* Share with sales reps (admin only) */}
+          {isAdmin && (
+            <LeadShareCard
+              leadId={lead.id}
+              salesReps={salesReps}
+              initialSharedWith={lead.shared_with ?? []}
+            />
+          )}
 
           {/* Follow-ups */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendInternalNotificationEmail, sendApprovalDrawingEmail } from "@/lib/email";
+import { sendSlackNotification } from "@/lib/slack";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import { recordEmailSent } from "@/lib/actions/email-history";
 import type { ApprovalDrawing } from "@/lib/types";
@@ -309,6 +310,33 @@ export async function requestApprovalDrawing(quoteId: string): Promise<void> {
     // Don't fail the request if notification fails
   }
 
+  // Slack notification
+  try {
+    const { data: sq } = await supabase
+      .from("quotes")
+      .select("quote_number, client_name, door_type, grand_total, cost")
+      .eq("id", quoteId)
+      .single();
+    if (sq) {
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const total = Number(sq.grand_total || sq.cost || 0).toLocaleString("en-US", { minimumFractionDigits: 2 });
+      await sendSlackNotification({
+        heading: `Approval Drawing Requested — ${sq.quote_number}`,
+        message: `*${sq.client_name}* has reviewed their quote and is requesting an approval drawing.`,
+        color: "#d97706",
+        details: [
+          { label: "Quote", value: sq.quote_number },
+          { label: "Client", value: sq.client_name },
+          { label: "Door Type", value: sq.door_type },
+          { label: "Total", value: `$${total}` },
+        ],
+        adminUrl: `${origin}/admin/quotes/${quoteId}`,
+      });
+    }
+  } catch {
+    // Don't fail request if Slack fails
+  }
+
   revalidatePath(`/admin/quotes/${quoteId}`);
   revalidatePath(`/portal/${quoteId}`);
 }
@@ -431,6 +459,25 @@ export async function signApprovalDrawing(
     }
   } catch {
     // Don't fail the signing if notification fails
+  }
+
+  // Slack notification
+  try {
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+    await sendSlackNotification({
+      heading: "Approval Drawing Signed — Order Created",
+      message: `*${customerName}* has signed the approval drawing. An order has been created and is awaiting the first deposit.`,
+      color: "#2563eb",
+      details: [
+        { label: "Quote", value: quote?.quote_number ?? "—" },
+        { label: "Client", value: quote?.client_name ?? customerName },
+        { label: "Signed By", value: customerName },
+        ...(totalAmount ? [{ label: "Order Total", value: `$${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` }] : []),
+      ],
+      adminUrl: `${origin}/admin/quotes/${drawing.quote_id}`,
+    });
+  } catch {
+    // Don't fail signing if Slack fails
   }
 
   revalidatePath(`/admin/quotes/${drawing.quote_id}`);

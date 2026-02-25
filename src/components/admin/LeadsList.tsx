@@ -197,6 +197,7 @@ function FilterDropdown({
 interface Props {
   leads: Lead[];
   needsAttentionIds?: Set<string>;
+  isAdmin?: boolean;
 }
 
 /* ── Bulk Status Dropdown (for bulk actions bar) ───────── */
@@ -255,7 +256,7 @@ function BulkStatusDropdown({ onSelect }: { onSelect: (v: string) => void }) {
   );
 }
 
-export default function LeadsList({ leads, needsAttentionIds = new Set() }: Props) {
+export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmin = true }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -356,8 +357,8 @@ export default function LeadsList({ leads, needsAttentionIds = new Set() }: Prop
 
   return (
     <div className="space-y-4">
-      {/* Bulk actions bar */}
-      {selectedIds.size > 0 && (
+      {/* Bulk actions bar (admin only) */}
+      {isAdmin && selectedIds.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl bg-violet-500/[0.06] border border-violet-500/20">
           <span className="text-violet-300 text-sm font-medium">{selectedIds.size} selected</span>
           <BulkStatusDropdown onSelect={handleBulkStatusUpdate} />
@@ -470,12 +471,14 @@ export default function LeadsList({ leads, needsAttentionIds = new Set() }: Prop
                   <span className="text-white/20 text-xs">
                     {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                   </span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(lead.id); }}
-                    className="p-2 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(lead.id); }}
+                      className="p-2 rounded-lg text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
           ))}
@@ -485,21 +488,23 @@ export default function LeadsList({ leads, needsAttentionIds = new Set() }: Prop
         <table className="hidden md:table w-full text-sm">
           <thead>
             <tr className="bg-white/[0.02]">
-              <th className="text-left px-3 py-3.5 w-10">
-                <input
-                  type="checkbox"
-                  checked={filtered.length > 0 && selectedIds.size === filtered.length}
-                  onChange={toggleSelectAll}
-                  className="w-3.5 h-3.5 rounded border-white/20 bg-white/[0.03] text-violet-500 focus:ring-violet-500/30 cursor-pointer"
-                />
-              </th>
+              {isAdmin && (
+                <th className="text-left px-3 py-3.5 w-10">
+                  <input
+                    type="checkbox"
+                    checked={filtered.length > 0 && selectedIds.size === filtered.length}
+                    onChange={toggleSelectAll}
+                    className="w-3.5 h-3.5 rounded border-white/20 bg-white/[0.03] text-violet-500 focus:ring-violet-500/30 cursor-pointer"
+                  />
+                </th>
+              )}
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Name</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Contact</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Source</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Status</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Quote</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Date</th>
-              <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold"></th>
+              {isAdmin && <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold"></th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-white/[0.04]">
@@ -509,14 +514,16 @@ export default function LeadsList({ leads, needsAttentionIds = new Set() }: Prop
                   className="hover:bg-white/[0.02] transition-colors cursor-pointer"
                   onClick={() => navigateToLead(lead.id)}
                 >
-                  <td className="px-3 py-3.5" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(lead.id)}
-                      onChange={() => toggleSelect(lead.id)}
-                      className="w-3.5 h-3.5 rounded border-white/20 bg-white/[0.03] text-violet-500 focus:ring-violet-500/30 cursor-pointer"
-                    />
-                  </td>
+                  {isAdmin && (
+                    <td className="px-3 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(lead.id)}
+                        onChange={() => toggleSelect(lead.id)}
+                        className="w-3.5 h-3.5 rounded border-white/20 bg-white/[0.03] text-violet-500 focus:ring-violet-500/30 cursor-pointer"
+                      />
+                    </td>
+                  )}
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-1.5">
                       <p className="text-white font-medium text-[13px]">{lead.name}</p>
@@ -545,14 +552,16 @@ export default function LeadsList({ leads, needsAttentionIds = new Set() }: Prop
                   <td className="px-5 py-3.5 text-white/25 text-xs">
                     {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                   </td>
-                  <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={() => handleDelete(lead.id)}
-                      className="p-1.5 rounded-lg text-white/15 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
+                  {isAdmin && (
+                    <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleDelete(lead.id)}
+                        className="p-1.5 rounded-lg text-white/15 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  )}
                 </tr>
             ))}
           </tbody>

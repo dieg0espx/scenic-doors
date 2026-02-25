@@ -13,6 +13,7 @@ export interface Lead {
   referral_code: string | null;
   has_quote: boolean;
   notes: string | null;
+  shared_with: string[];
   created_at: string;
   updated_at: string;
 }

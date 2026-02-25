@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendInvoiceEmail, sendPaymentReceiptEmail, sendInternalNotificationEmail } from "@/lib/email";
+import { sendSlackNotification } from "@/lib/slack";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 
 export async function createPayment({
@@ -240,6 +241,39 @@ export async function submitPaymentConfirmation(
     }
   } catch {
     // Don't fail the payment if email/order-update/notification fails
+  }
+
+  // Slack notification
+  try {
+    const { data: sp } = await supabase
+      .from("payments")
+      .select("*, quotes(quote_number, client_name)")
+      .eq("id", id)
+      .single();
+    if (sp) {
+      const sq = sp.quotes as { quote_number: string; client_name: string };
+      const isAdv = sp.payment_type === "advance_50";
+      const invoiceNum = `INV-${sq.quote_number.replace("QT-", "")}${isAdv ? "-A" : "-B"}`;
+      const typeLabel = isAdv ? "50% Advance" : "50% Balance";
+      const formattedAmt = Number(sp.amount).toLocaleString("en-US", { minimumFractionDigits: 2 });
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      await sendSlackNotification({
+        heading: `Payment Received — ${invoiceNum}`,
+        message: `*${sq.client_name}* has completed a payment.`,
+        color: "#16a34a",
+        details: [
+          { label: "Invoice", value: invoiceNum },
+          { label: "Client", value: sq.client_name },
+          { label: "Type", value: typeLabel },
+          { label: "Amount", value: `$${formattedAmt}` },
+          { label: "Method", value: paymentMethod },
+          { label: "Reference", value: paymentReference },
+        ],
+        adminUrl: `${origin}/admin/quotes/${sp.quote_id}`,
+      });
+    }
+  } catch {
+    // Don't fail payment if Slack fails
   }
 
   // Fetch quote_id for portal revalidation
