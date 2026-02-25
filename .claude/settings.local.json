@@ -25,7 +25,18 @@
       "Bash(where:*)",
       "Bash(powershell -Command \"Invoke-WebRequest -Uri ''https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif'' -OutFile ''C:\\\\Users\\\\52999\\\\Desktop\\\\scenic-doors\\\\public\\\\images\\\\scenic-doors-dark-logo.avif''\")",
       "Bash(/c/Windows/System32/curl.exe:*)",
-      "Bash(npx -y node -e \"const https = require\\(''https''\\); const fs = require\\(''fs''\\); const file = fs.createWriteStream\\(''public/images/scenic-doors-dark-logo.avif''\\); https.get\\(''https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif'', \\(r\\) => { if\\(r.statusCode >= 300 && r.statusCode < 400 && r.headers.location\\) { https.get\\(r.headers.location, \\(r2\\) => r2.pipe\\(file\\).on\\(''finish'', \\(\\) => { console.log\\(''Downloaded OK''\\); file.close\\(\\); }\\)\\); } else { r.pipe\\(file\\).on\\(''finish'', \\(\\) => { console.log\\(''Downloaded OK''\\); file.close\\(\\); }\\); }}\\);\")"
+      "Bash(npx -y node -e \"const https = require\\(''https''\\); const fs = require\\(''fs''\\); const file = fs.createWriteStream\\(''public/images/scenic-doors-dark-logo.avif''\\); https.get\\(''https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif'', \\(r\\) => { if\\(r.statusCode >= 300 && r.statusCode < 400 && r.headers.location\\) { https.get\\(r.headers.location, \\(r2\\) => r2.pipe\\(file\\).on\\(''finish'', \\(\\) => { console.log\\(''Downloaded OK''\\); file.close\\(\\); }\\)\\); } else { r.pipe\\(file\\).on\\(''finish'', \\(\\) => { console.log\\(''Downloaded OK''\\); file.close\\(\\); }\\); }}\\);\")",
+      "Bash(test:*)",
+      "Bash(rm:*)",
+      "Bash(npm run dev:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(kill:*)",
+      "Bash(pkill:*)",
+      "Bash(xargs rm -rf)",
+      "Bash(npx next dev:*)",
+      "Bash(find:*)",
+      "Bash(diskutil info:*)"
     ]
   }
 }
