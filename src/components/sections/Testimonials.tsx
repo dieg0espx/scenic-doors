@@ -141,7 +141,7 @@ export default function Testimonials() {
     <section className="py-16 md:py-20 bg-primary-800 relative overflow-hidden">
       {/* Background accent */}
       <div className="absolute top-0 right-0 w-1/2 h-full">
-        <div className="absolute inset-0 bg-gradient-to-l from-primary-900/30 to-transparent" />
+        <div className="absolute inset-0 bg-primary-900/20" />
       </div>
 
       <div className="section-container relative">

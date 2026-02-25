@@ -38,7 +38,8 @@
       "Bash(npx next dev:*)",
       "Bash(find:*)",
       "Bash(diskutil info:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(git:*)"
     ]
   }
 }

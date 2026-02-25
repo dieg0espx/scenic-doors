@@ -163,7 +163,7 @@ export default function Header() {
                           </div>
 
                           {/* Featured CTA */}
-                          <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg p-5 text-white">
+                          <div className="bg-primary-500 rounded-lg p-5 text-white">
                             <h4 className="font-semibold mb-2">Free Consultation</h4>
                             <p className="text-sm text-white/90 mb-4">
                               Get expert advice on choosing the perfect doors for your home.

@@ -90,7 +90,7 @@ export default function Hero() {
       </div>
 
       {/* Bottom Accent Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary-600 via-primary-500 to-primary-600" />
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500" />
     </section>
   );
 }
