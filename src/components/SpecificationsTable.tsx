@@ -23,7 +23,7 @@ export default function SpecificationsTable({ specifications }: SpecificationsTa
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-gradient-to-r from-primary-800 to-ocean-900">
+            <tr className="bg-primary-800">
               <th className="text-left py-5 px-8 font-heading text-lg text-white tracking-wide">
                 Specification
               </th>
