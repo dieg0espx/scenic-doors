@@ -189,6 +189,9 @@ export default function Header() {
             <NavLink href="/about" isWhite={isHeaderWhite}>
               About
             </NavLink>
+            <NavLink href="/installation" isWhite={isHeaderWhite}>
+              Installation
+            </NavLink>
             <NavLink href="/blog" isWhite={isHeaderWhite}>
               Blog
             </NavLink>
@@ -269,6 +272,12 @@ export default function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   About
+                </MobileNavLink>
+                <MobileNavLink
+                  href="/installation"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Installation
                 </MobileNavLink>
                 <MobileNavLink
                   href="/blog"
