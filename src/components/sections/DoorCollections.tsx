@@ -49,9 +49,9 @@ const doors = [
 
 export default function DoorCollections() {
   return (
-    <section className="py-16 md:py-20 bg-gradient-to-b from-primary-600 via-primary-700 to-primary-900 relative overflow-hidden">
+    <section className="py-16 md:py-20 bg-primary-800 relative overflow-hidden">
       {/* Background accent */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary-400/10 via-transparent to-primary-500/10" />
+      <div className="absolute inset-0 bg-primary-900/10" />
       
       {/* Section Header */}
       <div className="section-container mb-10 relative z-10">
@@ -128,7 +128,7 @@ export default function DoorCollections() {
       </div>
 
       {/* Bottom accent */}
-      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-primary-400/50 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-primary-400/30" />
     </section>
   );
 }

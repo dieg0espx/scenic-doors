@@ -123,7 +123,7 @@ function ProjectCard({
         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
       />
       {/* Dark overlay - always visible for text readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-ocean-900 via-ocean-900/50 to-ocean-900/20" />
+      <div className="absolute inset-0 bg-ocean-900/60" />
 
       {/* Content */}
       <div className="absolute bottom-0 left-0 right-0 p-4">

@@ -36,7 +36,8 @@
       "Bash(xargs rm -rf)",
       "Bash(npx next dev:*)",
       "Bash(find:*)",
-      "Bash(diskutil info:*)"
+      "Bash(diskutil info:*)",
+      "Bash(grep:*)"
     ]
   }
 }

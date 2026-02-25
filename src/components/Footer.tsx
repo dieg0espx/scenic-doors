@@ -29,7 +29,7 @@ export default function Footer() {
   return (
     <footer className="bg-ocean-900 relative overflow-hidden">
       {/* Top Accent */}
-      <div className="h-1 bg-gradient-to-r from-transparent via-primary-500 to-transparent" />
+      <div className="h-1 bg-primary-500/50" />
 
       {/* Main Footer */}
       <div className="section-container">

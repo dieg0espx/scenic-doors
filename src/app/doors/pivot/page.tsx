@@ -53,7 +53,7 @@ export default function PivotDoorsPage() {
                 backgroundImage: `url('${gallery[0]}')`,
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-ocean-900 via-ocean-900/90 to-ocean-900/50" />
+            <div className="absolute inset-0 bg-ocean-900/80" />
           </div>
           <div className="section-container relative">
             <motion.div

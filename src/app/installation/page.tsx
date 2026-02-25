@@ -87,7 +87,7 @@ export default function InstallationPage() {
         {/* Hero Section */}
         <section className="pt-32 pb-20 bg-primary-800 relative overflow-hidden">
           <div className="absolute inset-0">
-            <div className="absolute inset-0 bg-gradient-to-br from-ocean-900 via-primary-800 to-ocean-800" />
+            <div className="absolute inset-0 bg-primary-800" />
           </div>
           <div className="section-container relative">
             <motion.div
@@ -198,6 +198,36 @@ export default function InstallationPage() {
                 A seamless, stress-free installation experience designed around your schedule and needs.
               </p>
             </motion.div>
+
+            {/* Installation Images */}
+            <div className="grid md:grid-cols-2 gap-6 mb-16">
+              <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-lg"
+              >
+                <img
+                  src="/images/products/multi-slide/opening-door.avif"
+                  alt="Professional installation team at work"
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-lg"
+              >
+                <img
+                  src="/images/products/ultra-slim/corner-garden.avif"
+                  alt="Completed door installation"
+                  className="w-full h-full object-cover"
+                />
+              </motion.div>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
               {installationProcess.map((item, index) => (

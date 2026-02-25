@@ -119,7 +119,7 @@ export default function UltraSlimSliderPage() {
                 backgroundImage: `url('${gallery[0]}')`,
               }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-ocean-900 via-ocean-900/95 to-ocean-900/70" />
+            <div className="absolute inset-0 bg-ocean-900/80" />
           </div>
           <div className="section-container relative">
             <motion.div
