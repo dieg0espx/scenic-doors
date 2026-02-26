@@ -4,24 +4,37 @@ import { useState, useTransition, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, UserPlus, Trash2, Filter, StickyNote, AlertTriangle, X, ChevronDown, Check } from "lucide-react";
 import type { Lead } from "@/lib/types";
-import { deleteLead, updateLead } from "@/lib/actions/leads";
+import { deleteLead, updateLeadWorkflow } from "@/lib/actions/leads";
 
-const statusConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  new: { bg: "bg-blue-400/10", text: "text-blue-300", dot: "bg-blue-400", label: "New" },
+const tempConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+  hot: { bg: "bg-orange-400/10", text: "text-orange-300", dot: "bg-orange-400", label: "Hot" },
+  warm: { bg: "bg-amber-400/10", text: "text-amber-300", dot: "bg-amber-400", label: "Warm" },
+  cold: { bg: "bg-sky-400/10", text: "text-sky-300", dot: "bg-sky-400", label: "Cold" },
+};
+
+const workflowConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
   contacted: { bg: "bg-violet-400/10", text: "text-violet-300", dot: "bg-violet-400", label: "Contacted" },
   qualified: { bg: "bg-emerald-400/10", text: "text-emerald-300", dot: "bg-emerald-400", label: "Qualified" },
   lost: { bg: "bg-red-400/10", text: "text-red-300", dot: "bg-red-400", label: "Lost" },
 };
 
-const STATUS_VALUES = ["new", "contacted", "qualified", "lost"];
+// Combined for filter dropdown
+const statusConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+  ...tempConfig,
+  ...workflowConfig,
+};
 
-/* ── Custom Status Dropdown ────────────────────────────── */
-function StatusDropdown({
+// Grouped statuses — temperature (auto) vs. workflow (manual)
+const TEMPERATURE_STATUSES = ["hot", "warm", "cold"];
+const WORKFLOW_STATUSES = ["contacted", "qualified", "lost"];
+
+/* ── Workflow Dropdown (inline) ────────────────────────── */
+function WorkflowDropdown({
   value,
   onChange,
   compact,
 }: {
-  value: string;
+  value: string | null;
   onChange: (v: string) => void;
   compact?: boolean;
 }) {
@@ -37,29 +50,31 @@ function StatusDropdown({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open, close]);
 
-  const current = statusConfig[value] || statusConfig.new;
+  const current = value ? workflowConfig[value] : null;
 
   return (
     <div ref={ref} className="relative">
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
-        className={`inline-flex items-center gap-1.5 rounded-lg font-medium transition-all cursor-pointer active:scale-95 ${current.bg} ${current.text} ${
-          compact
-            ? "px-2 py-0.5 text-[10px]"
-            : "px-2.5 py-1 text-[11px]"
+        className={`inline-flex items-center gap-1.5 rounded-lg font-medium transition-all cursor-pointer active:scale-95 ${
+          current
+            ? `${current.bg} ${current.text}`
+            : "bg-white/[0.04] text-white/30"
+        } ${
+          compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[11px]"
         } ${open ? "ring-2 ring-white/10" : "hover:brightness-125"}`}
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${current.dot}`} />
-        {current.label}
+        {current && <span className={`w-1.5 h-1.5 rounded-full ${current.dot}`} />}
+        {current ? current.label : "—"}
         <ChevronDown className={`w-3 h-3 opacity-50 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1.5 w-36 rounded-xl border border-white/[0.08] bg-[#161b22] shadow-2xl shadow-black/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="absolute z-50 mt-1.5 w-40 rounded-xl border border-white/[0.08] bg-[#161b22] shadow-2xl shadow-black/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="py-1">
-            {STATUS_VALUES.map((s) => {
-              const sc = statusConfig[s];
+            {WORKFLOW_STATUSES.map((s) => {
+              const sc = workflowConfig[s];
               const isSelected = value === s;
               return (
                 <button
@@ -89,21 +104,13 @@ function StatusDropdown({
   );
 }
 
-/* ── Generic Filter Dropdown ────────────────────────────── */
-function FilterDropdown({
-  value,
+/* ── Status Filter Dropdown (multi-select, grouped) ────── */
+function StatusFilterDropdown({
+  selected,
   onChange,
-  options,
-  allLabel,
-  icon: Icon,
-  colorDots,
 }: {
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-  allLabel: string;
-  icon?: React.ComponentType<{ className?: string }>;
-  colorDots?: boolean;
+  selected: Set<string>;
+  onChange: (v: Set<string>) => void;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -117,11 +124,47 @@ function FilterDropdown({
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open, close]);
 
-  const activeLabel = value === "all"
-    ? allLabel
-    : options.find((o) => o.value === value)?.label || value;
-  const isFiltered = value !== "all";
-  const sc = colorDots && value !== "all" ? statusConfig[value] : null;
+  const isFiltered = selected.size > 0;
+  const label = !isFiltered
+    ? "All Status"
+    : selected.size === 1
+    ? statusConfig[Array.from(selected)[0]]?.label || "1 status"
+    : `${selected.size} statuses`;
+
+  function toggle(s: string) {
+    const next = new Set(selected);
+    if (next.has(s)) next.delete(s); else next.add(s);
+    onChange(next);
+  }
+
+  function renderGroup(title: string, statuses: string[]) {
+    return (
+      <>
+        <p className="px-3 pt-2 pb-1 text-[10px] uppercase tracking-wider text-white/20 font-semibold">{title}</p>
+        {statuses.map((s) => {
+          const sc = statusConfig[s];
+          if (!sc) return null;
+          const isSelected = selected.has(s);
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => toggle(s)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
+                isSelected
+                  ? `${sc.bg} ${sc.text}`
+                  : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${sc.dot} ${isSelected ? "" : "opacity-40"}`} />
+              <span className="flex-1 text-left font-medium">{sc.label}</span>
+              {isSelected && <Check className="w-3 h-3 opacity-70" />}
+            </button>
+          );
+        })}
+      </>
+    );
+  }
 
   return (
     <div ref={ref} className="relative">
@@ -130,22 +173,89 @@ function FilterDropdown({
         onClick={() => setOpen(!open)}
         className={`inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer active:scale-[0.97] ${
           isFiltered
-            ? sc
-              ? `${sc.bg} ${sc.text} border-current/20`
-              : "bg-violet-500/10 border-violet-500/30 text-violet-300"
+            ? "bg-violet-500/10 border-violet-500/30 text-violet-300"
             : "bg-white/[0.03] border-white/[0.08] text-white/50 hover:bg-white/[0.06]"
         } ${open ? "ring-2 ring-violet-500/20" : ""}`}
       >
-        {Icon && <Icon className="w-3.5 h-3.5" />}
-        {sc && <span className={`w-1.5 h-1.5 rounded-full ${sc.dot}`} />}
-        <span className="max-w-[7rem] truncate">{activeLabel}</span>
+        <span className="max-w-[7rem] truncate">{label}</span>
+        <ChevronDown className={`w-3 h-3 opacity-40 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1.5 w-44 rounded-xl border border-white/[0.08] bg-[#161b22] shadow-2xl shadow-black/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="max-h-72 overflow-y-auto py-1 custom-scrollbar">
+            {/* Clear all */}
+            <button
+              type="button"
+              onClick={() => onChange(new Set())}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
+                !isFiltered
+                  ? "bg-violet-500/10 text-violet-300"
+                  : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
+              }`}
+            >
+              <span className="flex-1 text-left font-medium">All Status</span>
+              {!isFiltered && <Check className="w-3 h-3 opacity-70" />}
+            </button>
+
+            <div className="mx-2.5 my-1 border-t border-white/[0.06]" />
+            {renderGroup("Temperature", TEMPERATURE_STATUSES)}
+
+            <div className="mx-2.5 my-1 border-t border-white/[0.06]" />
+            {renderGroup("Workflow", WORKFLOW_STATUSES)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Generic Filter Dropdown (single-select, for sources etc.) ── */
+function FilterDropdown({
+  value,
+  onChange,
+  options,
+  allLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  allLabel: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open, close]);
+
+  const isFiltered = value !== "all";
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className={`inline-flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-medium transition-all cursor-pointer active:scale-[0.97] ${
+          isFiltered
+            ? "bg-violet-500/10 border-violet-500/30 text-violet-300"
+            : "bg-white/[0.03] border-white/[0.08] text-white/50 hover:bg-white/[0.06]"
+        } ${open ? "ring-2 ring-violet-500/20" : ""}`}
+      >
+        <span className="max-w-[7rem] truncate">
+          {isFiltered ? options.find((o) => o.value === value)?.label || value : allLabel}
+        </span>
         <ChevronDown className={`w-3 h-3 opacity-40 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
         <div className="absolute z-50 mt-1.5 min-w-[10rem] rounded-xl border border-white/[0.08] bg-[#161b22] shadow-2xl shadow-black/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="max-h-56 overflow-y-auto py-1 custom-scrollbar">
-            {/* "All" option */}
             <button
               type="button"
               onClick={() => { onChange("all"); close(); }}
@@ -165,7 +275,6 @@ function FilterDropdown({
 
             {options.map((opt) => {
               const isSelected = value === opt.value;
-              const optSc = colorDots ? statusConfig[opt.value] : null;
               return (
                 <button
                   key={opt.value}
@@ -173,15 +282,10 @@ function FilterDropdown({
                   onClick={() => { onChange(opt.value); close(); }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs transition-colors cursor-pointer ${
                     isSelected
-                      ? optSc
-                        ? `${optSc.bg} ${optSc.text}`
-                        : "bg-violet-500/10 text-violet-300"
+                      ? "bg-violet-500/10 text-violet-300"
                       : "text-white/50 hover:bg-white/[0.04] hover:text-white/80"
                   }`}
                 >
-                  {optSc && (
-                    <span className={`w-2 h-2 rounded-full ${optSc.dot} ${isSelected ? "" : "opacity-40"}`} />
-                  )}
                   <span className="flex-1 text-left font-medium">{opt.label}</span>
                   {isSelected && <Check className="w-3 h-3 opacity-70" />}
                 </button>
@@ -231,12 +335,10 @@ function BulkStatusDropdown({ onSelect }: { onSelect: (v: string) => void }) {
 
       {open && (
         <div className="absolute z-50 mt-1.5 w-40 rounded-xl border border-white/[0.08] bg-[#161b22] shadow-2xl shadow-black/50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="px-3 py-2 border-b border-white/[0.06]">
-            <p className="text-[10px] uppercase tracking-wider text-white/25 font-semibold">Change status to</p>
-          </div>
           <div className="py-1">
-            {STATUS_VALUES.map((s) => {
-              const sc = statusConfig[s];
+            <p className="px-3 pt-1.5 pb-1 text-[10px] uppercase tracking-wider text-white/20 font-semibold">Set workflow</p>
+            {WORKFLOW_STATUSES.map((s) => {
+              const sc = workflowConfig[s];
               return (
                 <button
                   key={s}
@@ -259,7 +361,7 @@ function BulkStatusDropdown({ onSelect }: { onSelect: (v: string) => void }) {
 export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmin = true }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
   const [sourceFilter, setSourceFilter] = useState("all");
   const [showNonConverted, setShowNonConverted] = useState(false);
   const [showNeedsAttention, setShowNeedsAttention] = useState(false);
@@ -267,11 +369,10 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
   const [isPending, startTransition] = useTransition();
 
   const sources = Array.from(new Set(leads.map((l) => l.source).filter(Boolean)));
-  const statuses = Array.from(new Set(leads.map((l) => l.status)));
 
   const filtered = leads.filter((l) => {
     if (search && !l.name.toLowerCase().includes(search.toLowerCase()) && !l.email?.toLowerCase().includes(search.toLowerCase())) return false;
-    if (statusFilter !== "all" && l.status !== statusFilter) return false;
+    if (statusFilter.size > 0 && !statusFilter.has(l.status) && !(l.workflow_status && statusFilter.has(l.workflow_status))) return false;
     if (sourceFilter !== "all" && l.source !== sourceFilter) return false;
     if (showNonConverted && l.has_quote) return false;
     if (showNeedsAttention && !needsAttentionIds.has(l.id)) return false;
@@ -288,12 +389,12 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
     }
   }
 
-  async function handleInlineStatusChange(id: string, newStatus: string) {
+  async function handleInlineWorkflowChange(id: string, newWorkflow: string) {
     startTransition(async () => {
       try {
-        await updateLead(id, { status: newStatus });
+        await updateLeadWorkflow(id, newWorkflow);
       } catch (err) {
-        alert(err instanceof Error ? err.message : "Failed to update status");
+        alert(err instanceof Error ? err.message : "Failed to update workflow");
       }
     });
   }
@@ -314,11 +415,11 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
     }
   }
 
-  async function handleBulkStatusUpdate(newStatus: string) {
+  async function handleBulkWorkflowUpdate(newWorkflow: string) {
     if (selectedIds.size === 0) return;
     startTransition(async () => {
       try {
-        await Promise.all(Array.from(selectedIds).map((id) => updateLead(id, { status: newStatus })));
+        await Promise.all(Array.from(selectedIds).map((id) => updateLeadWorkflow(id, newWorkflow)));
         setSelectedIds(new Set());
       } catch (err) {
         alert(err instanceof Error ? err.message : "Bulk update failed");
@@ -361,7 +462,7 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
       {isAdmin && selectedIds.size > 0 && (
         <div className="flex flex-wrap items-center gap-3 px-4 py-3 rounded-xl bg-violet-500/[0.06] border border-violet-500/20">
           <span className="text-violet-300 text-sm font-medium">{selectedIds.size} selected</span>
-          <BulkStatusDropdown onSelect={handleBulkStatusUpdate} />
+          <BulkStatusDropdown onSelect={handleBulkWorkflowUpdate} />
           <button
             onClick={handleBulkDelete}
             disabled={isPending}
@@ -391,12 +492,9 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
           />
         </div>
         <div className="flex gap-2 flex-wrap sm:flex-nowrap sm:shrink-0">
-          <FilterDropdown
-            value={statusFilter}
+          <StatusFilterDropdown
+            selected={statusFilter}
             onChange={setStatusFilter}
-            options={statuses.map((s) => ({ value: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))}
-            allLabel="All Status"
-            colorDots
           />
           <FilterDropdown
             value={sourceFilter}
@@ -452,10 +550,19 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
                     </div>
                     {lead.email && <p className="text-white/30 text-xs truncate">{lead.email}</p>}
                   </div>
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <StatusDropdown
-                      value={lead.status}
-                      onChange={(v) => handleInlineStatusChange(lead.id, v)}
+                  <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    {(() => {
+                      const tc = tempConfig[lead.status] || tempConfig.hot;
+                      return (
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-medium ${tc.bg} ${tc.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${tc.dot}`} />
+                          {tc.label}
+                        </span>
+                      );
+                    })()}
+                    <WorkflowDropdown
+                      value={lead.workflow_status}
+                      onChange={(v) => handleInlineWorkflowChange(lead.id, v)}
                       compact
                     />
                   </div>
@@ -501,7 +608,8 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Name</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Contact</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Source</th>
-              <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Status</th>
+              <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Temp</th>
+              <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Workflow</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Quote</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Date</th>
               {isAdmin && <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold"></th>}
@@ -536,10 +644,21 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
                     {lead.phone && <p className="text-white/30 text-xs">{lead.phone}</p>}
                   </td>
                   <td className="px-5 py-3.5 text-white/40 text-xs">{lead.source || "—"}</td>
+                  <td className="px-5 py-3.5">
+                    {(() => {
+                      const tc = tempConfig[lead.status] || tempConfig.hot;
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium ${tc.bg} ${tc.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${tc.dot}`} />
+                          {tc.label}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
-                    <StatusDropdown
-                      value={lead.status}
-                      onChange={(v) => handleInlineStatusChange(lead.id, v)}
+                    <WorkflowDropdown
+                      value={lead.workflow_status}
+                      onChange={(v) => handleInlineWorkflowChange(lead.id, v)}
                     />
                   </td>
                   <td className="px-5 py-3.5">
