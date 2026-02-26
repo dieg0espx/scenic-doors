@@ -1,39 +1,63 @@
 import { createServiceClient } from "@/lib/supabase/server";
 
 /**
- * Automatic lead status aging based on inactivity.
+ * Automatic status aging based on inactivity for both quotes and leads.
  *
- * Rules (moderate thresholds):
+ * Quote aging rules:
  *   new / hot  → warm      after 3 days of no admin activity
  *   warm       → cold      after 7 days of no admin activity
  *   cold       → archived  after 14 days of no admin activity
  *
- * Excluded: hold, order, converted, closed, archived
- * Any admin activity (note, email, status change, assignment) resets the timer
+ * Lead aging rules (temperature column only):
+ *   hot  → warm   after 3 days of no admin activity
+ *   warm → cold   after 7 days of no admin activity
+ *   (no cold → archived for leads)
+ *
+ * workflow_status is independent and never touched by cron.
+ * Any admin activity (note, status change, sharing) resets the timer
  * by updating `last_activity_at`.
  */
 export async function ageLeadStatuses(): Promise<{ aged: number }> {
   const supabase = createServiceClient();
   const now = new Date();
 
-  // Thresholds in days
-  const THRESHOLDS = [
-    // Process most-aged first so a quote stuck at "cold" for 14+ days gets archived
-    // before we check warm→cold, avoiding double-updates in the same run.
+  let totalAged = 0;
+
+  // ── Quote aging ──────────────────────────────────────
+  const QUOTE_THRESHOLDS = [
     { fromStatuses: ["cold"], toStatus: "archived", days: 14 },
     { fromStatuses: ["warm"], toStatus: "cold", days: 7 },
     { fromStatuses: ["new", "hot"], toStatus: "warm", days: 3 },
   ];
 
-  let totalAged = 0;
-
-  for (const { fromStatuses, toStatus, days } of THRESHOLDS) {
+  for (const { fromStatuses, toStatus, days } of QUOTE_THRESHOLDS) {
     const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase
       .from("quotes")
       .update({ lead_status: toStatus })
       .in("lead_status", fromStatuses)
+      .lt("last_activity_at", cutoff)
+      .select("id");
+
+    if (!error && data) {
+      totalAged += data.length;
+    }
+  }
+
+  // ── Lead aging (temperature only) ────────────────────
+  const LEAD_THRESHOLDS = [
+    { fromStatuses: ["warm"], toStatus: "cold", days: 7 },
+    { fromStatuses: ["hot"], toStatus: "warm", days: 3 },
+  ];
+
+  for (const { fromStatuses, toStatus, days } of LEAD_THRESHOLDS) {
+    const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data, error } = await supabase
+      .from("leads")
+      .update({ status: toStatus })
+      .in("status", fromStatuses)
       .lt("last_activity_at", cutoff)
       .select("id");
 

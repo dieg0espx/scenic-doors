@@ -1,10 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendInternalNotificationEmail } from "@/lib/email";
 import { sendSlackNotification } from "@/lib/slack";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
+import { getUserByReferralCode } from "@/lib/actions/admin-users";
 import type { Lead, LeadMetrics } from "@/lib/types";
 
 export async function getLeads(): Promise<Lead[]> {
@@ -57,9 +58,10 @@ export async function createLead(formData: {
       customer_type: formData.customer_type || "homeowner",
       timeline: formData.timeline || null,
       source: formData.source || null,
-      status: formData.status || "new",
+      status: formData.status || "hot",
       referral_code: formData.referral_code || null,
       notes: formData.notes || null,
+      last_activity_at: new Date().toISOString(),
     })
     .select()
     .single();
@@ -76,10 +78,13 @@ export async function createLead(formData: {
         customer_type: formData.customer_type || "homeowner",
         timeline: formData.timeline || null,
         source: formData.source || null,
-        status: formData.status || "new",
+        status: formData.status || "hot",
+        workflow_status: null,
         referral_code: formData.referral_code || null,
         has_quote: false,
         notes: formData.notes || null,
+        shared_with: [],
+        last_activity_at: new Date().toISOString(),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } as Lead;
@@ -87,6 +92,22 @@ export async function createLead(formData: {
     throw new Error(error.message);
   }
   revalidatePath("/admin/leads");
+
+  // Auto-assign lead to referring user if referral code was provided
+  if (formData.referral_code) {
+    try {
+      const referrer = await getUserByReferralCode(formData.referral_code);
+      if (referrer) {
+        const serviceClient = createServiceClient();
+        await serviceClient
+          .from("leads")
+          .update({ shared_with: [referrer.id] })
+          .eq("id", data.id);
+      }
+    } catch {
+      // Don't fail lead creation if referral assignment fails
+    }
+  }
 
   // Send internal notification
   try {
@@ -156,9 +177,38 @@ export async function updateLead(
   }>
 ): Promise<void> {
   const supabase = await createClient();
+
+  // Bump last_activity_at when admin changes notes
+  const payload: Record<string, unknown> = { ...formData };
+  if (formData.notes !== undefined) {
+    payload.last_activity_at = new Date().toISOString();
+  }
+
   const { error } = await supabase
     .from("leads")
-    .update(formData)
+    .update(payload)
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/leads");
+  revalidatePath("/admin/leads/" + id);
+}
+
+export async function updateLeadWorkflow(
+  id: string,
+  workflowStatus: string
+): Promise<void> {
+  const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  // Setting a workflow status resets temperature to "hot" and bumps last_activity_at
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      workflow_status: workflowStatus,
+      status: "hot",
+      last_activity_at: now,
+    })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
@@ -262,7 +312,7 @@ export async function updateLeadSharedWith(
   const supabase = await createClient();
   const { error } = await supabase
     .from("leads")
-    .update({ shared_with: userIds })
+    .update({ shared_with: userIds, last_activity_at: new Date().toISOString() })
     .eq("id", leadId);
 
   if (error) throw new Error(error.message);

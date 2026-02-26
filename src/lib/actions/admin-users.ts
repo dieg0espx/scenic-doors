@@ -29,6 +29,36 @@ function generatePassword(length = 14): string {
   return chars.join("");
 }
 
+export async function getUserByReferralCode(
+  code: string
+): Promise<AdminUser | null> {
+  if (!code) return null;
+  const supabase = createServiceClient();
+  const upperCode = code.toUpperCase();
+
+  // First try matching against referral_codes array
+  const { data: byCode } = await supabase
+    .from("admin_users")
+    .select("*")
+    .eq("status", "active")
+    .contains("referral_codes", [upperCode])
+    .limit(1)
+    .maybeSingle();
+
+  if (byCode) return byCode;
+
+  // Fallback: match against prefix
+  const { data: byPrefix } = await supabase
+    .from("admin_users")
+    .select("*")
+    .eq("status", "active")
+    .eq("prefix", upperCode)
+    .limit(1)
+    .maybeSingle();
+
+  return byPrefix ?? null;
+}
+
 export async function getAdminUsers(): Promise<AdminUser[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

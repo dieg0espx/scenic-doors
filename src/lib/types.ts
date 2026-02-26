@@ -10,10 +10,12 @@ export interface Lead {
   timeline: string | null;
   source: string | null;
   status: string;
+  workflow_status: string | null;
   referral_code: string | null;
   has_quote: boolean;
   notes: string | null;
   shared_with: string[];
+  last_activity_at: string | null;
   created_at: string;
   updated_at: string;
 }

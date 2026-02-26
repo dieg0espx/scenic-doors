@@ -23,8 +23,13 @@ import LeadShareCard from "@/components/admin/LeadShareCard";
 
 export const dynamic = "force-dynamic";
 
-const statusConfig: Record<string, { bg: string; text: string }> = {
-  new: { bg: "bg-blue-400/10", text: "text-blue-300" },
+const tempConfig: Record<string, { bg: string; text: string }> = {
+  hot: { bg: "bg-orange-400/10", text: "text-orange-300" },
+  warm: { bg: "bg-amber-400/10", text: "text-amber-300" },
+  cold: { bg: "bg-sky-400/10", text: "text-sky-300" },
+};
+
+const workflowConfig: Record<string, { bg: string; text: string }> = {
   contacted: { bg: "bg-violet-400/10", text: "text-violet-300" },
   qualified: { bg: "bg-emerald-400/10", text: "text-emerald-300" },
   lost: { bg: "bg-red-400/10", text: "text-red-300" },
@@ -68,7 +73,8 @@ export default async function LeadDetailPage({
     .filter((u) => u.role === "sales" && u.status === "active")
     .map((u) => ({ id: u.id, name: u.name }));
 
-  const sc = statusConfig[lead.status] || statusConfig.new;
+  const tc = tempConfig[lead.status] || tempConfig.hot;
+  const wc = lead.workflow_status ? workflowConfig[lead.workflow_status] : null;
 
   const createQuoteParams = new URLSearchParams({
     leadId: lead.id,
@@ -118,9 +124,14 @@ export default async function LeadDetailPage({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`px-2.5 py-1 rounded-lg text-xs font-medium ${sc.bg} ${sc.text}`}>
+              <span className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${tc.bg} ${tc.text}`}>
                 {lead.status}
               </span>
+              {wc && (
+                <span className={`px-2.5 py-1 rounded-lg text-xs font-medium capitalize ${wc.bg} ${wc.text}`}>
+                  {lead.workflow_status}
+                </span>
+              )}
               {lead.customer_type && (
                 <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-400/10 text-indigo-300 capitalize">
                   {lead.customer_type}
@@ -260,6 +271,7 @@ export default async function LeadDetailPage({
           <LeadDetailClient
             leadId={lead.id}
             initialStatus={lead.status}
+            initialWorkflow={lead.workflow_status}
             initialNotes={lead.notes || ""}
           />
 
