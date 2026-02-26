@@ -35,7 +35,10 @@ export default async function LeadsPage() {
     if (followUpLeadIds.has(lead.id)) {
       needsAttentionIds.add(lead.id);
     }
-    if (lead.status === "new" && new Date(lead.created_at).getTime() < fortyEightHoursAgo) {
+    if (
+      lead.status === "hot" &&
+      new Date(lead.created_at).getTime() < fortyEightHoursAgo
+    ) {
       needsAttentionIds.add(lead.id);
     }
   }
