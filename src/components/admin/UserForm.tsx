@@ -8,10 +8,7 @@ import CustomSelect from "@/components/admin/CustomSelect";
 
 const ROLES = [
   { value: "admin", label: "Admin" },
-  { value: "sales", label: "Sales Person" },
-  { value: "manager", label: "Manager" },
-  { value: "user", label: "User" },
-  { value: "marketing", label: "Marketing" },
+  { value: "sales", label: "Sales Rep" },
 ];
 
 function parseTags(input: string): string[] {
@@ -235,7 +232,7 @@ export default function UserForm({ onSuccess }: { onSuccess?: () => void }) {
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white text-sm font-medium transition-all shadow-lg shadow-violet-500/25 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
+          className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 text-white text-sm font-medium transition-all shadow-lg shadow-violet-500/25 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
         >
           <Plus className="w-4 h-4" />
           {loading ? "Creating..." : "Create"}

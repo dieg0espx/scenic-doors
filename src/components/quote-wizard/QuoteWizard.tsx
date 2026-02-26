@@ -4,12 +4,15 @@ import { useReducer } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import QuoteWizardStepper from "./QuoteWizardStepper";
 import StepContactInfo from "./steps/StepContactInfo";
+import StepIntentSelection from "./steps/StepIntentSelection";
 import StepProductSelection from "./steps/StepProductSelection";
 import StepConfiguration from "./steps/StepConfiguration";
 import StepQuoteSummary from "./steps/StepQuoteSummary";
 import StepConfirmation from "./steps/StepConfirmation";
+import StepPriceExplorer from "./steps/StepPriceExplorer";
+import StepGeneralPreferences from "./steps/StepGeneralPreferences";
 import type { WizardState, WizardAction, ConfiguredItem } from "@/lib/quote-wizard/types";
-import { initialState, createEmptyItem } from "@/lib/quote-wizard/types";
+import { initialState, createEmptyItem, getStepLabels, initialGeneralPreferences } from "@/lib/quote-wizard/types";
 
 function wizardReducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
@@ -21,6 +24,18 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
 
     case "SET_LEAD_ID":
       return { ...state, leadId: action.payload };
+
+    case "SET_INTENT":
+      return { ...state, intentLevel: action.payload };
+
+    case "SET_BROWSE_INTERESTS":
+      return { ...state, browseInterests: action.payload };
+
+    case "SET_GENERAL_PREFERENCES":
+      return {
+        ...state,
+        generalPreferences: { ...state.generalPreferences, ...action.payload },
+      };
 
     case "SELECT_PRODUCT": {
       const { doorType, doorTypeSlug, basePrice } = action.payload;
@@ -76,7 +91,8 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
     case "REMOVE_ITEM": {
       const filtered = state.items.filter((_, i) => i !== action.payload);
       if (filtered.length === 0) {
-        return { ...state, items: [], currentItemIndex: null, currentStep: 2 };
+        // Step 3 is product selection for both medium and full tiers
+        return { ...state, items: [], currentItemIndex: null, currentStep: 3 };
       }
       return { ...state, items: filtered, currentItemIndex: null };
     }
@@ -97,7 +113,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       return { ...state, error: action.payload };
 
     case "RESET":
-      return { ...initialState };
+      return { ...initialState, generalPreferences: { ...initialGeneralPreferences } };
 
     default:
       return state;
@@ -121,24 +137,61 @@ const slideVariants = {
 
 export default function QuoteWizard() {
   const [state, dispatch] = useReducer(wizardReducer, initialState);
-  const { currentStep } = state;
+  const { currentStep, intentLevel } = state;
+
+  const stepLabels = getStepLabels(intentLevel);
 
   // Track direction for animation
   const direction = 1; // forward by default
 
   function renderStep() {
+    // Step 1 and 2 are always the same
+    if (currentStep === 1) {
+      return (
+        <StepContactInfo
+          contact={state.contact}
+          dispatch={dispatch}
+          isSubmitting={state.isSubmitting}
+        />
+      );
+    }
+
+    if (currentStep === 2) {
+      return <StepIntentSelection dispatch={dispatch} />;
+    }
+
+    // Steps 3+ depend on intent level
+    if (intentLevel === "browse") {
+      switch (currentStep) {
+        case 3:
+          return <StepPriceExplorer state={state} dispatch={dispatch} />;
+        case 4:
+          return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="browse" />;
+        default:
+          return null;
+      }
+    }
+
+    if (intentLevel === "medium") {
+      switch (currentStep) {
+        case 3:
+          return <StepProductSelection dispatch={dispatch} />;
+        case 4:
+          return <StepGeneralPreferences state={state} dispatch={dispatch} />;
+        case 5:
+          return <StepQuoteSummary state={state} dispatch={dispatch} />;
+        case 6:
+          return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="medium" />;
+        default:
+          return null;
+      }
+    }
+
+    // Full tier (default)
     switch (currentStep) {
-      case 1:
-        return (
-          <StepContactInfo
-            contact={state.contact}
-            dispatch={dispatch}
-            isSubmitting={state.isSubmitting}
-          />
-        );
-      case 2:
+      case 3:
         return <StepProductSelection dispatch={dispatch} />;
-      case 3: {
+      case 4: {
         const item =
           state.currentItemIndex !== null
             ? state.items[state.currentItemIndex]
@@ -146,10 +199,10 @@ export default function QuoteWizard() {
         if (!item) return <StepProductSelection dispatch={dispatch} />;
         return <StepConfiguration item={item} dispatch={dispatch} />;
       }
-      case 4:
-        return <StepQuoteSummary state={state} dispatch={dispatch} />;
       case 5:
-        return <StepConfirmation contact={state.contact} dispatch={dispatch} />;
+        return <StepQuoteSummary state={state} dispatch={dispatch} />;
+      case 6:
+        return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="full" />;
       default:
         return null;
     }
@@ -158,9 +211,9 @@ export default function QuoteWizard() {
   return (
     <div className="min-h-screen bg-ocean-50">
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-4 sm:py-12">
-        <QuoteWizardStepper currentStep={currentStep} />
+        <QuoteWizardStepper currentStep={currentStep} steps={stepLabels} />
 
-        {state.error && currentStep !== 4 && (
+        {state.error && currentStep !== 5 && (
           <div className="max-w-3xl mx-auto mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
             {state.error}
           </div>

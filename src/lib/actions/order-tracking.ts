@@ -2,8 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendInternalNotificationEmail } from "@/lib/email";
+import { sendInternalNotificationEmail, sendShippingNotificationEmail } from "@/lib/email";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
+import { recordEmailSent } from "@/lib/actions/email-history";
 import type { OrderTracking } from "@/lib/types";
 
 // Valid stage transitions: current stage → allowed next stages
@@ -223,6 +224,60 @@ export async function markDepositPaid(
     .eq("id", quoteId);
 
   revalidatePath(`/admin/quotes/${quoteId}`);
+}
+
+export async function updateTrackingInfo(
+  trackingId: string,
+  quoteId: string,
+  trackingNumber: string,
+  shippingCarrier: string
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("order_tracking")
+    .update({
+      tracking_number: trackingNumber || null,
+      shipping_carrier: shippingCarrier || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", trackingId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/orders`);
+  revalidatePath(`/portal/${quoteId}`);
+
+  // Send shipping notification email to client
+  if (trackingNumber) {
+    try {
+      const { data: quote } = await supabase
+        .from("quotes")
+        .select("quote_number, client_name, client_email, order_number")
+        .eq("id", quoteId)
+        .single();
+
+      if (quote?.client_email) {
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        await sendShippingNotificationEmail({
+          clientName: quote.client_name || "Customer",
+          clientEmail: quote.client_email,
+          quoteNumber: quote.quote_number || "",
+          orderNumber: quote.order_number || "",
+          trackingNumber,
+          shippingCarrier: shippingCarrier || "",
+          portalUrl: `${origin}/portal/${quoteId}`,
+        });
+
+        await recordEmailSent({
+          quote_id: quoteId,
+          recipient_email: quote.client_email,
+          subject: `Your Order Has Shipped — ${quote.order_number || quote.quote_number} | Scenic Doors`,
+          type: "shipping_notification",
+        });
+      }
+    } catch {
+      // Don't fail the tracking update if email fails
+    }
+  }
 }
 
 export async function addShippingUpdate(

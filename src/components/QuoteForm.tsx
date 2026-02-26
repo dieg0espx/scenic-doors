@@ -128,6 +128,7 @@ interface AdminUserOption {
   id: string;
   name: string;
   email: string | null;
+  role?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,12 +158,89 @@ interface QuoteData extends Record<string, any> {
   tax?: number;
   grand_total?: number;
   follow_up_date?: string;
+  shared_with?: string[];
+}
+
+interface LeadPrefill {
+  client_name?: string;
+  client_email?: string;
+  customer_phone?: string;
+  customer_zip?: string;
+  customer_type?: string;
 }
 
 interface QuoteFormProps {
   initialData?: QuoteData;
   clients?: ClientOption[];
   adminUsers?: AdminUserOption[];
+  prefill?: LeadPrefill;
+  leadId?: string;
+  createdBy?: string;
+  userRole?: string;
+}
+
+/* ── Hydrate stored items back to ConfiguredItem[] ──────── */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function hydrateItems(stored: any[]): ConfiguredItem[] {
+  const hydrated = stored.map((item) => {
+    // New format: full ConfiguredItem fields are present
+    if (item.doorTypeSlug) {
+      return {
+        id: item.id || crypto.randomUUID(),
+        doorType: item.doorType || item.name || "",
+        doorTypeSlug: item.doorTypeSlug,
+        systemType: item.systemType || "slider",
+        width: item.width || 0,
+        height: item.height || 0,
+        panelCount: item.panelCount || 0,
+        panelLayout: item.panelLayout || "",
+        roomName: item.roomName || "",
+        exteriorFinish: item.exteriorFinish || "",
+        interiorFinish: item.interiorFinish || "",
+        glassType: item.glassType || "",
+        hardwareFinish: item.hardwareFinish || "",
+        basePrice: item.basePrice || 0,
+        glassPriceModifier: item.glassPriceModifier || 0,
+        itemTotal: item.itemTotal || item.unit_price || 0,
+      } as ConfiguredItem;
+    }
+
+    // Legacy format: reconstruct from name + description
+    const product = PRODUCTS.find((p) => p.name === item.name);
+    const parts = (item.description || "").split(" | ");
+    const dims = (parts[0] || "").match(/(\d+)"\s*x\s*(\d+)"/);
+    const width = dims ? parseInt(dims[1]) : 0;
+    const height = dims ? parseInt(dims[2]) : 0;
+
+    let exteriorFinish = parts[1] || "";
+    let interiorFinish = "";
+    if (exteriorFinish.includes(" / ")) {
+      const [ext, int] = exteriorFinish.split(" / ");
+      exteriorFinish = ext;
+      interiorFinish = int.replace(" interior", "");
+    }
+
+    return {
+      id: item.id || crypto.randomUUID(),
+      doorType: item.name || "",
+      doorTypeSlug: product?.slug || "",
+      systemType: "slider",
+      width,
+      height,
+      panelCount: 0,
+      panelLayout: "",
+      roomName: parts[4] || "",
+      exteriorFinish,
+      interiorFinish,
+      glassType: parts[2] || "",
+      hardwareFinish: parts[3] || "",
+      basePrice: product?.basePrice || 0,
+      glassPriceModifier: GLASS_MODIFIERS[parts[2]] ?? 0,
+      itemTotal: item.unit_price || 0,
+    } as ConfiguredItem;
+  });
+
+  return hydrated.length > 0 ? hydrated : [createEmptyItem()];
 }
 
 /* ── Door Item Card ─────────────────────────────────────── */
@@ -546,15 +624,16 @@ function DoorItemCard({
 }
 
 /* ── Quote Form ──────────────────────────────────────────── */
-export default function QuoteForm({ initialData, clients = [], adminUsers = [] }: QuoteFormProps) {
+export default function QuoteForm({ initialData, clients = [], adminUsers = [], prefill, leadId, createdBy, userRole }: QuoteFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const isEdit = !!initialData;
+  const [sharedWith, setSharedWith] = useState<string[]>(initialData?.shared_with || []);
 
-  // Client mode
+  // Client mode — force "new" when prefilling from a lead
   const [clientMode, setClientMode] = useState<"existing" | "new">(
-    initialData?.client_id ? "existing" : clients.length > 0 ? "existing" : "new"
+    prefill ? "new" : initialData?.client_id ? "existing" : clients.length > 0 ? "existing" : "new"
   );
   const [selectedClientId, setSelectedClientId] = useState<string>(initialData?.client_id || "");
   const [clientSearch, setClientSearch] = useState("");
@@ -566,26 +645,35 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
   const selectedClient = clients.find((c) => c.id === selectedClientId);
 
   // Client name/email/phone/company for new client mode
-  const [newClientName, setNewClientName] = useState(initialData?.client_name || "");
-  const [newClientEmail, setNewClientEmail] = useState(initialData?.client_email || "");
+  const [newClientName, setNewClientName] = useState(prefill?.client_name || initialData?.client_name || "");
+  const [newClientEmail, setNewClientEmail] = useState(prefill?.client_email || initialData?.client_email || "");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientCompany, setNewClientCompany] = useState("");
 
   // New fields
-  const [customerType, setCustomerType] = useState(initialData?.customer_type || "homeowner");
-  const [customerPhone, setCustomerPhone] = useState(initialData?.customer_phone || "");
-  const [customerZip, setCustomerZip] = useState(initialData?.customer_zip || "");
+  const [customerType, setCustomerType] = useState(prefill?.customer_type || initialData?.customer_type || "homeowner");
+  const [customerPhone, setCustomerPhone] = useState(prefill?.customer_phone || initialData?.customer_phone || "");
+  const [customerZip, setCustomerZip] = useState(prefill?.customer_zip || initialData?.customer_zip || "");
   const [assignedTo, setAssignedTo] = useState(initialData?.assigned_to || "");
   const [leadStatus, setLeadStatus] = useState(initialData?.lead_status || "new");
   const [followUpDate, setFollowUpDate] = useState(initialData?.follow_up_date || "");
 
-  // Door items
-  const [items, setItems] = useState<ConfiguredItem[]>([createEmptyItem()]);
+  // Door items — hydrate from initialData when editing
+  const [items, setItems] = useState<ConfiguredItem[]>(() => {
+    if (initialData?.items && initialData.items.length > 0) {
+      return hydrateItems(initialData.items);
+    }
+    return [createEmptyItem()];
+  });
 
-  // Services
-  const [services, setServices] = useState<ServiceOptions>({
-    deliveryType: "none",
-    includeInstallation: false,
+  // Services — hydrate from initialData when editing
+  const [services, setServices] = useState<ServiceOptions>(() => {
+    if (!initialData) return { deliveryType: "none", includeInstallation: false };
+    const dc = Number(initialData.delivery_cost || 0);
+    const deliveryType: ServiceOptions["deliveryType"] =
+      dc >= 1500 ? "white-glove" : dc >= 800 ? "regular" : "none";
+    const includeInstallation = Number(initialData.installation_cost || 0) > 0;
+    return { deliveryType, includeInstallation };
   });
 
   // Filter clients based on search
@@ -647,12 +735,29 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
 
     const firstItem = items[0];
     const quoteItems = items.map((item) => ({
+      // Display fields (used by portal, PDFs, line-item tables)
       id: item.id,
       name: item.doorType,
       description: `${item.width}" x ${item.height}" | ${item.exteriorFinish}${item.interiorFinish && item.interiorFinish !== item.exteriorFinish ? ` / ${item.interiorFinish} interior` : ""} | ${item.glassType} | ${item.hardwareFinish}${item.roomName ? ` | ${item.roomName}` : ""}`,
       quantity: 1,
       unit_price: item.itemTotal,
       total: item.itemTotal,
+      // Full configuration (used to restore edit form)
+      doorType: item.doorType,
+      doorTypeSlug: item.doorTypeSlug,
+      systemType: item.systemType,
+      width: item.width,
+      height: item.height,
+      panelCount: item.panelCount,
+      panelLayout: item.panelLayout,
+      roomName: item.roomName,
+      exteriorFinish: item.exteriorFinish,
+      interiorFinish: item.interiorFinish,
+      glassType: item.glassType,
+      hardwareFinish: item.hardwareFinish,
+      basePrice: item.basePrice,
+      glassPriceModifier: item.glassPriceModifier,
+      itemTotal: item.itemTotal,
     }));
 
     const notes = (document.getElementById("notes") as HTMLTextAreaElement)?.value || "";
@@ -684,6 +789,9 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
       tax: totals.tax,
       grand_total: totals.grandTotal,
       follow_up_date: followUpDate || undefined,
+      lead_id: leadId || undefined,
+      created_by: createdBy || undefined,
+      shared_with: sharedWith,
     };
 
     try {
@@ -1012,6 +1120,71 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
         </div>
       </div>
 
+      {/* ── Section 2b: Share with Sales Reps (Admin only) ── */}
+      {userRole === "admin" && (
+        <div className="relative z-[45] rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+          <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+            <div className="w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center">
+              <Users className="w-4 h-4 text-teal-400" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-white">Share with Sales Reps</h3>
+              <p className="text-sm text-white/35">Give additional reps visibility into this quote</p>
+            </div>
+          </div>
+          <div className="p-5 sm:p-6">
+            {/* Selected tags */}
+            {sharedWith.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-3">
+                {sharedWith.map((uid) => {
+                  const user = adminUsers.find((u) => u.id === uid);
+                  return (
+                    <span
+                      key={uid}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-500/10 border border-teal-500/20 text-teal-300 text-xs font-medium"
+                    >
+                      {user?.name || uid}
+                      <button
+                        type="button"
+                        onClick={() => setSharedWith((prev) => prev.filter((id) => id !== uid))}
+                        className="p-0.5 rounded hover:bg-teal-500/20 transition-colors cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {/* Dropdown to add */}
+            {(() => {
+              const salesReps = adminUsers.filter(
+                (u) => u.role === "sales" && !sharedWith.includes(u.id) && u.id !== assignedTo
+              );
+              if (salesReps.length === 0) return (
+                <p className="text-white/25 text-sm">
+                  {adminUsers.filter((u) => u.role === "sales").length === 0
+                    ? "No sales reps available"
+                    : "All sales reps have been added"}
+                </p>
+              );
+              return (
+                <CustomSelect
+                  name="shared_with_select"
+                  value=""
+                  onChange={(val) => {
+                    const user = salesReps.find((u) => u.name === val);
+                    if (user) setSharedWith((prev) => [...prev, user.id]);
+                  }}
+                  options={salesReps.map((u) => u.name)}
+                  placeholder="Add a sales rep..."
+                />
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* ── Section 3: Door Items ── */}
       <div className="relative z-[40] space-y-4">
         <div className="flex items-center justify-between">
@@ -1065,7 +1238,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
             <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
               <Truck className="w-3.5 h-3.5" /> Delivery
             </label>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               {(["regular", "white-glove", "none"] as const).map((type) => {
                 const labels: Record<string, string> = {
                   regular: "Regular ($800)",
@@ -1208,13 +1381,16 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
         </div>
       )}
 
+      {/* ── Spacer so content isn't hidden behind fixed bar on mobile ── */}
+      <div className="h-16 sm:hidden" />
+
       {/* ── Actions ── */}
-      <div className="sticky bottom-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117] to-transparent pt-6 pb-4 -mx-4 px-4 sm:static sm:bg-transparent sm:p-0 sm:m-0 sm:pt-2">
-        <div className="flex flex-col sm:flex-row gap-3">
+      <div className="fixed bottom-0 left-0 right-0 z-[70] bg-[#0a0f1a] border-t border-white/[0.08] px-4 py-2.5 safe-area-bottom sm:relative sm:inset-auto sm:z-auto sm:bg-transparent sm:border-t-0 sm:px-0 sm:py-0 sm:pt-2">
+        <div className="flex gap-2 sm:gap-3">
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 sm:py-3 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-base sm:text-sm font-medium transition-all shadow-lg shadow-violet-500/25 cursor-pointer active:scale-[0.98]"
+            className="flex-1 sm:flex-initial sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:px-8 sm:py-3 rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-400 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium transition-all shadow-lg shadow-violet-500/25 cursor-pointer active:scale-[0.98]"
           >
             {isEdit ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             {loading
@@ -1225,7 +1401,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [] }
           <button
             type="button"
             onClick={() => router.back()}
-            className="w-full sm:w-auto px-8 py-3.5 sm:py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.06] text-white/40 hover:text-white/70 text-base sm:text-sm font-medium transition-all cursor-pointer active:scale-[0.98]"
+            className="px-5 py-2.5 sm:flex-initial sm:w-auto sm:px-8 sm:py-3 rounded-xl bg-white/[0.06] border border-white/[0.1] hover:bg-white/[0.1] text-white/50 hover:text-white/70 text-sm font-medium transition-all cursor-pointer active:scale-[0.98]"
           >
             Cancel
           </button>

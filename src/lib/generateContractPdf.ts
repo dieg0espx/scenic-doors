@@ -1,5 +1,16 @@
 import { jsPDF } from "jspdf";
 
+function formatDeliveryAddress(raw: string): string {
+  try {
+    const p = JSON.parse(raw);
+    if (p && typeof p === "object" && p.street) {
+      const parts = [p.street, p.unit, p.city, p.state, p.zip].filter(Boolean);
+      return parts.join(", ");
+    }
+  } catch { /* plain text */ }
+  return raw;
+}
+
 interface ContractData {
   client_name: string;
   signature_url: string;
@@ -127,7 +138,7 @@ export async function generateContractPdf(contract: ContractData) {
       value:
         contract.quotes.delivery_type === "pickup"
           ? "Client Pickup"
-          : `Delivery to: ${contract.quotes.delivery_address || "TBD"}`,
+          : `Delivery to: ${contract.quotes.delivery_address ? formatDeliveryAddress(contract.quotes.delivery_address) : "TBD"}`,
     });
   }
 

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendInvoiceEmail, sendPaymentReceiptEmail, sendInternalNotificationEmail } from "@/lib/email";
+import { sendSlackNotification } from "@/lib/slack";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 
 export async function createPayment({
@@ -13,22 +14,24 @@ export async function createPayment({
   paymentType = "advance_50",
 }: {
   quoteId: string;
-  contractId: string;
+  contractId?: string;
   clientName: string;
   amount: number;
   paymentType?: "advance_50" | "balance_50";
 }) {
   const supabase = await createClient();
+  const insert: Record<string, unknown> = {
+    quote_id: quoteId,
+    client_name: clientName,
+    amount,
+    payment_type: paymentType,
+    status: "pending",
+  };
+  if (contractId) insert.contract_id = contractId;
+
   const { data, error } = await supabase
     .from("payments")
-    .insert({
-      quote_id: quoteId,
-      contract_id: contractId,
-      client_name: clientName,
-      amount,
-      payment_type: paymentType,
-      status: "pending",
-    })
+    .insert(insert)
     .select()
     .single();
 
@@ -174,19 +177,39 @@ export async function submitPaymentConfirmation(
         paidAt,
       });
 
-      // Auto-update order status based on payment type
+      // Auto-update order status and tracking based on payment type
       if (payment.payment_type === "balance_50") {
         // Balance paid → order completed
         await supabase
           .from("orders")
           .update({ status: "completed" })
           .eq("quote_id", payment.quote_id);
+        // Sync order_tracking
+        await supabase
+          .from("order_tracking")
+          .update({ deposit_2_paid: true, deposit_2_paid_at: paidAt, stage: "shipping" })
+          .eq("quote_id", payment.quote_id);
+        // Advance portal stage
+        await supabase
+          .from("quotes")
+          .update({ portal_stage: "shipping" })
+          .eq("id", payment.quote_id);
       } else if (payment.payment_type === "advance_50") {
         // Advance paid → order in progress
         await supabase
           .from("orders")
           .update({ status: "in_progress" })
           .eq("quote_id", payment.quote_id);
+        // Sync order_tracking
+        await supabase
+          .from("order_tracking")
+          .update({ deposit_1_paid: true, deposit_1_paid_at: paidAt, stage: "manufacturing" })
+          .eq("quote_id", payment.quote_id);
+        // Advance portal stage
+        await supabase
+          .from("quotes")
+          .update({ portal_stage: "manufacturing" })
+          .eq("id", payment.quote_id);
       }
 
       // Send internal notification
@@ -220,9 +243,49 @@ export async function submitPaymentConfirmation(
     // Don't fail the payment if email/order-update/notification fails
   }
 
+  // Slack notification
+  try {
+    const { data: sp } = await supabase
+      .from("payments")
+      .select("*, quotes(quote_number, client_name)")
+      .eq("id", id)
+      .single();
+    if (sp) {
+      const sq = sp.quotes as { quote_number: string; client_name: string };
+      const isAdv = sp.payment_type === "advance_50";
+      const invoiceNum = `INV-${sq.quote_number.replace("QT-", "")}${isAdv ? "-A" : "-B"}`;
+      const typeLabel = isAdv ? "50% Advance" : "50% Balance";
+      const formattedAmt = Number(sp.amount).toLocaleString("en-US", { minimumFractionDigits: 2 });
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      await sendSlackNotification({
+        heading: `Payment Received — ${invoiceNum}`,
+        message: `*${sq.client_name}* has completed a payment.`,
+        color: "#16a34a",
+        details: [
+          { label: "Invoice", value: invoiceNum },
+          { label: "Client", value: sq.client_name },
+          { label: "Type", value: typeLabel },
+          { label: "Amount", value: `$${formattedAmt}` },
+          { label: "Method", value: paymentMethod },
+          { label: "Reference", value: paymentReference },
+        ],
+        adminUrl: `${origin}/admin/quotes/${sp.quote_id}`,
+      });
+    }
+  } catch {
+    // Don't fail payment if Slack fails
+  }
+
+  // Fetch quote_id for portal revalidation
+  const { data: pmt } = await supabase.from("payments").select("quote_id").eq("id", id).single();
+
   revalidatePath("/admin/payments");
   revalidatePath("/admin/invoices");
   revalidatePath("/admin/orders");
+  if (pmt?.quote_id) {
+    revalidatePath(`/portal/${pmt.quote_id}`);
+    revalidatePath(`/admin/quotes/${pmt.quote_id}`);
+  }
 }
 
 export async function createBalancePayment({
@@ -232,7 +295,7 @@ export async function createBalancePayment({
   amount,
 }: {
   quoteId: string;
-  contractId: string;
+  contractId?: string;
   clientName: string;
   amount: number;
 }) {
@@ -253,7 +316,7 @@ export async function createAndSendBalanceInvoice({
   origin,
 }: {
   quoteId: string;
-  contractId: string;
+  contractId?: string;
   clientName: string;
   amount: number;
   origin: string;
@@ -263,6 +326,29 @@ export async function createAndSendBalanceInvoice({
     contractId,
     clientName,
     amount,
+  });
+
+  await sendInvoiceToClient(payment.id, origin);
+  revalidatePath("/admin/orders");
+  return payment;
+}
+
+export async function createAndSendDepositInvoice({
+  quoteId,
+  clientName,
+  amount,
+  origin,
+}: {
+  quoteId: string;
+  clientName: string;
+  amount: number;
+  origin: string;
+}) {
+  const payment = await createPayment({
+    quoteId,
+    clientName,
+    amount,
+    paymentType: "advance_50",
   });
 
   await sendInvoiceToClient(payment.id, origin);

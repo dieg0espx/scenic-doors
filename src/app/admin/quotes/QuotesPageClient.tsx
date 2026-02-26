@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import type { Quote } from "@/lib/types";
 import { exportToCSV } from "@/lib/utils/csv-export";
-import QuoteStatusTabs from "@/components/admin/QuoteStatusTabs";
 import QuoteSearchBar from "@/components/admin/QuoteSearchBar";
 import ExpandableQuoteCard from "@/components/admin/ExpandableQuoteCard";
 import ColumnSelectorModal, {
@@ -14,11 +13,13 @@ import { FileText } from "lucide-react";
 interface Props {
   quotes: Quote[];
   counts: Record<string, number>;
+  intentCounts: Record<string, number>;
+  userNameMap?: Record<string, string>;
 }
 
 const STORAGE_KEY = "scenic-quote-columns";
 
-export default function QuotesPageClient({ quotes, counts }: Props) {
+export default function QuotesPageClient({ quotes, counts, intentCounts, userNameMap = {} }: Props) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expandAll, setExpandAll] = useState(false);
   const [showColumnModal, setShowColumnModal] = useState(false);
@@ -82,9 +83,9 @@ export default function QuotesPageClient({ quotes, counts }: Props) {
 
   return (
     <div className="space-y-4">
-      <QuoteStatusTabs counts={counts} />
-
       <QuoteSearchBar
+        statusCounts={counts}
+        intentCounts={intentCounts}
         onExportCSV={handleExportCSV}
         onToggleColumns={() => setShowColumnModal(true)}
         expandAll={expandAll}
@@ -92,7 +93,7 @@ export default function QuotesPageClient({ quotes, counts }: Props) {
       />
 
       {quotes.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-white/[0.08] p-12 sm:p-16 text-center">
+        <div className="rounded-2xl border border-dashed border-white/[0.08] p-8 sm:p-16 text-center">
           <div className="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center mx-auto mb-4">
             <FileText className="w-7 h-7 text-violet-400/60" />
           </div>
@@ -112,6 +113,7 @@ export default function QuotesPageClient({ quotes, counts }: Props) {
               expanded={expandedIds.has(quote.id)}
               onToggle={() => toggleExpand(quote.id)}
               visibleColumns={visibleColumns}
+              userNameMap={userNameMap}
             />
           ))}
         </div>

@@ -34,8 +34,15 @@ export interface ServiceOptions {
   includeInstallation: boolean;
 }
 
+export interface GeneralPreferences {
+  approximateSize: string;    // "small" | "medium" | "large" | "extra-large" | "not-sure"
+  colorPreference: string;    // "light" | "dark" | "wood-tones" | "not-sure"
+  glassPreference: string;    // "standard" | "energy-efficient" | "privacy" | "not-sure"
+  projectNotes: string;
+}
+
 export interface WizardState {
-  currentStep: 1 | 2 | 3 | 4 | 5;
+  currentStep: number;
   contact: ContactInfo;
   items: ConfiguredItem[];
   currentItemIndex: number | null;
@@ -44,11 +51,14 @@ export interface WizardState {
   quoteId: string | null;
   isSubmitting: boolean;
   error: string | null;
+  intentLevel: "browse" | "medium" | "full" | null;
+  browseInterests: string[];
+  generalPreferences: GeneralPreferences;
 }
 
 export type WizardAction =
   | { type: "SET_CONTACT"; payload: Partial<ContactInfo> }
-  | { type: "SET_STEP"; payload: 1 | 2 | 3 | 4 | 5 }
+  | { type: "SET_STEP"; payload: number }
   | { type: "SET_LEAD_ID"; payload: string }
   | { type: "SELECT_PRODUCT"; payload: { doorType: string; doorTypeSlug: string; basePrice: number } }
   | { type: "UPDATE_CURRENT_ITEM"; payload: Partial<ConfiguredItem> }
@@ -61,7 +71,10 @@ export type WizardAction =
   | { type: "SET_QUOTE_ID"; payload: string }
   | { type: "SET_SUBMITTING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string | null }
-  | { type: "RESET" };
+  | { type: "RESET" }
+  | { type: "SET_INTENT"; payload: "browse" | "medium" | "full" }
+  | { type: "SET_BROWSE_INTERESTS"; payload: string[] }
+  | { type: "SET_GENERAL_PREFERENCES"; payload: Partial<GeneralPreferences> };
 
 export const initialContact: ContactInfo = {
   firstName: "",
@@ -78,6 +91,13 @@ export const initialContact: ContactInfo = {
 export const initialServices: ServiceOptions = {
   deliveryType: "none",
   includeInstallation: false,
+};
+
+export const initialGeneralPreferences: GeneralPreferences = {
+  approximateSize: "",
+  colorPreference: "",
+  glassPreference: "",
+  projectNotes: "",
 };
 
 export function createEmptyItem(): ConfiguredItem {
@@ -111,4 +131,16 @@ export const initialState: WizardState = {
   quoteId: null,
   isSubmitting: false,
   error: null,
+  intentLevel: null,
+  browseInterests: [],
+  generalPreferences: initialGeneralPreferences,
 };
+
+export function getStepLabels(intentLevel: string | null): string[] {
+  switch (intentLevel) {
+    case "browse":  return ["Contact", "Intent", "Explore Prices", "Done"];
+    case "medium":  return ["Contact", "Intent", "Product", "Preferences", "Summary", "Done"];
+    case "full":    return ["Contact", "Intent", "Product", "Configure", "Summary", "Done"];
+    default:        return ["Contact", "Intent"];
+  }
+}

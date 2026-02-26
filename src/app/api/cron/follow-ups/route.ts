@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendPendingFollowUps } from "@/lib/cron/process-follow-ups";
+import { ageLeadStatuses } from "@/lib/cron/age-lead-statuses";
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -12,10 +13,15 @@ export async function GET(request: NextRequest) {
   const origin = process.env.NEXT_PUBLIC_SITE_URL || `https://${request.headers.get("host")}`;
 
   try {
-    const result = await sendPendingFollowUps(origin);
+    const [followUpResult, agingResult] = await Promise.all([
+      sendPendingFollowUps(origin),
+      ageLeadStatuses(),
+    ]);
+
     return NextResponse.json({
       ok: true,
-      ...result,
+      ...followUpResult,
+      aged: agingResult.aged,
       timestamp: new Date().toISOString(),
     });
   } catch (err) {

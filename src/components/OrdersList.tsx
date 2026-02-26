@@ -21,12 +21,12 @@ const statusConfig: Record<string, { dot: string; bg: string; text: string }> = 
 export default function OrdersList({ orders }: { orders: Order[] }) {
   if (orders.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-white/[0.08] p-12 sm:p-16 text-center">
+      <div className="rounded-2xl border border-dashed border-white/[0.08] p-8 sm:p-16 text-center">
         <div className="w-14 h-14 rounded-2xl bg-sky-500/10 flex items-center justify-center mx-auto mb-4">
           <Package className="w-7 h-7 text-sky-400/60" />
         </div>
         <h3 className="text-lg font-semibold text-white/60 mb-1">No orders yet</h3>
-        <p className="text-white/30 text-sm">Orders are created after contract signing.</p>
+        <p className="text-white/30 text-sm">Orders are created when clients sign their approval drawing.</p>
       </div>
     );
   }
@@ -47,39 +47,39 @@ export default function OrdersList({ orders }: { orders: Order[] }) {
       <div className="md:hidden space-y-3">
         {orders.map((o) => (
           <div key={o.id} className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4">
-            <div className="flex items-start justify-between mb-3">
-              <div className="min-w-0">
-                <Link href={`/admin/orders/${o.id}`} className="text-white font-medium text-[15px] hover:text-violet-300 transition-colors">{o.client_name}</Link>
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <div className="min-w-0 flex-1">
+                <Link href={`/admin/orders/${o.id}`} className="text-white font-medium text-sm hover:text-violet-300 transition-colors truncate block">{o.client_name}</Link>
                 <p className="text-white/30 text-xs truncate">{o.client_email}</p>
               </div>
               <StatusBadge status={o.status} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">Order</p>
-                <Link href={`/admin/orders/${o.id}`} className="text-white/70 font-mono text-xs mt-0.5 hover:text-violet-300 transition-colors">{o.order_number}</Link>
+                <p className="text-white/25 text-[10px] uppercase tracking-wider font-medium">Order</p>
+                <Link href={`/admin/orders/${o.id}`} className="text-white/70 font-mono text-xs hover:text-violet-300 transition-colors block truncate">{o.order_number}</Link>
               </div>
               <div>
-                <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">Quote</p>
-                <p className="text-white/50 font-mono text-xs mt-0.5">{o.quotes?.quote_number}</p>
+                <p className="text-white/25 text-[10px] uppercase tracking-wider font-medium">Quote</p>
+                <p className="text-white/50 font-mono text-xs truncate">{o.quotes?.quote_number}</p>
               </div>
               <div>
-                <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">Cost</p>
-                <p className="text-white font-semibold text-sm mt-0.5">
+                <p className="text-white/25 text-[10px] uppercase tracking-wider font-medium">Cost</p>
+                <p className="text-white font-semibold text-sm">
                   ${o.quotes?.cost ? Number(o.quotes.cost).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "-"}
                 </p>
               </div>
               <div>
-                <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">Type</p>
-                <p className="text-white/50 text-xs mt-0.5">{o.quotes?.door_type}</p>
+                <p className="text-white/25 text-[10px] uppercase tracking-wider font-medium">Type</p>
+                <p className="text-white/50 text-xs truncate">{o.quotes?.door_type}</p>
               </div>
-              <div className="col-span-2 flex items-center justify-between pt-3 border-t border-white/[0.04]">
+              <div className="col-span-2 flex items-center justify-between pt-2 border-t border-white/[0.04]">
                 <p className="text-white/40 text-xs">{new Date(o.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
                 <Link
                   href={`/admin/orders/${o.id}`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-medium bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 transition-colors active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-violet-500/10 hover:bg-violet-500/20 text-violet-300 transition-colors active:scale-95"
                 >
-                  <Eye className="w-3.5 h-3.5" /> View Details
+                  <Eye className="w-3.5 h-3.5" /> View
                 </Link>
               </div>
             </div>

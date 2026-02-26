@@ -62,33 +62,37 @@ export default function QuoteDetailClient({ quoteId, quoteEmail, quoteStatus }: 
           <button
             onClick={handleApprove}
             disabled={approving}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium hover:bg-emerald-500/15 transition-colors cursor-pointer disabled:opacity-50"
+            title="Approve"
+            className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium hover:bg-emerald-500/15 transition-colors cursor-pointer disabled:opacity-50"
           >
-            <CheckCircle2 className="w-3.5 h-3.5" /> {approving ? "Approving..." : "Approve"}
+            <CheckCircle2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{approving ? "Approving..." : "Approve"}</span>
           </button>
           <button
             onClick={handleDecline}
             disabled={declining}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs font-medium hover:bg-red-500/15 transition-colors cursor-pointer disabled:opacity-50"
+            title="Decline"
+            className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-xs font-medium hover:bg-red-500/15 transition-colors cursor-pointer disabled:opacity-50"
           >
-            <XCircle className="w-3.5 h-3.5" /> {declining ? "Declining..." : "Decline"}
+            <XCircle className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{declining ? "Declining..." : "Decline"}</span>
           </button>
         </>
       )}
       <button
         onClick={handleSendEmail}
         disabled={sending}
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs font-medium hover:bg-sky-500/15 transition-colors cursor-pointer disabled:opacity-50"
+        title="Send email"
+        className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs font-medium hover:bg-sky-500/15 transition-colors cursor-pointer disabled:opacity-50"
       >
-        <Send className="w-3.5 h-3.5" /> {sending ? "Sending..." : "Email"}
+        <Send className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{sending ? "Sending..." : "Email"}</span>
       </button>
       <a
         href={`/admin/quotes/${quoteId}/print`}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-colors"
+        title="Export PDF"
+        className="inline-flex items-center gap-1.5 p-2.5 sm:px-3 sm:py-2 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white/50 text-xs font-medium hover:bg-white/[0.06] hover:text-white/80 transition-colors"
       >
-        <Download className="w-3.5 h-3.5" /> Export PDF
+        <Download className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Export PDF</span>
       </a>
     </>
   );

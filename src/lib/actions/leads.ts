@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendInternalNotificationEmail } from "@/lib/email";
+import { sendSlackNotification } from "@/lib/slack";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 import type { Lead, LeadMetrics } from "@/lib/types";
 
@@ -115,6 +116,26 @@ export async function createLead(formData: {
     // Don't fail lead creation if notification fails
   }
 
+  // Slack notification
+  try {
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+    await sendSlackNotification({
+      heading: "New Lead",
+      message: `A new lead has been created and is ready for follow-up.`,
+      color: "#0d9488",
+      details: [
+        { label: "Name", value: data.name },
+        ...(data.email ? [{ label: "Email", value: data.email }] : []),
+        ...(data.phone ? [{ label: "Phone", value: data.phone }] : []),
+        ...(data.zip ? [{ label: "Zip", value: data.zip }] : []),
+        { label: "Type", value: data.customer_type || "homeowner" },
+      ],
+      adminUrl: `${origin}/admin/leads`,
+    });
+  } catch {
+    // Don't fail lead creation if Slack notification fails
+  }
+
   return data;
 }
 
@@ -142,6 +163,7 @@ export async function updateLead(
 
   if (error) throw new Error(error.message);
   revalidatePath("/admin/leads");
+  revalidatePath("/admin/leads/" + id);
 }
 
 export async function deleteLead(id: string): Promise<void> {
@@ -186,4 +208,64 @@ export async function getLeadMetrics(): Promise<LeadMetrics> {
     withQuotes: withQuotesRes.count ?? 0,
     newThisWeek: newThisWeekRes.count ?? 0,
   };
+}
+
+export async function getLeadsForUser(
+  userId: string,
+  role: string
+): Promise<Lead[]> {
+  // Admin sees everything
+  if (role === "admin") {
+    return getLeads();
+  }
+
+  // Sales rep sees only leads shared with them
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*")
+    .contains("shared_with", [userId])
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    if (error.message.includes("schema cache")) return [];
+    throw new Error(error.message);
+  }
+  return data ?? [];
+}
+
+export async function getLeadMetricsForUser(
+  userId: string,
+  role: string
+): Promise<LeadMetrics> {
+  // Admin sees global metrics
+  if (role === "admin") {
+    return getLeadMetrics();
+  }
+
+  // Sales rep sees metrics only for their shared leads
+  const leads = await getLeadsForUser(userId, role);
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+  return {
+    total: leads.length,
+    withoutQuotes: leads.filter((l) => !l.has_quote).length,
+    withQuotes: leads.filter((l) => l.has_quote).length,
+    newThisWeek: leads.filter((l) => new Date(l.created_at).getTime() > oneWeekAgo).length,
+  };
+}
+
+export async function updateLeadSharedWith(
+  leadId: string,
+  userIds: string[]
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("leads")
+    .update({ shared_with: userIds })
+    .eq("id", leadId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/leads/${leadId}`);
+  revalidatePath("/admin/leads");
 }

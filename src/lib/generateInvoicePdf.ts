@@ -41,6 +41,17 @@ interface InvoiceData {
   };
 }
 
+function formatDeliveryAddress(raw: string): string {
+  try {
+    const p = JSON.parse(raw);
+    if (p && typeof p === "object" && p.street) {
+      const parts = [p.street, p.unit, p.city, p.state, p.zip].filter(Boolean);
+      return parts.join(", ");
+    }
+  } catch { /* plain text */ }
+  return raw;
+}
+
 export async function generateInvoicePdf(payment: InvoiceData) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -140,7 +151,7 @@ export async function generateInvoicePdf(payment: InvoiceData) {
   doc.text(payment.quotes.client_email, margin, y);
   y += 4.5;
   if (payment.quotes.delivery_type === "delivery" && payment.quotes.delivery_address) {
-    doc.text(payment.quotes.delivery_address, margin, y);
+    doc.text(formatDeliveryAddress(payment.quotes.delivery_address), margin, y);
     y += 4.5;
   }
 
@@ -289,7 +300,7 @@ export async function generateInvoicePdf(payment: InvoiceData) {
       doc.text("Client Pickup", margin + 4, y);
     } else {
       doc.text(
-        `Delivery to: ${payment.quotes.delivery_address || "Address TBD"}`,
+        `Delivery to: ${payment.quotes.delivery_address ? formatDeliveryAddress(payment.quotes.delivery_address) : "Address TBD"}`,
         margin + 4,
         y
       );

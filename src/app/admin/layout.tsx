@@ -21,13 +21,13 @@ export default async function AdminLayout({
   // Fetch the admin_users record for the logged-in user
   const { data: adminUser } = await supabase
     .from("admin_users")
-    .select("name, role")
+    .select("id, name, role")
     .eq("email", user.email!)
     .single();
 
   const currentUser = adminUser
-    ? { name: adminUser.name, role: adminUser.role }
-    : { name: user.email ?? "User", role: "user" };
+    ? { id: adminUser.id, name: adminUser.name, role: adminUser.role }
+    : { id: "", name: user.email ?? "User", role: "user" };
 
   return (
     <div className="flex min-h-screen bg-[#0d1117]">

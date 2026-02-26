@@ -25,16 +25,16 @@ const baseNavItems = [
   { label: "Quotes", href: "/admin/quotes", icon: FileText },
   { label: "Leads", href: "/admin/leads", icon: UserPlus },
   { label: "Orders", href: "/admin/orders", icon: Package },
-  { label: "Marketing", href: "/admin/marketing", icon: BarChart3 },
+  { label: "Marketing", href: "/admin/marketing", icon: BarChart3, adminOnly: true },
   { label: "Users", href: "/admin/users", icon: Users, adminOnly: true },
-  { label: "Notifications", href: "/admin/notifications", icon: Bell },
+  { label: "Notifications", href: "/admin/notifications", icon: Bell, adminOnly: true },
   { label: "My Account", href: "/admin/account", icon: CircleUser, nonAdminOnly: true },
 ];
 
 export default function AdminSidebar({
   currentUser,
 }: {
-  currentUser: { name: string; role: string };
+  currentUser: { id: string; name: string; role: string };
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -89,10 +89,17 @@ export default function AdminSidebar({
       {/* User info + role badge */}
       <div className="px-5 mb-3 space-y-2">
         <p className="text-sm font-medium text-white/70 truncate">{currentUser.name}</p>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/15">
-          <Shield className="w-3.5 h-3.5 text-amber-400/70" />
-          <span className="text-[11px] font-medium text-amber-400/70 uppercase tracking-wider">Role: {currentUser.role}</span>
-        </div>
+        {isAdmin ? (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/15">
+            <Shield className="w-3.5 h-3.5 text-amber-400/70" />
+            <span className="text-[11px] font-medium text-amber-400/70 uppercase tracking-wider">Admin</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-500/[0.08] border border-teal-500/15">
+            <CircleUser className="w-3.5 h-3.5 text-teal-400/70" />
+            <span className="text-[11px] font-medium text-teal-400/70 uppercase tracking-wider">Sales Rep</span>
+          </div>
+        )}
       </div>
 
       <div className="px-4 mb-2">
@@ -148,7 +155,7 @@ export default function AdminSidebar({
   return (
     <>
       {/* Mobile top bar */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-[#0a0f1a]/95 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center gap-3 safe-area-top">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-[70] bg-[#0a0f1a] border-b border-white/[0.08] px-4 py-3 flex items-center gap-3 safe-area-top">
         <button
           onClick={() => setOpen(true)}
           className="p-2.5 -ml-1 rounded-xl text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer active:scale-95"
@@ -182,7 +189,7 @@ export default function AdminSidebar({
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-[272px] min-h-screen bg-[#0a0f1a] border-r border-white/[0.06] flex-col shrink-0">
+      <aside className="hidden md:flex w-[272px] h-screen bg-[#0a0f1a] border-r border-white/[0.06] flex-col shrink-0 sticky top-0">
         {navContent}
       </aside>
     </>

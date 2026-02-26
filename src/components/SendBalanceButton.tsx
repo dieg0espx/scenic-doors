@@ -12,7 +12,7 @@ export default function SendBalanceButton({
   amount,
 }: {
   quoteId: string;
-  contractId: string;
+  contractId?: string;
   clientName: string;
   amount: number;
 }) {

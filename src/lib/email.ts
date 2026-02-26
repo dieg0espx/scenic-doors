@@ -95,10 +95,10 @@ export async function sendQuoteEmail(data: QuoteEmailData) {
       <!-- CTA Button -->
       <div style="padding:0 32px 32px;text-align:center;">
         <a href="${data.quoteUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
-          View Full Quote
+          View Your Quote
         </a>
         <p style="margin:16px 0 0;font-size:12px;color:#a1a1aa;">
-          You can accept or decline this quote from the link above.
+          View your quote details, upload site photos, and request an approval drawing from your client portal.
         </p>
       </div>
     </div>
@@ -748,13 +748,330 @@ export async function sendQuoteApprovedEmail(data: QuoteApprovedEmailData) {
   });
 }
 
+interface ApprovalDrawingEmailData {
+  clientName: string;
+  clientEmail: string;
+  quoteNumber: string;
+  portalUrl: string;
+}
+
+export async function sendApprovalDrawingEmail(data: ApprovalDrawingEmailData) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:#fffbeb;border-bottom:1px solid #fef3c7;padding:20px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:#d97706;">Approval Drawing Ready</p>
+      </div>
+
+      <div style="padding:24px 32px;">
+        <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.clientName},</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#71717a;line-height:1.6;">
+          Your approval drawing for quote <strong>${data.quoteNumber}</strong> is ready for review. Please take a moment to review the door specifications and sign off so we can begin manufacturing.
+        </p>
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:16px 20px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#a1a1aa;width:100px;">Quote</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">${data.quoteNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#a1a1aa;">Status</td>
+              <td style="padding:4px 0;font-size:13px;color:#d97706;font-weight:500;">Awaiting Your Signature</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div style="padding:0 32px 32px;text-align:center;">
+        <a href="${data.portalUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#f59e0b,#d97706);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
+          Review &amp; Sign Drawing
+        </a>
+        <p style="margin:16px 0 0;font-size:12px;color:#a1a1aa;">
+          Click the button above to review the drawing and sign to approve manufacturing.
+        </p>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: data.clientEmail,
+    subject: `Approval Drawing Ready — Quote ${data.quoteNumber} | Scenic Doors`,
+    html,
+  });
+}
+
+interface ManufacturingStartedEmailData {
+  clientName: string;
+  clientEmail: string;
+  quoteNumber: string;
+  orderNumber: string;
+  doorType: string;
+  portalUrl: string;
+}
+
+export async function sendManufacturingStartedEmail(data: ManufacturingStartedEmailData) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:#eff6ff;border-bottom:1px solid #dbeafe;padding:20px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:#2563eb;">Manufacturing Has Started!</p>
+      </div>
+
+      <div style="padding:24px 32px;">
+        <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.clientName},</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#71717a;line-height:1.6;">
+          Great news! Your <strong>${data.doorType}</strong> order has entered manufacturing. Our team is now building your custom doors to the exact specifications you approved.
+        </p>
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:16px 20px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#a1a1aa;width:100px;">Order</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">${data.orderNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#a1a1aa;">Quote</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">${data.quoteNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#a1a1aa;">Status</td>
+              <td style="padding:4px 0;font-size:13px;color:#2563eb;font-weight:500;">In Manufacturing</td>
+            </tr>
+          </table>
+        </div>
+        <p style="margin:16px 0 0;font-size:14px;color:#71717a;line-height:1.6;">
+          We&apos;ll keep you updated on the progress. You can check the status of your order anytime through your client portal.
+        </p>
+      </div>
+
+      <div style="padding:0 32px 32px;text-align:center;">
+        <a href="${data.portalUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#3b82f6,#2563eb);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
+          View Order Status
+        </a>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: data.clientEmail,
+    subject: `Your Doors Are Now in Manufacturing — ${data.orderNumber} | Scenic Doors`,
+    html,
+  });
+}
+
+interface ShippingNotificationEmailData {
+  clientName: string;
+  clientEmail: string;
+  quoteNumber: string;
+  orderNumber: string;
+  trackingNumber: string;
+  shippingCarrier: string;
+  portalUrl: string;
+}
+
+export async function sendShippingNotificationEmail(data: ShippingNotificationEmailData) {
+  const carrierLine = data.shippingCarrier
+    ? `<tr>
+        <td style="padding:4px 0;font-size:13px;color:#a1a1aa;width:100px;">Carrier</td>
+        <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">${data.shippingCarrier}</td>
+      </tr>`
+    : "";
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:#ecfdf5;border-bottom:1px solid #d1fae5;padding:20px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:#059669;">Your Order Has Shipped!</p>
+      </div>
+
+      <div style="padding:24px 32px;">
+        <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.clientName},</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#71717a;line-height:1.6;">
+          Great news! Your door order has been shipped and is on its way to you. Here are your tracking details:
+        </p>
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:16px 20px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#a1a1aa;width:100px;">Order</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">${data.orderNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#a1a1aa;">Quote</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">${data.quoteNumber}</td>
+            </tr>
+            ${carrierLine}
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#a1a1aa;">Tracking #</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:600;font-family:'Courier New',Courier,monospace;">${data.trackingNumber}</td>
+            </tr>
+          </table>
+        </div>
+        <p style="margin:16px 0 0;font-size:14px;color:#71717a;line-height:1.6;">
+          You can track your shipment and view your order details through your client portal.
+        </p>
+      </div>
+
+      <div style="padding:0 32px 32px;text-align:center;">
+        <a href="${data.portalUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#10b981,#059669);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
+          Track Your Order
+        </a>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: data.clientEmail,
+    subject: `Your Order Has Shipped — ${data.orderNumber} | Scenic Doors`,
+    html,
+  });
+}
+
+interface EstimateConfirmationData {
+  clientName: string;
+  clientEmail: string;
+  quoteNumber: string;
+  doorType: string;
+}
+
+export async function sendEstimateConfirmationEmail(data: EstimateConfirmationData) {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:#f0fdf4;border-bottom:1px solid #dcfce7;padding:20px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:#16a34a;">We Received Your Request!</p>
+      </div>
+
+      <div style="padding:24px 32px;">
+        <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.clientName},</p>
+        <p style="margin:0 0 16px;font-size:14px;color:#71717a;line-height:1.6;">
+          Thank you for your interest in Scenic Doors! We\u2019ve received your inquiry and a member of our team will reach out to you shortly to discuss your project.
+        </p>
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:20px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#a1a1aa;width:120px;">Reference</td>
+              <td style="padding:6px 0;font-size:13px;color:#18181b;font-weight:500;">${data.quoteNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding:6px 0;font-size:13px;color:#a1a1aa;">Product</td>
+              <td style="padding:6px 0;font-size:13px;color:#18181b;font-weight:500;">${data.doorType}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Contact info -->
+      <div style="padding:0 32px 32px;">
+        <div style="background:#f5f3ff;border-radius:12px;border:1px solid #ede9fe;padding:20px;">
+          <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#7c3aed;">Want to get in touch sooner?</p>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#71717a;width:60px;">Phone</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">
+                <a href="tel:818-427-6690" style="color:#7c3aed;text-decoration:none;">818-427-6690</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:4px 0;font-size:13px;color:#71717a;">Email</td>
+              <td style="padding:4px 0;font-size:13px;color:#18181b;font-weight:500;">
+                <a href="mailto:info@scenicdoors.com" style="color:#7c3aed;text-decoration:none;">info@scenicdoors.com</a>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await transporter.sendMail({
+    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+    to: data.clientEmail,
+    subject: `We Received Your Inquiry \u2014 ${data.quoteNumber} | Scenic Doors`,
+    html,
+  });
+}
+
 interface FollowUpEmailData {
   clientName: string;
   clientEmail: string;
   quoteNumber: string;
   doorType: string;
   sequenceNumber: number;
-  quoteUrl: string;
+  quoteUrl: string | null;
 }
 
 const followUpMessages: Record<number, { subject: string; heading: string; body: string }> = {
@@ -815,14 +1132,23 @@ export async function sendFollowUpEmail(data: FollowUpEmailData) {
         </div>
       </div>
 
-      <div style="padding:0 32px 32px;text-align:center;">
+      ${data.quoteUrl ? `<div style="padding:0 32px 32px;text-align:center;">
         <a href="${data.quoteUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
           View Your Quote
         </a>
         <p style="margin:16px 0 0;font-size:12px;color:#a1a1aa;">
-          You can review, accept, or decline your quote from the link above.
+          View your quote and project details from the link above.
         </p>
-      </div>
+      </div>` : `<div style="padding:0 32px 32px;">
+        <div style="background:#f5f3ff;border-radius:12px;border:1px solid #ede9fe;padding:20px;text-align:center;">
+          <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#7c3aed;">Ready to move forward? Get in touch!</p>
+          <p style="margin:0;font-size:13px;color:#71717a;">
+            <a href="tel:818-427-6690" style="color:#7c3aed;text-decoration:none;font-weight:500;">818-427-6690</a>
+            &nbsp;&bull;&nbsp;
+            <a href="mailto:info@scenicdoors.com" style="color:#7c3aed;text-decoration:none;font-weight:500;">info@scenicdoors.com</a>
+          </p>
+        </div>
+      </div>`}
     </div>
 
     <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">

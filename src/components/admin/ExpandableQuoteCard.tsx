@@ -15,6 +15,7 @@ import {
   Eye,
   Trash2,
   Download,
+  Users,
 } from "lucide-react";
 import type { Quote } from "@/lib/types";
 import { deleteQuote } from "@/lib/actions/quotes";
@@ -39,6 +40,7 @@ interface Props {
   expanded: boolean;
   onToggle: () => void;
   visibleColumns: Set<string>;
+  userNameMap?: Record<string, string>;
 }
 
 export default function ExpandableQuoteCard({
@@ -46,6 +48,7 @@ export default function ExpandableQuoteCard({
   expanded,
   onToggle,
   visibleColumns,
+  userNameMap = {},
 }: Props) {
   const [deleting, setDeleting] = useState(false);
   const leadStatus = quote.lead_status || "new";
@@ -55,6 +58,9 @@ export default function ExpandableQuoteCard({
   const assignedName = quote.admin_users?.name;
   const itemsCount = Array.isArray(quote.items) ? quote.items.length : 0;
   const total = Number(quote.grand_total || quote.cost || 0);
+  const sharedWithNames = (quote.shared_with || [])
+    .map((uid: string) => userNameMap[uid])
+    .filter(Boolean) as string[];
 
   async function handleDelete() {
     if (!confirm("Delete this quote? This cannot be undone.")) return;
@@ -80,68 +86,100 @@ export default function ExpandableQuoteCard({
 
         {/* Main info */}
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="text-white/25 font-mono text-[11px]">
-              {quote.quote_number}
-            </span>
-            {assignedName && visibleColumns.has("assigned") && (
-              <span className="px-2 py-0.5 rounded-md bg-violet-500/10 text-violet-300 text-[10px] font-medium">
-                {assignedName}
+          {/* Row 1: Customer name + status badge */}
+          <div className="flex items-center gap-2 mb-1">
+            {visibleColumns.has("customer") && (
+              <span className="text-white text-sm font-medium truncate max-w-[200px] sm:max-w-[280px]">
+                {quote.client_name}
               </span>
             )}
-            {visibleColumns.has("date") && (
-              <span className="text-white/20 text-[11px]">
-                {new Date(quote.created_at).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
-            )}
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${sc.bg} ${sc.text}`}>
+            <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${sc.bg} ${sc.text}`}>
               {leadStatus.charAt(0).toUpperCase() + leadStatus.slice(1)}
             </span>
+            {quote.intent_level && quote.intent_level !== "full" && (
+              <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                quote.intent_level === "browse"
+                  ? "bg-sky-400/10 text-sky-300"
+                  : "bg-amber-400/10 text-amber-300"
+              }`}>
+                {quote.intent_level === "browse" ? "Price Inquiry" : "General Estimate"}
+              </span>
+            )}
+            {quote.portal_stage === "drawing_requested" && (
+              <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-400/15 text-orange-300 animate-pulse">
+                Drawing Requested
+              </span>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            {visibleColumns.has("customer") && (
-              <div className="flex items-center gap-1.5">
-                <User className="w-3 h-3 text-white/20" />
-                <span className="text-white text-sm font-medium truncate max-w-[160px]">
-                  {quote.client_name}
+          {/* Row 2: Quote number, meta details, created by */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
+            <span className="text-white/25 font-mono">
+              {quote.quote_number}
+            </span>
+            {visibleColumns.has("date") && (
+              <>
+                <span className="hidden sm:inline text-white/10">·</span>
+                <span className="hidden sm:inline text-white/20">
+                  {new Date(quote.created_at).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
                 </span>
-              </div>
-            )}
-            {visibleColumns.has("type") && quote.customer_type && (
-              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${customerTypeBadge[quote.customer_type] || customerTypeBadge.residential}`}>
-                {quote.customer_type}
-              </span>
-            )}
-            {visibleColumns.has("phone") && (quote.customer_phone || quote.client_email) && (
-              <div className="hidden sm:flex items-center gap-1.5 text-white/30 text-xs">
-                {quote.customer_phone && (
-                  <>
-                    <Phone className="w-3 h-3" />
-                    <span>{quote.customer_phone}</span>
-                  </>
-                )}
-              </div>
+              </>
             )}
             {visibleColumns.has("email") && (
-              <div className="hidden sm:flex items-center gap-1.5 text-white/30 text-xs">
-                <Mail className="w-3 h-3" />
-                <span className="truncate max-w-[180px]">{quote.client_email}</span>
-              </div>
+              <>
+                <span className="hidden sm:inline text-white/10">·</span>
+                <span className="hidden sm:inline text-white/25 truncate max-w-[180px]">
+                  {quote.client_email}
+                </span>
+              </>
+            )}
+            {visibleColumns.has("phone") && quote.customer_phone && (
+              <>
+                <span className="hidden sm:inline text-white/10">·</span>
+                <span className="hidden sm:inline text-white/25">{quote.customer_phone}</span>
+              </>
             )}
             {visibleColumns.has("zip") && quote.customer_zip && (
-              <div className="hidden sm:flex items-center gap-1.5 text-white/30 text-xs">
-                <MapPin className="w-3 h-3" />
-                <span>{quote.customer_zip}</span>
-              </div>
+              <>
+                <span className="hidden sm:inline text-white/10">·</span>
+                <span className="hidden sm:inline text-white/25">{quote.customer_zip}</span>
+              </>
             )}
             {visibleColumns.has("items") && itemsCount > 0 && (
-              <span className="text-white/25 text-[11px]">
-                {itemsCount} item{itemsCount !== 1 ? "s" : ""}
-              </span>
+              <>
+                <span className="hidden sm:inline text-white/10">·</span>
+                <span className="hidden sm:inline text-white/25">
+                  {itemsCount} item{itemsCount !== 1 ? "s" : ""}
+                </span>
+              </>
+            )}
+            {assignedName && visibleColumns.has("assigned") && (
+              <>
+                <span className="hidden sm:inline text-white/10">·</span>
+                <span className="hidden sm:inline-flex px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-300 text-[10px] font-medium">
+                  {assignedName}
+                </span>
+              </>
+            )}
+            {quote.created_by && (
+              <>
+                <span className="hidden sm:inline text-white/10">·</span>
+                <span className="hidden sm:inline text-white/30 text-[10px]">
+                  by {quote.created_by}
+                </span>
+              </>
+            )}
+            {sharedWithNames.length > 0 && (
+              <>
+                <span className="hidden sm:inline text-white/10">·</span>
+                <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-400/10 text-teal-300 text-[10px] font-medium">
+                  <Users className="w-2.5 h-2.5" />
+                  {sharedWithNames.join(", ")}
+                </span>
+              </>
             )}
           </div>
         </div>
@@ -214,17 +252,20 @@ export default function ExpandableQuoteCard({
                         year: "numeric",
                       })}
                     </p>
-                    {quote.assigned_date && (
-                      <p>
-                        Assigned:{" "}
-                        {new Date(quote.assigned_date).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </p>
-                    )}
                     {quote.created_by && <p>Created by: {quote.created_by}</p>}
+                    {sharedWithNames.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                        <span className="text-white/25">Shared with:</span>
+                        {sharedWithNames.map((name) => (
+                          <span
+                            key={name}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-400/10 text-teal-300 text-[10px] font-medium"
+                          >
+                            {name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
 

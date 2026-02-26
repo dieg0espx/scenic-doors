@@ -17,22 +17,24 @@ export async function getFollowUps(quoteId: string): Promise<FollowUpEntry[]> {
 }
 
 export async function scheduleFollowUps(
-  leadId: string,
+  leadId: string | null,
   quoteId: string,
   intervalDays: number = 4,
   count: number = 3
 ): Promise<FollowUpEntry[]> {
   const supabase = await createClient();
 
-  // Validate lead exists
-  const { data: lead, error: leadError } = await supabase
-    .from("leads")
-    .select("id")
-    .eq("id", leadId)
-    .maybeSingle();
+  // Validate lead exists if provided
+  if (leadId) {
+    const { data: lead, error: leadError } = await supabase
+      .from("leads")
+      .select("id")
+      .eq("id", leadId)
+      .maybeSingle();
 
-  if (leadError) throw new Error(leadError.message);
-  if (!lead) throw new Error("Lead not found — cannot schedule follow-ups without a valid lead");
+    if (leadError) throw new Error(leadError.message);
+    if (!lead) leadId = null; // Lead not found, proceed without it
+  }
 
   // Prevent duplicate scheduling
   const { data: existing } = await supabase
@@ -91,6 +93,44 @@ export async function markFollowUpSent(id: string, quoteId: string): Promise<voi
 
   if (error) throw new Error(error.message);
   revalidatePath(`/admin/quotes/${quoteId}`);
+}
+
+export async function getFollowUpsByLeadId(leadId: string): Promise<FollowUpEntry[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("follow_up_schedule")
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("scheduled_for", { ascending: true });
+
+  if (error) {
+    if (error.message.includes("column") || error.message.includes("schema")) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return data ?? [];
+}
+
+export async function getFollowUpsDueToday(): Promise<FollowUpEntry[]> {
+  const supabase = await createClient();
+  const today = new Date();
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+  const { data, error } = await supabase
+    .from("follow_up_schedule")
+    .select("*")
+    .eq("status", "pending")
+    .lte("scheduled_for", endOfDay.toISOString())
+    .order("scheduled_for", { ascending: true });
+
+  if (error) {
+    if (error.message.includes("column") || error.message.includes("schema")) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return data ?? [];
 }
 
 export async function getPendingFollowUps(): Promise<FollowUpEntry[]> {

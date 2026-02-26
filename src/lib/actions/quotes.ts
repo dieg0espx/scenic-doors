@@ -2,9 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendQuoteEmail, sendNewQuoteNotificationEmail, sendInternalNotificationEmail, sendQuoteApprovedEmail } from "@/lib/email";
+import { sendQuoteEmail, sendNewQuoteNotificationEmail, sendInternalNotificationEmail, sendQuoteApprovedEmail, sendEstimateConfirmationEmail } from "@/lib/email";
+import { sendSlackNotification } from "@/lib/slack";
 import { recordEmailSent } from "@/lib/actions/email-history";
 import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
+import { scheduleFollowUps } from "@/lib/actions/follow-ups";
 import type { Quote, DashboardMetrics } from "@/lib/types";
 
 export async function createQuote(formData: {
@@ -37,6 +39,8 @@ export async function createQuote(formData: {
   follow_up_date?: string;
   lead_id?: string;
   created_by?: string;
+  shared_with?: string[];
+  intent_level?: string;
 }) {
   const supabase = await createClient();
 
@@ -112,11 +116,21 @@ export async function createQuote(formData: {
       follow_up_date: formData.follow_up_date || null,
       lead_id: formData.lead_id || null,
       created_by: formData.created_by || null,
+      shared_with: formData.shared_with || [],
+      intent_level: formData.intent_level || "full",
     })
     .select()
     .single();
 
   if (error) throw new Error(error.message);
+
+  // Auto-schedule follow-up emails (3 follow-ups at 4-day intervals)
+  try {
+    await scheduleFollowUps(formData.lead_id || null, data.id);
+  } catch {
+    // Don't fail quote creation if follow-up scheduling fails
+  }
+
   revalidatePath("/admin/quotes");
   revalidatePath("/admin/clients");
   return data;
@@ -146,6 +160,7 @@ export async function getQuotes() {
 
 export async function getQuotesWithFilters(filters?: {
   lead_status?: string;
+  intent_level?: string;
   search?: string;
   sort?: string;
   due_today?: boolean;
@@ -157,7 +172,30 @@ export async function getQuotesWithFilters(filters?: {
     let q = query;
     // lead_status and follow_up_date are from migration 008 — skip if safeOnly
     if (!safeOnly && filters?.lead_status && filters.lead_status !== "all") {
-      q = q.eq("lead_status", filters.lead_status);
+      const statuses = filters.lead_status.split(",").filter(Boolean);
+      if (statuses.length === 1) {
+        q = q.eq("lead_status", statuses[0]);
+      } else {
+        q = q.in("lead_status", statuses);
+      }
+    } else if (!safeOnly) {
+      // Exclude orders from the quotes list — they belong on the Orders page
+      q = q.neq("lead_status", "order");
+    }
+    if (!safeOnly && filters?.intent_level && filters.intent_level !== "all") {
+      const intents = filters.intent_level.split(",").filter(Boolean);
+      const includesFull = intents.includes("full");
+      const others = intents.filter((i) => i !== "full");
+      if (includesFull && others.length > 0) {
+        // "full" includes rows with NULL intent_level (legacy quotes)
+        q = q.or(`intent_level.in.(${intents.join(",")}),intent_level.is.null`);
+      } else if (includesFull) {
+        q = q.or("intent_level.eq.full,intent_level.is.null");
+      } else if (others.length === 1) {
+        q = q.eq("intent_level", others[0]);
+      } else {
+        q = q.in("intent_level", others);
+      }
     }
     if (filters?.search) {
       const s = `%${filters.search}%`;
@@ -190,6 +228,100 @@ export async function getQuotesWithFilters(filters?: {
     if (fbErr) throw new Error(fbErr.message);
     return (fallback ?? []) as Quote[];
   }
+  return (data ?? []) as Quote[];
+}
+
+export async function getQuotesForUser(
+  userId: string,
+  userName: string,
+  role: string,
+  filters?: {
+    lead_status?: string;
+    intent_level?: string;
+    search?: string;
+    sort?: string;
+    due_today?: boolean;
+  }
+): Promise<Quote[]> {
+  // Admin sees everything
+  if (role === "admin") {
+    return getQuotesWithFilters(filters);
+  }
+
+  // Sales rep sees own + assigned + shared quotes
+  const supabase = await createClient();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query: any = supabase
+    .from("quotes")
+    .select("*, quote_notes(id), quote_tasks(id), admin_users(name)")
+    .or(`assigned_to.eq.${userId},created_by.eq.${userName},shared_with.cs.{${userId}}`);
+
+  if (filters?.lead_status && filters.lead_status !== "all") {
+    const statuses = filters.lead_status.split(",").filter(Boolean);
+    if (statuses.length === 1) {
+      query = query.eq("lead_status", statuses[0]);
+    } else {
+      query = query.in("lead_status", statuses);
+    }
+  } else {
+    query = query.neq("lead_status", "order");
+  }
+
+  if (filters?.intent_level && filters.intent_level !== "all") {
+    const intents = filters.intent_level.split(",").filter(Boolean);
+    const includesFull = intents.includes("full");
+    const others = intents.filter((i) => i !== "full");
+    if (includesFull && others.length > 0) {
+      query = query.or(`intent_level.in.(${intents.join(",")}),intent_level.is.null`);
+    } else if (includesFull) {
+      query = query.or("intent_level.eq.full,intent_level.is.null");
+    } else if (others.length === 1) {
+      query = query.eq("intent_level", others[0]);
+    } else {
+      query = query.in("intent_level", others);
+    }
+  }
+
+  if (filters?.search) {
+    const s = `%${filters.search}%`;
+    query = query.or(
+      `client_name.ilike.${s},client_email.ilike.${s},quote_number.ilike.${s}`
+    );
+  }
+
+  if (filters?.due_today) {
+    const today = new Date().toISOString().split("T")[0];
+    query = query.eq("follow_up_date", today);
+  }
+
+  if (filters?.sort === "oldest") {
+    query = query.order("created_at", { ascending: true });
+  } else {
+    query = query.order("created_at", { ascending: false });
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    // Fallback: query without joins
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let fallbackQuery: any = supabase
+      .from("quotes")
+      .select("*")
+      .or(`assigned_to.eq.${userId},created_by.eq.${userName},shared_with.cs.{${userId}}`);
+
+    if (filters?.sort === "oldest") {
+      fallbackQuery = fallbackQuery.order("created_at", { ascending: true });
+    } else {
+      fallbackQuery = fallbackQuery.order("created_at", { ascending: false });
+    }
+
+    const { data: fallback, error: fbErr } = await fallbackQuery;
+    if (fbErr) throw new Error(fbErr.message);
+    return (fallback ?? []) as Quote[];
+  }
+
   return (data ?? []) as Quote[];
 }
 
@@ -287,6 +419,37 @@ export async function updateQuoteStatus(
     } catch {
       // Don't fail the status update if notification fails
     }
+
+    // Slack notification
+    try {
+      const { data: sq } = await supabase
+        .from("quotes")
+        .select("quote_number, client_name, door_type, grand_total, cost")
+        .eq("id", id)
+        .single();
+      if (sq) {
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        const slackTotal = Number(sq.grand_total || sq.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+        await sendSlackNotification({
+          heading: status === "pending_approval"
+            ? `Quote ${sq.quote_number} Awaiting Approval`
+            : `Quote ${sq.quote_number} Declined`,
+          message: status === "pending_approval"
+            ? `*${sq.client_name}* has accepted their quote and is awaiting your approval.`
+            : `*${sq.client_name}* has declined their quote.`,
+          color: status === "pending_approval" ? "#d97706" : "#dc2626",
+          details: [
+            { label: "Quote", value: sq.quote_number },
+            { label: "Client", value: sq.client_name },
+            { label: "Door Type", value: sq.door_type },
+            { label: "Total", value: `$${slackTotal}` },
+          ],
+          adminUrl: `${origin}/admin/quotes/${id}`,
+        });
+      }
+    } catch {
+      // Don't fail status update if Slack fails
+    }
   }
 }
 
@@ -360,6 +523,25 @@ export async function approveQuote(id: string) {
   } catch {
     // Don't fail the approval if notification fails
   }
+
+  // Slack notification for approval
+  try {
+    const total = Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+    await sendSlackNotification({
+      heading: `Quote ${quote.quote_number} Approved`,
+      message: `Quote for *${quote.client_name}* has been approved. Contract link sent to client.`,
+      color: "#16a34a",
+      details: [
+        { label: "Quote", value: quote.quote_number },
+        { label: "Client", value: quote.client_name },
+        { label: "Door Type", value: quote.door_type },
+        { label: "Total", value: `$${total}` },
+      ],
+      adminUrl: `${origin}/admin/quotes/${id}`,
+    });
+  } catch {
+    // Don't fail approval if Slack fails
+  }
 }
 
 export async function updateQuoteLeadStatus(
@@ -369,7 +551,7 @@ export async function updateQuoteLeadStatus(
   const supabase = await createClient();
   const { error } = await supabase
     .from("quotes")
-    .update({ lead_status })
+    .update({ lead_status, last_activity_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
@@ -381,11 +563,13 @@ export async function assignQuote(
   assignedTo: string
 ) {
   const supabase = await createClient();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("quotes")
     .update({
       assigned_to: assignedTo,
-      assigned_date: new Date().toISOString(),
+      assigned_date: now,
+      last_activity_at: now,
     })
     .eq("id", id);
 
@@ -413,7 +597,7 @@ export async function sendQuoteToClient(id: string, origin: string) {
 
   if (fetchError || !quote) throw new Error("Quote not found");
 
-  // Send the email
+  // Send the email — link to client portal instead of quote acceptance page
   await sendQuoteEmail({
     clientName: quote.client_name,
     clientEmail: quote.client_email,
@@ -424,7 +608,7 @@ export async function sendQuoteToClient(id: string, origin: string) {
     glassType: quote.glass_type,
     size: quote.size,
     cost: quote.cost,
-    quoteUrl: `${origin}/quote/${quote.id}`,
+    quoteUrl: `${origin}/portal/${quote.id}`,
     deliveryType: quote.delivery_type,
     deliveryAddress: quote.delivery_address,
   });
@@ -438,9 +622,10 @@ export async function sendQuoteToClient(id: string, origin: string) {
   });
 
   // Update status to sent
+  const sentNow = new Date().toISOString();
   const { error } = await supabase
     .from("quotes")
-    .update({ status: "sent", sent_at: new Date().toISOString() })
+    .update({ status: "sent", sent_at: sentNow, last_activity_at: sentNow })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
@@ -514,6 +699,26 @@ export async function notifyNewQuote(quoteId: string, origin: string) {
     subject: `New Quote ${quote.quote_number} — ${quote.client_name}`,
     type: "notification",
   });
+
+  // Slack notification
+  try {
+    const total = Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+    await sendSlackNotification({
+      heading: `New Quote ${quote.quote_number}`,
+      message: `A new quote has been created for *${quote.client_name}*.`,
+      color: "#7c3aed",
+      details: [
+        { label: "Client", value: quote.client_name },
+        { label: "Email", value: quote.client_email },
+        { label: "Door Type", value: quote.door_type },
+        { label: "Total", value: `$${total}` },
+        ...(repName ? [{ label: "Assigned To", value: repName }] : []),
+      ],
+      adminUrl: `${origin}/admin/quotes/${quoteId}`,
+    });
+  } catch {
+    // Don't fail if Slack notification fails
+  }
 }
 
 export async function updateQuote(
@@ -543,6 +748,7 @@ export async function updateQuote(
     tax?: number;
     grand_total?: number;
     follow_up_date?: string;
+    shared_with?: string[];
   }
 ) {
   const supabase = await createClient();
@@ -573,11 +779,48 @@ export async function updateQuote(
       tax: formData.tax,
       grand_total: formData.grand_total,
       follow_up_date: formData.follow_up_date || null,
+      shared_with: formData.shared_with,
     })
     .eq("id", id);
 
   if (error) throw new Error(error.message);
+
+  // Sync approval drawing if one exists and isn't already signed
+  if (formData.items) {
+    try {
+      const items = JSON.parse(formData.items);
+      if (items.length > 0) {
+        const firstItem = items[0];
+        const { data: drawing } = await supabase
+          .from("approval_drawings")
+          .select("id, status")
+          .eq("quote_id", id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (drawing && drawing.status !== "signed") {
+          const drawingUpdates: Record<string, unknown> = {
+            updated_at: new Date().toISOString(),
+          };
+          if (firstItem.width) drawingUpdates.overall_width = firstItem.width;
+          if (firstItem.height) drawingUpdates.overall_height = firstItem.height;
+          if (firstItem.panelCount) drawingUpdates.panel_count = firstItem.panelCount;
+          if (firstItem.panelLayout) drawingUpdates.configuration = firstItem.panelLayout;
+
+          await supabase
+            .from("approval_drawings")
+            .update(drawingUpdates)
+            .eq("id", drawing.id);
+        }
+      }
+    } catch {
+      // Don't fail the quote update if drawing sync fails
+    }
+  }
+
   revalidatePath("/admin/quotes");
+  revalidatePath(`/admin/quotes/${id}`);
 }
 
 export async function markQuoteViewed(id: string) {
@@ -599,6 +842,42 @@ export async function markQuoteViewed(id: string) {
       })
       .eq("id", id);
   }
+}
+
+export async function updateDeliveryAddress(
+  quoteId: string,
+  address: string
+): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("quotes")
+    .update({
+      delivery_address: address,
+      delivery_type: "delivery",
+    })
+    .eq("id", quoteId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/portal/${quoteId}`);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+}
+
+export async function getQuotesByLeadId(leadId: string): Promise<Quote[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    // Graceful fallback if lead_id column doesn't exist
+    if (error.message.includes("column") || error.message.includes("schema")) {
+      return [];
+    }
+    throw new Error(error.message);
+  }
+  return (data ?? []) as Quote[];
 }
 
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
@@ -647,4 +926,44 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics> {
     conversionRate,
     averageOrderVolume,
   };
+}
+
+export async function updateQuoteSharedWith(
+  quoteId: string,
+  userIds: string[]
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("quotes")
+    .update({ shared_with: userIds })
+    .eq("id", quoteId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+  revalidatePath("/admin/quotes");
+}
+
+export async function sendEstimateConfirmation(quoteId: string) {
+  const supabase = await createClient();
+  const { data: quote, error } = await supabase
+    .from("quotes")
+    .select("client_name, client_email, quote_number, door_type")
+    .eq("id", quoteId)
+    .single();
+
+  if (error || !quote) return;
+
+  await sendEstimateConfirmationEmail({
+    clientName: quote.client_name,
+    clientEmail: quote.client_email,
+    quoteNumber: quote.quote_number,
+    doorType: quote.door_type,
+  });
+
+  await recordEmailSent({
+    quote_id: quoteId,
+    recipient_email: quote.client_email,
+    subject: `We Received Your Inquiry — ${quote.quote_number}`,
+    type: "confirmation",
+  });
 }

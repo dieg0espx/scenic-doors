@@ -64,4 +64,29 @@ export async function uploadPhoto(
   });
 }
 
+export async function uploadDocument(
+  buffer: Buffer,
+  originalName: string
+): Promise<{ url: string; publicId: string; bytes: number }> {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "scenic-doors/documents",
+        resource_type: "auto",
+        public_id: originalName.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_"),
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        if (!result) return reject(new Error("No result from Cloudinary"));
+        resolve({
+          url: result.secure_url,
+          publicId: result.public_id,
+          bytes: result.bytes,
+        });
+      }
+    );
+    stream.end(buffer);
+  });
+}
+
 export default cloudinary;

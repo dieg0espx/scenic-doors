@@ -13,6 +13,7 @@ export interface Lead {
   referral_code: string | null;
   has_quote: boolean;
   notes: string | null;
+  shared_with: string[];
   created_at: string;
   updated_at: string;
 }
@@ -114,7 +115,10 @@ export interface Quote {
   grand_total: number;
   follow_up_date: string | null;
   lead_id: string | null;
+  shared_with: string[];
   portal_stage: string;
+  intent_level?: string;
+  last_activity_at: string | null;
   // Joined relations (optional)
   quote_notes?: QuoteNote[];
   quote_tasks?: QuoteTask[];
@@ -178,6 +182,8 @@ export interface ApprovalDrawing {
   system_type: string;
   configuration: string;
   additional_notes: string;
+  frame_color: string;
+  hardware_color: string;
   status: string;
   sent_at: string | null;
   signed_at: string | null;
@@ -227,6 +233,17 @@ export interface ShippingUpdate {
   date: string;
   status: string;
   location?: string;
+}
+
+export interface QuoteDocument {
+  id: string;
+  quote_id: string;
+  file_url: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  uploaded_by: string | null;
+  created_at: string;
 }
 
 export interface FollowUpEntry {
