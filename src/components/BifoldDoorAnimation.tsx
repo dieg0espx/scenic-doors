@@ -7,6 +7,8 @@ const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compac
   const [openAmount, setOpenAmount] = useState(0);
   const [foldDirection, setFoldDirection] = useState<'left' | 'right' | 'center'>(foldDirectionOverride ?? 'left');
   const [isAnimating, setIsAnimating] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(900);
 
   useEffect(() => {
     if (panelCountOverride !== undefined) {
@@ -21,6 +23,18 @@ const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compac
       setOpenAmount(0);
     }
   }, [foldDirectionOverride]);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   const animateDoor = () => {
     if (isAnimating) return;
@@ -57,81 +71,66 @@ const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compac
   const configurations = [2, 3, 4, 5, 6];
 
   // Calculate panel transformations based on open amount
-  const getPanelStyle = (index: number, totalPanels: number) => {
-    const panelWidth = 100 / totalPanels;
+  const getPanelStyle = (index: number, totalPanels: number, containerWidth: number) => {
+    const panelWidthPx = containerWidth / totalPanels;
     const progress = openAmount / 100;
 
-    const isLeftFold = foldDirection === 'left';
-    const isRightFold = foldDirection === 'right';
-    const isCenterFold = foldDirection === 'center';
+    // 10px gap between stacked panels
+    const gapPx = 10;
 
-    let translateX = 0;
+    // Starting position when closed
+    const closedX = index * panelWidthPx;
+
+    // Variables to calculate
+    let openX = 0;
     let rotateY = 0;
-    let zIndex = totalPanels - index;
     let originX = '100%';
+    let zIndex = 0;
 
-    const stackGap = 0.3; // Gap between folded panels in % (very tight stacking at edges)
+    if (foldDirection === 'left') {
+      // All panels stack at LEFT edge
+      // Final positions: 0px, 10px, 20px, 30px...
+      openX = index * gapPx;
+      rotateY = (index % 2 === 0 ? -89 : 89) * progress;
+      originX = index % 2 === 0 ? '0%' : '100%';
+      zIndex = index;
 
-    if (isCenterFold) {
+    } else if (foldDirection === 'right') {
+      // All panels stack at RIGHT edge
+      // Panel 0 should be furthest left in the stack
+      // Last panel (index = totalPanels - 1) at rightmost position
+      openX = containerWidth - ((totalPanels - index) * gapPx);
+      rotateY = (index % 2 === 0 ? 89 : -89) * progress;
+      originX = index % 2 === 0 ? '100%' : '0%';
+      zIndex = totalPanels - index;
+
+    } else if (foldDirection === 'center') {
       const midPoint = Math.floor(totalPanels / 2);
-      const isLeftSide = index < midPoint;
 
-      if (isLeftSide) {
-        // Left side panels fold left and stack at left edge
-        const foldAngle = index % 2 === 0 ? -88 : 88;
-        rotateY = foldAngle * progress;
+      if (index < midPoint) {
+        // Left half - stack at LEFT edge
+        openX = index * gapPx;
+        rotateY = (index % 2 === 0 ? -89 : 89) * progress;
         originX = index % 2 === 0 ? '0%' : '100%';
-
-        // Current position: index * panelWidth
-        // Target position at left edge: index * stackGap
-        const currentPos = index * panelWidth;
-        const targetPos = index * stackGap;
-        translateX = ((targetPos - currentPos) / panelWidth) * 100 * progress;
         zIndex = index;
       } else {
-        // Right side panels fold right and stack at right edge
+        // Right half - stack at RIGHT edge
         const rightIndex = index - midPoint;
         const rightTotal = totalPanels - midPoint;
-        const foldAngle = rightIndex % 2 === 0 ? 88 : -88;
-        rotateY = foldAngle * progress;
+        openX = containerWidth - ((rightTotal - rightIndex) * gapPx);
+        rotateY = (rightIndex % 2 === 0 ? 89 : -89) * progress;
         originX = rightIndex % 2 === 0 ? '100%' : '0%';
-
-        // Current position: index * panelWidth
-        // Target position at right edge: 100 - (rightTotal - rightIndex) * stackGap
-        const currentPos = index * panelWidth;
-        const targetPos = 100 - (rightTotal - rightIndex) * stackGap;
-        translateX = ((targetPos - currentPos) / panelWidth) * 100 * progress;
         zIndex = totalPanels - index;
       }
-    } else if (isLeftFold) {
-      // All panels fold to the left and stack at left edge
-      const foldAngle = index % 2 === 0 ? -88 : 88;
-      rotateY = foldAngle * progress;
-      originX = index % 2 === 0 ? '0%' : '100%';
-
-      // Current position: index * panelWidth
-      // Target position at left edge: index * stackGap
-      const currentPos = index * panelWidth;
-      const targetPos = index * stackGap;
-      translateX = ((targetPos - currentPos) / panelWidth) * 100 * progress;
-      zIndex = index;
-    } else if (isRightFold) {
-      // All panels fold to the right and stack at right edge
-      const foldAngle = index % 2 === 0 ? 88 : -88;
-      rotateY = foldAngle * progress;
-      originX = index % 2 === 0 ? '100%' : '0%';
-
-      // Current position: index * panelWidth
-      // Target position at right edge: 100 - (totalPanels - index) * stackGap
-      const currentPos = index * panelWidth;
-      const targetPos = 100 - (totalPanels - index) * stackGap;
-      translateX = ((targetPos - currentPos) / panelWidth) * 100 * progress;
-      zIndex = totalPanels - index;
     }
 
+    // Interpolate between closed and open positions
+    const currentX = closedX + ((openX - closedX) * progress);
+
     return {
-      width: `${panelWidth}%`,
-      transform: `translateX(${translateX}%) rotateY(${rotateY}deg)`,
+      width: `${panelWidthPx}px`,
+      left: 0,
+      transform: `translateX(${currentX}px) rotateY(${rotateY}deg)`,
       transformOrigin: `${originX} center`,
       zIndex,
       transformStyle: 'preserve-3d' as const,
@@ -139,14 +138,13 @@ const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compac
   };
 
   const Panel = ({ index, totalPanels }: { index: number; totalPanels: number }) => {
-    const style = getPanelStyle(index, totalPanels);
+    const style = getPanelStyle(index, totalPanels, containerWidth);
     const isLocked = openAmount < 5;
 
     return (
       <div
         style={{
           position: 'absolute',
-          left: `${(index * 100) / totalPanels}%`,
           top: 0,
           height: '100%',
           transition: 'transform 0.1s ease-out',
@@ -453,7 +451,7 @@ const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compac
         </div>
 
         {/* Door Frame Container */}
-        <div style={{
+        <div ref={containerRef} style={{
           position: 'relative',
           height: compact ? '250px' : '400px',
           background: '#FFFFFF',
