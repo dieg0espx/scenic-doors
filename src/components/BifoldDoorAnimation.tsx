@@ -1,62 +1,33 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
-const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compact }: { panelCountOverride?: number; foldDirectionOverride?: 'left' | 'right' | 'center'; compact?: boolean } = {}) => {
-  const [selectedConfig, setSelectedConfig] = useState(panelCountOverride ?? 4);
-  const [openAmount, setOpenAmount] = useState(0);
-  const [foldDirection, setFoldDirection] = useState<'left' | 'right' | 'center'>(foldDirectionOverride ?? 'left');
+export default function BifoldDoorAnimation() {
+  const [panelCount, setPanelCount] = useState(4);
+  const [foldDirection, setFoldDirection] = useState<'left' | 'right' | 'center'>('left');
+  const [openPercent, setOpenPercent] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
-  const [containerWidth, setContainerWidth] = useState(900);
 
-  useEffect(() => {
-    if (panelCountOverride !== undefined) {
-      setSelectedConfig(panelCountOverride);
-      setOpenAmount(0);
-    }
-  }, [panelCountOverride]);
-
-  useEffect(() => {
-    if (foldDirectionOverride !== undefined) {
-      setFoldDirection(foldDirectionOverride);
-      setOpenAmount(0);
-    }
-  }, [foldDirectionOverride]);
-
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.offsetWidth);
-      }
-    };
-
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
-
-  const animateDoor = () => {
+  // Animation logic
+  const toggleDoors = () => {
     if (isAnimating) return;
 
     setIsAnimating(true);
-    const targetValue = openAmount > 50 ? 0 : 100;
-    const duration = 2000; // 2 seconds
+    const targetOpen = openPercent > 50 ? 0 : 100;
+    const startOpen = openPercent;
     const startTime = Date.now();
-    const startValue = openAmount;
-    const difference = targetValue - startValue;
+    const duration = 2000;
 
     const animate = () => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
-      // Ease in-out function for smooth animation
-      const easeProgress = progress < 0.5
+      // Easing function
+      const eased = progress < 0.5
         ? 2 * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-      const newValue = startValue + (difference * easeProgress);
-      setOpenAmount(newValue);
+      setOpenPercent(startOpen + (targetOpen - startOpen) * eased);
 
       if (progress < 1) {
         requestAnimationFrame(animate);
@@ -68,517 +39,425 @@ const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compac
     requestAnimationFrame(animate);
   };
 
-  const configurations = [2, 3, 4, 5, 6];
+  // Calculate panel position and rotation
+  const calculatePanelStyle = (panelIndex: number) => {
+    const CONTAINER_WIDTH = 800; // Fixed container width
+    const PANEL_WIDTH = CONTAINER_WIDTH / panelCount;
+    const FOLDED_PANEL_WIDTH = 50; // Width of each panel when folded (thicker so visible)
+    const GAP_BETWEEN_PANELS = -40; // NEGATIVE gap - panels overlap heavily
+    const progress = openPercent / 100;
 
-  // Calculate panel transformations based on open amount
-  const getPanelStyle = (index: number, totalPanels: number, containerWidth: number) => {
-    const panelWidthPx = containerWidth / totalPanels;
-    const progress = openAmount / 100;
+    // Starting position when CLOSED (spread across container)
+    const closedX = panelIndex * PANEL_WIDTH;
 
-    // 10px gap between stacked panels
-    const gapPx = 10;
-
-    // Starting position when closed
-    const closedX = index * panelWidthPx;
-
-    // Variables to calculate
+    // Ending position when OPEN (stacked at edge)
     let openX = 0;
-    let rotateY = 0;
-    let originX = '100%';
+    let rotationAngle = 0;
     let zIndex = 0;
 
+    // Width transitions from full to folded
+    const currentWidth = PANEL_WIDTH + (FOLDED_PANEL_WIDTH - PANEL_WIDTH) * progress;
+
+    const LEFT_OFFSET = -50; // Move stacks 50px more to the left
+
     if (foldDirection === 'left') {
-      // All panels stack at LEFT edge
-      // Final positions: 0px, 10px, 20px, 30px...
-      openX = index * gapPx;
-      rotateY = (index % 2 === 0 ? -89 : 89) * progress;
-      originX = index % 2 === 0 ? '0%' : '100%';
-      zIndex = index;
+      // Stack all panels at LEFT edge with gaps
+      openX = LEFT_OFFSET + panelIndex * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
+      rotationAngle = (panelIndex % 2 === 0 ? -75 : 75);
+      zIndex = panelIndex;
 
     } else if (foldDirection === 'right') {
-      // All panels stack at RIGHT edge
-      // Panel 0 should be furthest left in the stack
-      // Last panel (index = totalPanels - 1) at rightmost position
-      openX = containerWidth - ((totalPanels - index) * gapPx);
-      rotateY = (index % 2 === 0 ? 89 : -89) * progress;
-      originX = index % 2 === 0 ? '100%' : '0%';
-      zIndex = totalPanels - index;
+      // Stack all panels at RIGHT edge with gaps
+      openX = CONTAINER_WIDTH - (panelCount - panelIndex) * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
+      rotationAngle = (panelIndex % 2 === 0 ? 75 : -75);
+      zIndex = panelCount - panelIndex;
 
-    } else if (foldDirection === 'center') {
-      const midPoint = Math.floor(totalPanels / 2);
+    } else {
+      // CENTER: split panels
+      const halfPoint = Math.floor(panelCount / 2);
 
-      if (index < midPoint) {
-        // Left half - stack at LEFT edge
-        openX = index * gapPx;
-        rotateY = (index % 2 === 0 ? -89 : 89) * progress;
-        originX = index % 2 === 0 ? '0%' : '100%';
-        zIndex = index;
+      if (panelIndex < halfPoint) {
+        // Left group stacks at LEFT
+        openX = LEFT_OFFSET + panelIndex * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
+        rotationAngle = (panelIndex % 2 === 0 ? -75 : 75);
+        zIndex = panelIndex;
       } else {
-        // Right half - stack at RIGHT edge
-        const rightIndex = index - midPoint;
-        const rightTotal = totalPanels - midPoint;
-        openX = containerWidth - ((rightTotal - rightIndex) * gapPx);
-        rotateY = (rightIndex % 2 === 0 ? 89 : -89) * progress;
-        originX = rightIndex % 2 === 0 ? '100%' : '0%';
-        zIndex = totalPanels - index;
+        // Right group stacks at RIGHT
+        const rightIdx = panelIndex - halfPoint;
+        const rightCount = panelCount - halfPoint;
+        openX = CONTAINER_WIDTH - (rightCount - rightIdx) * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
+        rotationAngle = (rightIdx % 2 === 0 ? 75 : -75);
+        zIndex = panelCount - panelIndex;
       }
     }
 
-    // Interpolate between closed and open positions
-    const currentX = closedX + ((openX - closedX) * progress);
+    // Interpolate position and rotation
+    const currentX = closedX + (openX - closedX) * progress;
+    const currentRotation = rotationAngle * progress;
 
     return {
-      width: `${panelWidthPx}px`,
-      left: 0,
-      transform: `translateX(${currentX}px) rotateY(${rotateY}deg)`,
-      transformOrigin: `${originX} center`,
+      transform: `translateX(${currentX}px) rotateY(${currentRotation}deg)`,
+      transformOrigin: '50% 50%',
+      width: currentWidth,
       zIndex,
-      transformStyle: 'preserve-3d' as const,
     };
-  };
-
-  const Panel = ({ index, totalPanels }: { index: number; totalPanels: number }) => {
-    const style = getPanelStyle(index, totalPanels, containerWidth);
-    const isLocked = openAmount < 5;
-
-    return (
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          height: '100%',
-          transition: 'transform 0.1s ease-out',
-          ...style,
-        }}
-      >
-        {/* Panel Frame */}
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            background: 'linear-gradient(180deg, rgba(135,206,235,0.15) 0%, rgba(176,224,230,0.1) 50%, rgba(135,206,235,0.2) 100%)',
-            border: '3px solid #78716C',
-            borderRadius: '1px',
-            position: 'relative',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1), inset 0 0 30px rgba(255,255,255,0.1)',
-            backfaceVisibility: 'hidden',
-          }}
-        >
-          {/* Slim aluminum frame - Top */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: '6px',
-            background: 'linear-gradient(180deg, #A8A29E 0%, #78716C 100%)',
-          }} />
-          {/* Bottom frame */}
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '10px',
-            background: 'linear-gradient(0deg, #A8A29E 0%, #78716C 100%)',
-          }} />
-          {/* Left frame */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            bottom: 0,
-            width: '5px',
-            background: 'linear-gradient(90deg, #A8A29E 0%, #78716C 100%)',
-          }} />
-          {/* Right frame */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            right: 0,
-            bottom: 0,
-            width: '5px',
-            background: 'linear-gradient(-90deg, #A8A29E 0%, #78716C 100%)',
-          }} />
-
-          {/* Thermal break indicator line */}
-          <div style={{
-            position: 'absolute',
-            top: '6px',
-            left: '5px',
-            right: '5px',
-            height: '2px',
-            background: '#1F2937',
-            opacity: 0.3,
-          }} />
-
-          {/* Glass reflection */}
-          <div style={{
-            position: 'absolute',
-            top: '15px',
-            left: '10px',
-            width: '40%',
-            height: '30%',
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 60%)',
-            borderRadius: '2px',
-          }} />
-
-          {/* Secondary reflection */}
-          <div style={{
-            position: 'absolute',
-            bottom: '20%',
-            right: '15%',
-            width: '25%',
-            height: '15%',
-            background: 'linear-gradient(315deg, rgba(255,255,255,0.2) 0%, transparent 60%)',
-            borderRadius: '2px',
-          }} />
-
-          {/* Hinge indicators */}
-          <div style={{
-            position: 'absolute',
-            top: '15%',
-            left: '-2px',
-            width: '6px',
-            height: '20px',
-            background: 'linear-gradient(90deg, #57534E 0%, #78716C 100%)',
-            borderRadius: '2px',
-          }} />
-          <div style={{
-            position: 'absolute',
-            top: '45%',
-            left: '-2px',
-            width: '6px',
-            height: '20px',
-            background: 'linear-gradient(90deg, #57534E 0%, #78716C 100%)',
-            borderRadius: '2px',
-          }} />
-          <div style={{
-            position: 'absolute',
-            top: '75%',
-            left: '-2px',
-            width: '6px',
-            height: '20px',
-            background: 'linear-gradient(90deg, #57534E 0%, #78716C 100%)',
-            borderRadius: '2px',
-          }} />
-
-          {/* Handle on specific panels */}
-          {(index === 0 || index === totalPanels - 1) && (
-            <div style={{
-              position: 'absolute',
-              top: '48%',
-              right: index === 0 ? '8px' : 'auto',
-              left: index === totalPanels - 1 ? '8px' : 'auto',
-              width: '6px',
-              height: '50px',
-              background: 'linear-gradient(90deg, #57534E 0%, #44403C 100%)',
-              borderRadius: '3px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-            }} />
-          )}
-
-          {/* Lock indicator */}
-          {index === 0 && (
-            <div style={{
-              position: 'absolute',
-              bottom: '15px',
-              right: '8px',
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: isLocked ? '#10B981' : '#EF4444',
-              boxShadow: isLocked
-                ? '0 0 8px rgba(16, 185, 129, 0.6)'
-                : '0 0 8px rgba(239, 68, 68, 0.6)',
-              transition: 'all 0.3s',
-            }} />
-          )}
-
-          {/* Panel number */}
-          <div style={{
-            position: 'absolute',
-            bottom: '15px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontSize: '11px',
-            color: '#78716C',
-            fontWeight: '600',
-          }}>
-            {index + 1}
-          </div>
-        </div>
-      </div>
-    );
   };
 
   return (
     <div style={{
       width: '100%',
-      background: '#FFFFFF',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: compact ? '16px 12px' : '40px 20px',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      padding: '40px 20px',
+      background: '#fff',
+      fontFamily: 'system-ui, sans-serif',
     }}>
-      {/* Header */}
-      {!compact && (
-        <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px' }}>
-          <h2 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#1F2937',
-            margin: '0 0 8px 0',
-          }}>
-            Bi-Fold Door Preview
-          </h2>
-          <p style={{
-            fontSize: '14px',
-            color: '#6B7280',
-            margin: 0,
-          }}>
-            Explore different panel configurations and folding directions
-          </p>
-        </div>
-      )}
+      {/* Title */}
+      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1F2937', margin: '0 0 10px 0' }}>
+          Bi-Fold Door Preview
+        </h2>
+        <p style={{ fontSize: '16px', color: '#6B7280', margin: 0 }}>
+          Interactive door animation - choose panels and fold direction
+        </p>
+      </div>
 
       {/* Controls */}
       <div style={{
         display: 'flex',
-        gap: '12px',
-        marginBottom: compact ? '16px' : '24px',
-        flexWrap: 'wrap',
+        gap: '20px',
         justifyContent: 'center',
-        alignItems: 'center',
+        marginBottom: '40px',
+        flexWrap: 'wrap',
       }}>
-        {/* Panel Count - hide when controlled externally */}
-        {!panelCountOverride && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
-            {configurations.map((count) => (
-              <button
-                key={count}
-                onClick={() => {
-                  setSelectedConfig(count);
-                  setOpenAmount(0);
-                }}
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  border: selectedConfig === count ? '2px solid #3B82F6' : '2px solid #E4E4E7',
-                  background: selectedConfig === count ? '#EFF6FF' : '#FFFFFF',
-                  color: selectedConfig === count ? '#2563EB' : '#71717A',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-              >
-                {count}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Panel count selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>Panels:</span>
+          {[2, 3, 4, 5, 6].map(num => (
+            <button
+              key={num}
+              onClick={() => { setPanelCount(num); setOpenPercent(0); }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                border: panelCount === num ? '2px solid #3B82F6' : '2px solid #E5E7EB',
+                background: panelCount === num ? '#EFF6FF' : '#fff',
+                color: panelCount === num ? '#2563EB' : '#6B7280',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer',
+              }}
+            >
+              {num}
+            </button>
+          ))}
+        </div>
 
-        {/* Fold Direction - hide when controlled externally */}
-        {!foldDirectionOverride && (
-          <div style={{
-            display: 'flex',
-            background: '#F4F4F5',
-            padding: '4px',
-            borderRadius: '10px',
-            marginLeft: panelCountOverride ? '0px' : '8px',
-          }}>
-            {[
-              { id: 'left' as const, label: '← Left' },
-              { id: 'center' as const, label: '↔ Center' },
-              { id: 'right' as const, label: 'Right →' },
-            ].map((option) => (
-              <button
-                key={option.id}
-                onClick={() => {
-                  setFoldDirection(option.id);
-                  setOpenAmount(0);
-                }}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  background: foldDirection === option.id ? '#FFFFFF' : 'transparent',
-                  color: foldDirection === option.id ? '#18181B' : '#71717A',
-                  fontWeight: '500',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                  boxShadow: foldDirection === option.id ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                }}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        )}
+        {/* Fold direction selector */}
+        <div style={{ display: 'flex', gap: '8px', background: '#F3F4F6', padding: '4px', borderRadius: '8px' }}>
+          {[
+            { id: 'left' as const, label: '← Left' },
+            { id: 'center' as const, label: '↔ Center' },
+            { id: 'right' as const, label: 'Right →' },
+          ].map(option => (
+            <button
+              key={option.id}
+              onClick={() => { setFoldDirection(option.id); setOpenPercent(0); }}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '6px',
+                border: 'none',
+                background: foldDirection === option.id ? '#fff' : 'transparent',
+                color: foldDirection === option.id ? '#1F2937' : '#6B7280',
+                fontSize: '14px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                boxShadow: foldDirection === option.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Door Animation Container */}
+      {/* Door visualization */}
       <div style={{
-        width: '100%',
         maxWidth: '900px',
-        perspective: '1200px',
-        perspectiveOrigin: '50% 50%',
+        margin: '0 auto',
+        perspective: '1500px',
       }}>
-        {/* Top Track */}
+        {/* Top track */}
         <div style={{
-          height: '14px',
-          background: 'linear-gradient(180deg, #57534E 0%, #78716C 50%, #57534E 100%)',
-          borderRadius: '2px',
+          height: '16px',
+          background: 'linear-gradient(180deg, #78716C 0%, #57534E 100%)',
+          borderRadius: '3px',
           marginBottom: '2px',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
           position: 'relative',
         }}>
-          {/* Track groove */}
           <div style={{
             position: 'absolute',
-            top: '5px',
-            left: '8px',
-            right: '8px',
+            top: '6px',
+            left: '10px',
+            right: '10px',
             height: '4px',
             background: '#44403C',
             borderRadius: '2px',
           }} />
         </div>
 
-        {/* Door Frame Container */}
-        <div ref={containerRef} style={{
+        {/* Door container */}
+        <div style={{
           position: 'relative',
-          height: compact ? '250px' : '400px',
-          background: '#FFFFFF',
+          height: '400px',
+          width: '800px',
+          margin: '0 auto',
+          background: '#F9FAFB',
           overflow: 'visible',
-          border: '4px solid #57534E',
-          borderTop: 'none',
-          borderBottom: 'none',
         }}>
+          {/* Render panels */}
+          {Array.from({ length: panelCount }).map((_, i) => {
+            const style = calculatePanelStyle(i);
+            const isLocked = openPercent < 5;
 
-          {/* Panels */}
-          {Array.from({ length: selectedConfig }).map((_, index) => (
-            <Panel
-              key={index}
-              index={index}
-              totalPanels={selectedConfig}
-            />
-          ))}
+            return (
+              <div
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: `${style.width}px`,
+                  height: '100%',
+                  transform: style.transform,
+                  transformOrigin: style.transformOrigin,
+                  transformStyle: 'preserve-3d',
+                  zIndex: style.zIndex,
+                }}
+              >
+                {/* Panel glass */}
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(180deg, rgba(135,206,235,0.2) 0%, rgba(176,224,230,0.15) 100%)',
+                  border: '3px solid #78716C',
+                  borderRadius: '2px',
+                  position: 'relative',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                  backfaceVisibility: 'hidden',
+                }}>
+                  {/* Top frame */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '8px',
+                    background: 'linear-gradient(180deg, #A8A29E 0%, #78716C 100%)',
+                  }} />
+
+                  {/* Bottom frame */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: '12px',
+                    background: 'linear-gradient(0deg, #A8A29E 0%, #78716C 100%)',
+                  }} />
+
+                  {/* Left frame */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    width: '6px',
+                    background: 'linear-gradient(90deg, #A8A29E 0%, #78716C 100%)',
+                  }} />
+
+                  {/* Right frame */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: '6px',
+                    background: 'linear-gradient(-90deg, #A8A29E 0%, #78716C 100%)',
+                  }} />
+
+                  {/* Glass reflection */}
+                  <div style={{
+                    position: 'absolute',
+                    top: '20px',
+                    left: '15px',
+                    width: '45%',
+                    height: '35%',
+                    background: 'linear-gradient(135deg, rgba(255,255,255,0.5) 0%, transparent 70%)',
+                    borderRadius: '3px',
+                  }} />
+
+                  {/* Hinges */}
+                  {[20, 50, 80].map(top => (
+                    <div key={top} style={{
+                      position: 'absolute',
+                      top: `${top}%`,
+                      left: '-3px',
+                      width: '8px',
+                      height: '25px',
+                      background: '#57534E',
+                      borderRadius: '2px',
+                    }} />
+                  ))}
+
+                  {/* Handle */}
+                  {(i === 0 || i === panelCount - 1) && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      right: i === 0 ? '10px' : 'auto',
+                      left: i === panelCount - 1 ? '10px' : 'auto',
+                      width: '8px',
+                      height: '60px',
+                      background: '#44403C',
+                      borderRadius: '4px',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+                    }} />
+                  )}
+
+                  {/* Lock indicator */}
+                  {i === 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '20px',
+                      right: '15px',
+                      width: '12px',
+                      height: '12px',
+                      borderRadius: '50%',
+                      background: isLocked ? '#10B981' : '#EF4444',
+                      boxShadow: `0 0 10px ${isLocked ? 'rgba(16,185,129,0.6)' : 'rgba(239,68,68,0.6)'}`,
+                    }} />
+                  )}
+
+                  {/* Panel number */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#78716C',
+                  }}>
+                    {i + 1}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Bottom Track/Threshold */}
+        {/* Bottom track */}
         <div style={{
-          height: '18px',
-          background: 'linear-gradient(0deg, #57534E 0%, #78716C 50%, #57534E 100%)',
-          borderRadius: '2px',
+          height: '20px',
+          background: 'linear-gradient(0deg, #78716C 0%, #57534E 100%)',
+          borderRadius: '3px',
           marginTop: '2px',
-          boxShadow: '0 -2px 6px rgba(0,0,0,0.1)',
           position: 'relative',
         }}>
-          {/* Threshold detail */}
           <div style={{
             position: 'absolute',
-            top: '6px',
-            left: '8px',
-            right: '8px',
+            top: '8px',
+            left: '10px',
+            right: '10px',
             height: '6px',
-            background: 'linear-gradient(180deg, #44403C 0%, #57534E 100%)',
+            background: '#44403C',
             borderRadius: '2px',
           }} />
         </div>
       </div>
 
-      {/* Animated Button */}
+      {/* Control panel */}
       <div style={{
-        marginTop: '32px',
-        width: '100%',
-        maxWidth: '340px',
-        padding: '24px',
+        maxWidth: '400px',
+        margin: '40px auto 0',
+        padding: '30px',
         background: '#F9FAFB',
         borderRadius: '16px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
       }}>
+        {/* Status */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '18px',
+          marginBottom: '20px',
         }}>
-          <span style={{
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#374151',
-          }}>
-            Door Position
+          <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>
+            Door Status
           </span>
           <span style={{
-            fontSize: '28px',
+            fontSize: '32px',
             fontWeight: '700',
-            color: openAmount < 5 ? '#22C55E' : '#3898EC',
-            fontVariantNumeric: 'tabular-nums',
+            color: openPercent < 5 ? '#10B981' : '#3B82F6',
           }}>
-            {Math.round(openAmount)}%
+            {Math.round(openPercent)}%
           </span>
         </div>
 
-        {/* Progress Bar */}
-        <div style={{ position: 'relative', height: '8px', marginBottom: '20px' }}>
-          <div style={{
-            width: '100%',
-            height: '100%',
-            background: '#E5E7EB',
-            borderRadius: '4px',
-          }} />
+        {/* Progress bar */}
+        <div style={{
+          position: 'relative',
+          height: '10px',
+          background: '#E5E7EB',
+          borderRadius: '5px',
+          marginBottom: '25px',
+          overflow: 'hidden',
+        }}>
           <div style={{
             position: 'absolute',
             top: 0,
             left: 0,
-            width: `${openAmount}%`,
             height: '100%',
-            background: 'linear-gradient(90deg, #3898EC 0%, #1D4ED8 100%)',
-            borderRadius: '4px',
+            width: `${openPercent}%`,
+            background: 'linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)',
+            borderRadius: '5px',
             transition: 'width 0.05s linear',
           }} />
         </div>
 
-        {/* Button */}
+        {/* Action button */}
         <button
-          onClick={animateDoor}
+          onClick={toggleDoors}
           disabled={isAnimating}
           style={{
             width: '100%',
-            padding: '16px',
-            borderRadius: '12px',
-            border: 'none',
+            padding: '18px',
+            fontSize: '18px',
+            fontWeight: '700',
+            color: '#fff',
             background: isAnimating
-              ? '#D1D5DB'
-              : openAmount < 50
-                ? 'linear-gradient(135deg, #3898EC 0%, #1D4ED8 100%)'
-                : 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-            color: '#FFFFFF',
-            fontSize: '16px',
-            fontWeight: '600',
+              ? '#9CA3AF'
+              : openPercent < 50
+                ? 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)'
+                : 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            border: 'none',
+            borderRadius: '12px',
             cursor: isAnimating ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s',
-            boxShadow: isAnimating ? 'none' : '0 2px 8px rgba(0,0,0,0.15)',
+            boxShadow: isAnimating ? 'none' : '0 4px 12px rgba(0,0,0,0.15)',
           }}
         >
-          {isAnimating ? 'Animating...' : openAmount < 50 ? 'Open Doors' : 'Close Doors'}
+          {isAnimating ? 'Animating...' : openPercent < 50 ? 'Open Doors' : 'Close Doors'}
         </button>
 
         {/* Labels */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
-          marginTop: '10px',
-          fontSize: '11px',
+          marginTop: '12px',
+          fontSize: '12px',
+          fontWeight: '600',
           color: '#9CA3AF',
-          fontWeight: '500',
         }}>
           <span>CLOSED</span>
           <span>OPEN</span>
@@ -586,6 +465,4 @@ const BifoldDoorAnimation = ({ panelCountOverride, foldDirectionOverride, compac
       </div>
     </div>
   );
-};
-
-export default BifoldDoorAnimation;
+}
