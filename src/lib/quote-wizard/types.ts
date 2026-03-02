@@ -24,13 +24,13 @@ export interface ConfiguredItem {
   interiorFinish: string;
   glassType: string;
   hardwareFinish: string;
-  basePrice: number;
+  ratePerSqFt: number;
+  squareFeet: number;
   glassPriceModifier: number;
   itemTotal: number;
 }
 
 export interface ServiceOptions {
-  deliveryType: "regular" | "white-glove" | "none";
   includeInstallation: boolean;
 }
 
@@ -60,7 +60,7 @@ export type WizardAction =
   | { type: "SET_CONTACT"; payload: Partial<ContactInfo> }
   | { type: "SET_STEP"; payload: number }
   | { type: "SET_LEAD_ID"; payload: string }
-  | { type: "SELECT_PRODUCT"; payload: { doorType: string; doorTypeSlug: string; basePrice: number } }
+  | { type: "SELECT_PRODUCT"; payload: { doorType: string; doorTypeSlug: string; ratePerSqFt: number } }
   | { type: "UPDATE_CURRENT_ITEM"; payload: Partial<ConfiguredItem> }
   | { type: "SAVE_CURRENT_ITEM" }
   | { type: "EDIT_ITEM"; payload: number }
@@ -89,7 +89,6 @@ export const initialContact: ContactInfo = {
 };
 
 export const initialServices: ServiceOptions = {
-  deliveryType: "none",
   includeInstallation: false,
 };
 
@@ -115,7 +114,8 @@ export function createEmptyItem(): ConfiguredItem {
     interiorFinish: "",
     glassType: "",
     hardwareFinish: "",
-    basePrice: 0,
+    ratePerSqFt: 0,
+    squareFeet: 0,
     glassPriceModifier: 0,
     itemTotal: 0,
   };

@@ -4,10 +4,10 @@ import { useState } from "react";
 import Image from "next/image";
 import { Check, Loader2, Eye, ChevronUp } from "lucide-react";
 import { PRODUCTS } from "@/lib/quote-wizard/product-data";
-import { BASE_PRICES } from "@/lib/quote-wizard/pricing";
 import type { WizardState, WizardAction } from "@/lib/quote-wizard/types";
-import { createQuote, notifyNewQuote, sendEstimateConfirmation } from "@/lib/actions/quotes";
+import { createQuote, notifyNewQuote, sendEstimateConfirmation, assignQuote } from "@/lib/actions/quotes";
 import { updateLead } from "@/lib/actions/leads";
+import { getUserByReferralCode, getNextSalesRep } from "@/lib/actions/admin-users";
 import { scheduleFollowUps } from "@/lib/actions/follow-ups";
 import SlidingDoorAnimation from "@/components/SlidingDoorAnimation";
 import BifoldDoorAnimation from "@/components/BifoldDoorAnimation";
@@ -30,48 +30,50 @@ interface ProductPanelInfo {
   note?: string;
 }
 
-// Approximate pricing per panel count — gives visitors a feel for cost at different sizes.
-// These are estimates based on typical configurations.
+// Approximate pricing per panel count — calculated using sq ft model with typical dimensions.
+// Multi-Slide: $105/sqft, ~40"/panel, 96"H | Ultra Slim: $130/sqft, ~36"/panel, 108"H
+// Bi-Fold: $110/sqft, ~32"/panel, 84"H | Slide-Stack: $121.79/sqft, ~34"/panel, 96"H
+// Awning: $95/sqft, 48"x36"
 const PANEL_INFO: Record<string, ProductPanelInfo> = {
   "multi-slide-pocket": {
     panelOptions: [
-      { panels: 2, approxPrice: 8500 },
-      { panels: 3, approxPrice: 10200 },
-      { panels: 4, approxPrice: 12800 },
-      { panels: 5, approxPrice: 15500 },
-      { panels: 6, approxPrice: 18000 },
+      { panels: 2, approxPrice: 5600 },
+      { panels: 3, approxPrice: 8400 },
+      { panels: 4, approxPrice: 11200 },
+      { panels: 5, approxPrice: 14000 },
+      { panels: 6, approxPrice: 16800 },
     ],
   },
   "ultra-slim": {
     panelOptions: [
-      { panels: 2, approxPrice: 12000 },
-      { panels: 3, approxPrice: 14500 },
-      { panels: 4, approxPrice: 17500 },
-      { panels: 5, approxPrice: 21000 },
-      { panels: 6, approxPrice: 24000 },
+      { panels: 2, approxPrice: 7000 },
+      { panels: 3, approxPrice: 10500 },
+      { panels: 4, approxPrice: 14000 },
+      { panels: 5, approxPrice: 17600 },
+      { panels: 6, approxPrice: 21100 },
     ],
   },
   "bi-fold": {
     panelOptions: [
-      { panels: 2, approxPrice: 7500 },
-      { panels: 3, approxPrice: 9000 },
-      { panels: 4, approxPrice: 11000 },
-      { panels: 5, approxPrice: 13500 },
-      { panels: 6, approxPrice: 15500 },
+      { panels: 2, approxPrice: 4100 },
+      { panels: 3, approxPrice: 6200 },
+      { panels: 4, approxPrice: 8200 },
+      { panels: 5, approxPrice: 10300 },
+      { panels: 6, approxPrice: 12300 },
     ],
   },
   "slide-stack": {
     panelOptions: [
-      { panels: 2, approxPrice: 9000 },
-      { panels: 3, approxPrice: 10800 },
-      { panels: 4, approxPrice: 13000 },
-      { panels: 5, approxPrice: 15800 },
-      { panels: 6, approxPrice: 18500 },
+      { panels: 2, approxPrice: 5500 },
+      { panels: 3, approxPrice: 8200 },
+      { panels: 4, approxPrice: 10900 },
+      { panels: 5, approxPrice: 13600 },
+      { panels: 6, approxPrice: 16400 },
     ],
   },
   "awning-window": {
     panelOptions: [
-      { panels: 1, approxPrice: 6000 },
+      { panels: 1, approxPrice: 1140 },
     ],
     note: "Single-panel window system",
   },
@@ -85,7 +87,7 @@ function getCompactAnimation(slug: string): React.ReactNode | null {
     case "ultra-slim":
       return <SlidingDoorAnimation compact />;
     case "bi-fold":
-      return <BifoldDoorAnimation compact />;
+      return <BifoldDoorAnimation />;
     case "slide-stack":
       return <SlideStackDoorAnimation compact />;
     default:
@@ -112,16 +114,26 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
 
     try {
       const interestedProducts = PRODUCTS.filter((p) => browseInterests.includes(p.slug));
-      const totalCost = interestedProducts.reduce((sum, p) => sum + (BASE_PRICES[p.slug] || p.basePrice), 0);
+      const totalCost = interestedProducts.reduce((sum, p) => sum + p.ratePerSqFt, 0);
 
       const quoteItems = interestedProducts.map((p) => ({
         id: p.slug,
         name: p.name,
         description: `Price inquiry — ${p.features.join(", ")}`,
         quantity: 1,
-        unit_price: BASE_PRICES[p.slug] || p.basePrice,
-        total: BASE_PRICES[p.slug] || p.basePrice,
+        unit_price: p.ratePerSqFt,
+        total: p.ratePerSqFt,
       }));
+
+      // Check if referral code maps to a specific user
+      let referralUser: { id: string } | null = null;
+      if (contact.referralCode) {
+        try {
+          referralUser = await getUserByReferralCode(contact.referralCode);
+        } catch {
+          // Don't block the flow
+        }
+      }
 
       const quote = await createQuote({
         client_name: `${contact.firstName} ${contact.lastName}`,
@@ -142,10 +154,25 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
         grand_total: totalCost,
         notes: note.trim() || undefined,
         intent_level: "browse",
+        ...(referralUser ? { assigned_to: referralUser.id, shared_with: [referralUser.id] } : {}),
       });
 
       if (leadId) {
         await updateLead(leadId, { has_quote: true });
+      }
+
+      // Assign to referral user or fall back to round-robin
+      try {
+        if (referralUser) {
+          await assignQuote(quote.id, referralUser.id);
+        } else {
+          const rep = await getNextSalesRep();
+          if (rep) {
+            await assignQuote(quote.id, rep.id);
+          }
+        }
+      } catch {
+        // Don't block the flow if assignment fails
       }
 
       // Send confirmation email to client (no portal link)
@@ -326,7 +353,7 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
                         Pricing
                       </p>
                       <p className="text-sm sm:text-base font-bold text-ocean-800">
-                        ~${(info.panelOptions[0]?.approxPrice || product.basePrice).toLocaleString()}
+                        ~${(info.panelOptions[0]?.approxPrice || 0).toLocaleString()}
                       </p>
                       <p className="text-[10px] sm:text-xs text-ocean-400 mt-0.5">
                         {info.note}

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { getQuoteById, markQuoteViewed, updateQuoteStatus } from "@/lib/actions/quotes";
 import { FileText, CheckCircle2, XCircle, DoorOpen, Layers, Palette, GlassWater, Ruler, ArrowRight, Truck, MapPin, Clock } from "lucide-react";
 import ProgressStepper from "@/components/ProgressStepper";
+import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 interface Quote {
   id: string;
@@ -214,6 +215,13 @@ export default function PublicQuotePage() {
               {quote.status.charAt(0).toUpperCase() + quote.status.slice(1)}
             </span>
           </div>
+
+          {/* Door Animation Preview */}
+          {quote.door_type && (
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden mb-6">
+              <DoorTypeAnimation doorType={quote.door_type} compact={false} />
+            </div>
+          )}
 
           {/* Specs Grid */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">

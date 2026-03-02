@@ -17,10 +17,12 @@ import {
   getPanelLayouts,
   calculateItemTotal,
   calculateQuoteTotals,
-  DELIVERY_COSTS,
-  INSTALLATION_COST,
+  DELIVERY_COST,
+  INSTALLATION_RATE,
   TAX_RATE,
   GLASS_MODIFIERS,
+  RATES_PER_SQFT,
+  calculateSquareFeet,
 } from "@/lib/quote-wizard/pricing";
 import type { ConfiguredItem, ServiceOptions } from "@/lib/quote-wizard/types";
 import { createEmptyItem } from "@/lib/quote-wizard/types";
@@ -185,13 +187,15 @@ function hydrateItems(stored: any[]): ConfiguredItem[] {
   const hydrated = stored.map((item) => {
     // New format: full ConfiguredItem fields are present
     if (item.doorTypeSlug) {
+      const w = item.width || 0;
+      const h = item.height || 0;
       return {
         id: item.id || crypto.randomUUID(),
         doorType: item.doorType || item.name || "",
         doorTypeSlug: item.doorTypeSlug,
         systemType: item.systemType || "slider",
-        width: item.width || 0,
-        height: item.height || 0,
+        width: w,
+        height: h,
         panelCount: item.panelCount || 0,
         panelLayout: item.panelLayout || "",
         roomName: item.roomName || "",
@@ -199,7 +203,8 @@ function hydrateItems(stored: any[]): ConfiguredItem[] {
         interiorFinish: item.interiorFinish || "",
         glassType: item.glassType || "",
         hardwareFinish: item.hardwareFinish || "",
-        basePrice: item.basePrice || 0,
+        ratePerSqFt: item.ratePerSqFt || RATES_PER_SQFT[item.doorTypeSlug] || 0,
+        squareFeet: item.squareFeet || calculateSquareFeet(w, h),
         glassPriceModifier: item.glassPriceModifier || 0,
         itemTotal: item.itemTotal || item.unit_price || 0,
       } as ConfiguredItem;
@@ -234,7 +239,8 @@ function hydrateItems(stored: any[]): ConfiguredItem[] {
       interiorFinish,
       glassType: parts[2] || "",
       hardwareFinish: parts[3] || "",
-      basePrice: product?.basePrice || 0,
+      ratePerSqFt: product?.ratePerSqFt || 0,
+      squareFeet: calculateSquareFeet(width, height),
       glassPriceModifier: GLASS_MODIFIERS[parts[2]] ?? 0,
       itemTotal: item.unit_price || 0,
     } as ConfiguredItem;
@@ -290,7 +296,8 @@ function DoorItemCard({
     const updates: Partial<ConfiguredItem> = {
       doorType: product.name,
       doorTypeSlug: slug,
-      basePrice: product.basePrice,
+      ratePerSqFt: product.ratePerSqFt,
+      squareFeet: 0,
       systemType: newConfig?.hasSystemType ? "slider" : "",
       width: 0,
       height: 0,
@@ -397,7 +404,7 @@ function DoorItemCard({
                             : "bg-white/[0.03] border-white/[0.08] text-white/40 hover:border-white/[0.15] hover:bg-white/[0.05]"
                         }`}
                       >
-                        {type}{type === "pocket" ? " (+$1,200)" : ""}
+                        {type}
                       </button>
                     ))}
                   </div>
@@ -668,12 +675,9 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
 
   // Services — hydrate from initialData when editing
   const [services, setServices] = useState<ServiceOptions>(() => {
-    if (!initialData) return { deliveryType: "none", includeInstallation: false };
-    const dc = Number(initialData.delivery_cost || 0);
-    const deliveryType: ServiceOptions["deliveryType"] =
-      dc >= 1500 ? "white-glove" : dc >= 800 ? "regular" : "none";
+    if (!initialData) return { includeInstallation: false };
     const includeInstallation = Number(initialData.installation_cost || 0) > 0;
-    return { deliveryType, includeInstallation };
+    return { includeInstallation };
   });
 
   // Filter clients based on search
@@ -755,7 +759,8 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
       interiorFinish: item.interiorFinish,
       glassType: item.glassType,
       hardwareFinish: item.hardwareFinish,
-      basePrice: item.basePrice,
+      ratePerSqFt: item.ratePerSqFt,
+      squareFeet: item.squareFeet,
       glassPriceModifier: item.glassPriceModifier,
       itemTotal: item.itemTotal,
     }));
@@ -772,7 +777,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
       size: firstItem ? `${firstItem.width}" x ${firstItem.height}"` : "",
       cost: totals.grandTotal,
       notes: notes || undefined,
-      delivery_type: services.deliveryType === "none" ? "pickup" : "delivery",
+      delivery_type: "delivery",
       client_id: clientMode === "existing" ? selectedClientId || undefined : undefined,
       save_as_client: clientMode === "new" ? saveAsClient : undefined,
       client_phone: clientMode === "new" && saveAsClient ? newClientPhone || undefined : undefined,
@@ -1233,33 +1238,14 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
           </div>
         </div>
         <div className="p-5 sm:p-6 space-y-4">
-          {/* Delivery */}
+          {/* Delivery — always $800 */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
               <Truck className="w-3.5 h-3.5" /> Delivery
             </label>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              {(["regular", "white-glove", "none"] as const).map((type) => {
-                const labels: Record<string, string> = {
-                  regular: "Regular ($800)",
-                  "white-glove": "White Glove ($1,500)",
-                  none: "None",
-                };
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setServices((s) => ({ ...s, deliveryType: type }))}
-                    className={`flex-1 py-3 sm:py-2.5 rounded-xl border text-sm font-medium transition-all cursor-pointer active:scale-95 ${
-                      services.deliveryType === type
-                        ? "bg-sky-500/10 border-sky-500/30 text-sky-300 ring-2 ring-sky-500/20"
-                        : "bg-white/[0.03] border-white/[0.08] text-white/40 hover:border-white/[0.15] hover:bg-white/[0.05]"
-                    }`}
-                  >
-                    {labels[type]}
-                  </button>
-                );
-              })}
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-300">
+              <span className="text-sm font-medium">Delivery (included)</span>
+              <span className="text-sm font-bold">${DELIVERY_COST.toLocaleString()}</span>
             </div>
           </div>
 
@@ -1278,7 +1264,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
               </div>
               <div>
                 <span className="text-white/70 text-sm font-medium">Include Installation</span>
-                <span className="text-white/30 text-sm ml-2">($1,750)</span>
+                <span className="text-white/30 text-sm ml-2">(${INSTALLATION_RATE}/sq ft)</span>
               </div>
             </label>
           </div>
@@ -1317,14 +1303,10 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
               <span className="text-white/70 font-medium">${totals.subtotal.toLocaleString()}</span>
             </div>
 
-            {totals.deliveryCost > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">
-                  Delivery ({services.deliveryType === "white-glove" ? "White Glove" : "Regular"})
-                </span>
-                <span className="text-white/70 font-medium">${totals.deliveryCost.toLocaleString()}</span>
-              </div>
-            )}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/50">Delivery</span>
+              <span className="text-white/70 font-medium">${totals.deliveryCost.toLocaleString()}</span>
+            </div>
 
             {totals.installationCost > 0 && (
               <div className="flex items-center justify-between text-sm">

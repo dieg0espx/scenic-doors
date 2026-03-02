@@ -1,14 +1,12 @@
 import type { ConfiguredItem, ServiceOptions } from "./types";
 
-export const BASE_PRICES: Record<string, number> = {
-  "multi-slide-pocket": 8500,
-  "ultra-slim": 12000,
-  "bi-fold": 7500,
-  "slide-stack": 9000,
-  "awning-window": 6000,
+export const RATES_PER_SQFT: Record<string, number> = {
+  "multi-slide-pocket": 105,
+  "ultra-slim": 130,
+  "bi-fold": 110,
+  "slide-stack": 121.785714,
+  "awning-window": 95,
 };
-
-export const POCKET_UPCHARGE = 1200;
 
 export const GLASS_MODIFIERS: Record<string, number> = {
   "Low-E3 Glass": 0,
@@ -16,13 +14,8 @@ export const GLASS_MODIFIERS: Record<string, number> = {
   "Laminated Glass": 75,
 };
 
-export const DELIVERY_COSTS: Record<string, number> = {
-  regular: 800,
-  "white-glove": 1500,
-  none: 0,
-};
-
-export const INSTALLATION_COST = 1750;
+export const INSTALLATION_RATE = 30;
+export const DELIVERY_COST = 800;
 export const TAX_RATE = 0.08;
 
 /* ── Product-specific configuration rules ─────────────── */
@@ -48,9 +41,9 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
     maxWidth: 240,
     maxHeight: 140,
     hasPanelCount: true,
-    panelMinWidth: 35,
-    panelMaxWidth: 60,
-    usableOpeningOffset: 3,
+    panelMinWidth: 26,
+    panelMaxWidth: 92.51,
+    usableOpeningOffset: 0,
     hasRoomName: false,
     hardwareOptions: ["Black", "White", "Silver"],
     detailedGlass: true,
@@ -61,9 +54,9 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
     maxWidth: 240,
     maxHeight: 140,
     hasPanelCount: true,
-    panelMinWidth: 35,
-    panelMaxWidth: 60,
-    usableOpeningOffset: 3,
+    panelMinWidth: 26,
+    panelMaxWidth: 92.51,
+    usableOpeningOffset: 0,
     hasRoomName: false,
     hardwareOptions: ["Black", "White", "Silver"],
     detailedGlass: true,
@@ -74,9 +67,9 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
     maxWidth: 240,
     maxHeight: 120,
     hasPanelCount: true,
-    panelMinWidth: 25,
+    panelMinWidth: 28,
     panelMaxWidth: 39,
-    usableOpeningOffset: 5,
+    usableOpeningOffset: 0,
     hasRoomName: false,
     hardwareOptions: ["Black", "White", "Silver"],
     detailedGlass: false,
@@ -84,12 +77,12 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
   "slide-stack": {
     displayName: "Slide & Stack System",
     hasSystemType: false,
-    maxWidth: 240,
-    maxHeight: 120,
+    maxWidth: 292,
+    maxHeight: 137.79,
     hasPanelCount: true,
-    panelMinWidth: 25,
+    panelMinWidth: 28,
     panelMaxWidth: 39,
-    usableOpeningOffset: 5,
+    usableOpeningOffset: 0,
     hasRoomName: false,
     hardwareOptions: ["Black", "White", "Silver"],
     detailedGlass: false,
@@ -97,11 +90,11 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
   "awning-window": {
     displayName: "Awning Window",
     hasSystemType: false,
-    maxWidth: 240,
-    maxHeight: 140,
+    maxWidth: 60,
+    maxHeight: 60,
     hasPanelCount: false,
-    panelMinWidth: 0,
-    panelMaxWidth: 0,
+    panelMinWidth: 24,
+    panelMaxWidth: 60,
     usableOpeningOffset: 0,
     hasRoomName: true,
     hardwareOptions: ["Black", "White", "Bronze"],
@@ -198,11 +191,19 @@ export function getPanelLayouts(panelCount: number, slug: string): string[] {
 
 /* ── Price calculations ───────────────────────────────── */
 
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+export function calculateSquareFeet(width: number, height: number): number {
+  return (width * height) / 144;
+}
+
 export function calculateItemTotal(item: ConfiguredItem): number {
-  const glassMod = GLASS_MODIFIERS[item.glassType] ?? 0;
-  const pocketUpcharge = item.systemType === "pocket" ? POCKET_UPCHARGE : 0;
-  const panels = item.panelCount || 1;
-  return item.basePrice + pocketUpcharge + glassMod * panels;
+  const sqft = calculateSquareFeet(item.width, item.height);
+  const rate = RATES_PER_SQFT[item.doorTypeSlug] ?? 0;
+  const glassMod = (GLASS_MODIFIERS[item.glassType] ?? 0) * (item.panelCount || 1);
+  return round2(sqft * rate + glassMod);
 }
 
 export function calculateQuoteTotals(
@@ -210,11 +211,17 @@ export function calculateQuoteTotals(
   services: ServiceOptions
 ) {
   const subtotal = items.reduce((sum, item) => sum + item.itemTotal, 0);
-  const deliveryCost = DELIVERY_COSTS[services.deliveryType] ?? 0;
-  const installationCost = services.includeInstallation ? INSTALLATION_COST : 0;
-  const taxableAmount = subtotal + deliveryCost + installationCost;
-  const tax = Math.round(taxableAmount * TAX_RATE * 100) / 100;
-  const grandTotal = Math.round((taxableAmount + tax) * 100) / 100;
+  const totalSqFt = items.reduce(
+    (sum, item) => sum + calculateSquareFeet(item.width, item.height),
+    0
+  );
+  const installationCost = services.includeInstallation
+    ? round2(totalSqFt * INSTALLATION_RATE)
+    : 0;
+  const deliveryCost = DELIVERY_COST;
+  const taxableAmount = subtotal + installationCost + deliveryCost;
+  const tax = round2(taxableAmount * TAX_RATE);
+  const grandTotal = round2(taxableAmount + tax);
 
-  return { subtotal, deliveryCost, installationCost, tax, grandTotal };
+  return { subtotal, installationCost, deliveryCost, tax, grandTotal };
 }

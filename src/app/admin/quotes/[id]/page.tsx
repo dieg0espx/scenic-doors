@@ -44,6 +44,7 @@ import AdminPortalManager from "@/components/admin/AdminPortalManager";
 import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
 import PortalLinkBar from "@/components/admin/PortalLinkBar";
 import QuoteShareCard from "@/components/admin/QuoteShareCard";
+import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 export const dynamic = "force-dynamic";
 
@@ -60,11 +61,9 @@ function formatDeliveryAddress(raw: string): string {
 
 const leadStatusConfig: Record<string, { dot: string; bg: string; text: string; label: string }> = {
   new: { dot: "bg-blue-400", bg: "bg-blue-400/10", text: "text-blue-300", label: "New" },
-  hot: { dot: "bg-red-400", bg: "bg-red-400/10", text: "text-red-300", label: "Hot" },
-  warm: { dot: "bg-amber-400", bg: "bg-amber-400/10", text: "text-amber-300", label: "Warm" },
-  cold: { dot: "bg-sky-400", bg: "bg-sky-400/10", text: "text-sky-300", label: "Cold" },
-  hold: { dot: "bg-gray-400", bg: "bg-gray-400/10", text: "text-gray-300", label: "Hold" },
-  archived: { dot: "bg-zinc-500", bg: "bg-zinc-500/10", text: "text-zinc-400", label: "Archived" },
+  contacted: { dot: "bg-amber-400", bg: "bg-amber-400/10", text: "text-amber-300", label: "Contacted" },
+  in_progress: { dot: "bg-violet-400", bg: "bg-violet-400/10", text: "text-violet-300", label: "In Progress" },
+  not_interested: { dot: "bg-gray-400", bg: "bg-gray-400/10", text: "text-gray-300", label: "Not Interested" },
 };
 
 const quoteStatusLabels: Record<string, { bg: string; text: string; label: string }> = {
@@ -360,6 +359,11 @@ export default async function QuoteDetailPage({
               <h2 className="text-base font-semibold text-white">Door Specifications</h2>
             </div>
             <div className="p-4 sm:p-6">
+              {quote.door_type && (
+                <div className="mb-4 rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                  <DoorTypeAnimation doorType={quote.door_type} compact={false} />
+                </div>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {specs.map(({ label, value, icon: Icon }) => (
                   <div key={label} className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-2.5 sm:p-3">

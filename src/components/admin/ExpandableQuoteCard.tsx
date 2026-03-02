@@ -18,15 +18,16 @@ import {
   Users,
 } from "lucide-react";
 import type { Quote } from "@/lib/types";
-import { deleteQuote } from "@/lib/actions/quotes";
+import { deleteQuote, updateQuoteLeadStatus } from "@/lib/actions/quotes";
+import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
-const leadStatusConfig: Record<string, { dot: string; bg: string; text: string }> = {
-  new: { dot: "bg-blue-400", bg: "bg-blue-400/10", text: "text-blue-300" },
-  hot: { dot: "bg-red-400", bg: "bg-red-400/10", text: "text-red-300" },
-  warm: { dot: "bg-amber-400", bg: "bg-amber-400/10", text: "text-amber-300" },
-  cold: { dot: "bg-sky-400", bg: "bg-sky-400/10", text: "text-sky-300" },
-  hold: { dot: "bg-gray-400", bg: "bg-gray-400/10", text: "text-gray-300" },
-  archived: { dot: "bg-zinc-500", bg: "bg-zinc-500/10", text: "text-zinc-400" },
+const LEAD_STAGES = ["new", "contacted", "in_progress", "not_interested"] as const;
+
+const leadStatusConfig: Record<string, { dot: string; bg: string; text: string; label: string }> = {
+  new: { dot: "bg-blue-400", bg: "bg-blue-400/10", text: "text-blue-300", label: "New" },
+  contacted: { dot: "bg-amber-400", bg: "bg-amber-400/10", text: "text-amber-300", label: "Contacted" },
+  in_progress: { dot: "bg-violet-400", bg: "bg-violet-400/10", text: "text-violet-300", label: "In Progress" },
+  not_interested: { dot: "bg-gray-400", bg: "bg-gray-400/10", text: "text-gray-300", label: "Not Interested" },
 };
 
 const customerTypeBadge: Record<string, string> = {
@@ -51,14 +52,16 @@ export default function ExpandableQuoteCard({
   userNameMap = {},
 }: Props) {
   const [deleting, setDeleting] = useState(false);
-  const leadStatus = quote.lead_status || "new";
-  const sc = leadStatusConfig[leadStatus] || leadStatusConfig.new;
+  const [currentStatus, setCurrentStatus] = useState(quote.lead_status || "new");
+  const [cycling, setCycling] = useState(false);
+  const sc = leadStatusConfig[currentStatus] || leadStatusConfig.new;
   const notesCount = quote.quote_notes?.length ?? 0;
   const tasksCount = quote.quote_tasks?.length ?? 0;
   const assignedName = quote.admin_users?.name;
   const itemsCount = Array.isArray(quote.items) ? quote.items.length : 0;
   const total = Number(quote.grand_total || quote.cost || 0);
   const sharedWithNames = (quote.shared_with || [])
+    .filter((uid: string) => uid !== quote.assigned_to)
     .map((uid: string) => userNameMap[uid])
     .filter(Boolean) as string[];
 
@@ -69,6 +72,22 @@ export default function ExpandableQuoteCard({
       await deleteQuote(quote.id);
     } catch {
       setDeleting(false);
+    }
+  }
+
+  async function cycleStatus(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (cycling) return;
+    const idx = LEAD_STAGES.indexOf(currentStatus as typeof LEAD_STAGES[number]);
+    const next = LEAD_STAGES[(idx + 1) % LEAD_STAGES.length];
+    setCycling(true);
+    setCurrentStatus(next);
+    try {
+      await updateQuoteLeadStatus(quote.id, next);
+    } catch {
+      setCurrentStatus(currentStatus);
+    } finally {
+      setCycling(false);
     }
   }
 
@@ -93,8 +112,14 @@ export default function ExpandableQuoteCard({
                 {quote.client_name}
               </span>
             )}
-            <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${sc.bg} ${sc.text}`}>
-              {leadStatus.charAt(0).toUpperCase() + leadStatus.slice(1)}
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={cycleStatus}
+              title="Click to advance status"
+              className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium cursor-pointer hover:ring-1 hover:ring-white/20 transition-all ${sc.bg} ${sc.text}`}
+            >
+              {sc.label}
             </span>
             {quote.intent_level && quote.intent_level !== "full" && (
               <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${
@@ -208,6 +233,12 @@ export default function ExpandableQuoteCard({
             className="overflow-hidden"
           >
             <div className="px-4 sm:px-5 pb-4 border-t border-white/[0.04]">
+              {/* Door Animation */}
+              {quote.door_type && (
+                <div className="mt-4 mb-3 rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
+                  <DoorTypeAnimation doorType={quote.door_type} compact />
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
                 {/* Activity */}
                 <div className="space-y-2">

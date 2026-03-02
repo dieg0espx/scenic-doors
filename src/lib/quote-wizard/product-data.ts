@@ -3,7 +3,7 @@ export interface Product {
   slug: string;
   image: string;
   features: string[];
-  basePrice: number;
+  ratePerSqFt: number;
 }
 
 export const PRODUCTS: Product[] = [
@@ -16,7 +16,7 @@ export const PRODUCTS: Product[] = [
       "Modern & sleek",
       "Space-saving design",
     ],
-    basePrice: 8500,
+    ratePerSqFt: 105,
   },
   {
     name: "Ultra Slim Multi-Slide",
@@ -27,7 +27,7 @@ export const PRODUCTS: Product[] = [
       "Maximum views",
       "Weather-sealed",
     ],
-    basePrice: 12000,
+    ratePerSqFt: 130,
   },
   {
     name: "Bi-Fold Doors",
@@ -38,7 +38,7 @@ export const PRODUCTS: Product[] = [
       "Wide openings",
       "Premium hardware",
     ],
-    basePrice: 7500,
+    ratePerSqFt: 110,
   },
   {
     name: "Slide-&-Stack",
@@ -49,7 +49,7 @@ export const PRODUCTS: Product[] = [
       "German precision",
       "Minimal frame design",
     ],
-    basePrice: 9000,
+    ratePerSqFt: 121.785714,
   },
   {
     name: "Awning Window",
@@ -60,6 +60,6 @@ export const PRODUCTS: Product[] = [
       "Enhanced security",
       "Energy-efficient",
     ],
-    basePrice: 6000,
+    ratePerSqFt: 95,
   },
 ];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer } from "react";
+import { useReducer, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import QuoteWizardStepper from "./QuoteWizardStepper";
 import StepContactInfo from "./steps/StepContactInfo";
@@ -38,7 +38,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
       };
 
     case "SELECT_PRODUCT": {
-      const { doorType, doorTypeSlug, basePrice } = action.payload;
+      const { doorType, doorTypeSlug, ratePerSqFt } = action.payload;
       // If editing an existing item, update it; otherwise create a new draft
       if (state.currentItemIndex !== null && state.items[state.currentItemIndex]) {
         const updated = [...state.items];
@@ -46,7 +46,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
           ...updated[state.currentItemIndex],
           doorType,
           doorTypeSlug,
-          basePrice,
+          ratePerSqFt,
         };
         return { ...state, items: updated };
       }
@@ -55,7 +55,7 @@ function wizardReducer(state: WizardState, action: WizardAction): WizardState {
         ...createEmptyItem(),
         doorType,
         doorTypeSlug,
-        basePrice,
+        ratePerSqFt,
       };
       return {
         ...state,
@@ -135,9 +135,15 @@ const slideVariants = {
   }),
 };
 
-export default function QuoteWizard() {
+export default function QuoteWizard({ referralCode }: { referralCode?: string }) {
   const [state, dispatch] = useReducer(wizardReducer, initialState);
   const { currentStep, intentLevel } = state;
+
+  useEffect(() => {
+    if (referralCode) {
+      dispatch({ type: "SET_CONTACT", payload: { referralCode } });
+    }
+  }, [referralCode]);
 
   const stepLabels = getStepLabels(intentLevel);
 
@@ -152,6 +158,7 @@ export default function QuoteWizard() {
           contact={state.contact}
           dispatch={dispatch}
           isSubmitting={state.isSubmitting}
+          hasUrlReferral={!!referralCode}
         />
       );
     }

@@ -10,6 +10,7 @@ import { createOrder } from "@/lib/actions/orders";
 import SignaturePad from "@/components/SignaturePad";
 import ProgressStepper from "@/components/ProgressStepper";
 import { ScrollText, ShieldCheck, User, CheckCircle2, XCircle, ArrowRight, FileText, Truck, MapPin } from "lucide-react";
+import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 interface Quote {
   id: string;
@@ -218,6 +219,11 @@ export default function ContractPage() {
                   <span className="w-5 h-5 rounded-full bg-violet-500/15 text-violet-400 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
                   <h3 className="text-white font-semibold text-sm">Project Specifications</h3>
                 </div>
+                {quote.door_type && (
+                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden mb-4">
+                    <DoorTypeAnimation doorType={quote.door_type} compact />
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {[
                     { label: "Door Type", value: quote.door_type },
