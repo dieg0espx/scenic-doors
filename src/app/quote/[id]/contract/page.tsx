@@ -27,6 +27,8 @@ interface Quote {
   status: string;
   delivery_type?: string;
   delivery_address?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  items?: any[];
 }
 
 function CenteredCard({ children }: { children: React.ReactNode }) {
@@ -219,11 +221,20 @@ export default function ContractPage() {
                   <span className="w-5 h-5 rounded-full bg-violet-500/15 text-violet-400 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
                   <h3 className="text-white font-semibold text-sm">Project Specifications</h3>
                 </div>
-                {quote.door_type && (
-                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden mb-4">
-                    <DoorTypeAnimation doorType={quote.door_type} compact />
-                  </div>
-                )}
+                {quote.door_type && (() => {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const fi: any = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items[0] : null;
+                  return (
+                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden mb-4">
+                      <DoorTypeAnimation
+                        doorType={quote.door_type}
+                        compact
+                        panelCount={fi?.panelCount}
+                        panelLayout={fi?.panelLayout}
+                      />
+                    </div>
+                  );
+                })()}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {[
                     { label: "Door Type", value: quote.door_type },

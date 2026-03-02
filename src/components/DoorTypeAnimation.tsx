@@ -32,19 +32,42 @@ function resolveType(doorType: string): string | null {
 interface DoorTypeAnimationProps {
   doorType: string;
   compact?: boolean;
+  panelCount?: number;
+  panelLayout?: string;
 }
 
-export default function DoorTypeAnimation({ doorType, compact = true }: DoorTypeAnimationProps) {
+export default function DoorTypeAnimation({ doorType, compact = true, panelCount, panelLayout }: DoorTypeAnimationProps) {
   const type = resolveType(doorType);
   if (!type) return null;
 
   switch (type) {
     case "sliding":
-      return <SlidingDoorAnimation compact={compact} />;
+      return (
+        <SlidingDoorAnimation
+          compact={compact}
+          panelCountOverride={panelCount}
+          panelLayoutOverride={panelLayout}
+        />
+      );
     case "bifold":
       return <BifoldDoorAnimation />;
-    case "slidestack":
-      return <SlideStackDoorAnimation compact={compact} />;
+    case "slidestack": {
+      // Derive stack side from panel layout string if available
+      let stackSide: "left" | "right" | "split" | undefined;
+      if (panelLayout) {
+        const lower = panelLayout.toLowerCase();
+        if (lower.includes("+")) stackSide = "split";
+        else if (lower.includes("l")) stackSide = "left";
+        else if (lower.includes("r")) stackSide = "right";
+      }
+      return (
+        <SlideStackDoorAnimation
+          compact={compact}
+          panelCountOverride={panelCount}
+          stackSideOverride={stackSide}
+        />
+      );
+    }
     default:
       return null;
   }

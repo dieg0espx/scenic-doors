@@ -23,6 +23,8 @@ interface Quote {
   status: string;
   delivery_type?: string;
   delivery_address?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  items?: any[];
 }
 
 const statusColors: Record<string, { dot: string; bg: string; text: string }> = {
@@ -171,6 +173,12 @@ export default function PublicQuotePage() {
 
   const sc = statusColors[quote.status] || statusColors.draft;
 
+  // Extract config from first item if available
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const firstItem: any = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items[0] : null;
+  const itemPanelCount: number | undefined = firstItem?.panelCount;
+  const itemPanelLayout: string | undefined = firstItem?.panelLayout;
+
   const specs = [
     { label: "Door Type", value: quote.door_type, icon: DoorOpen },
     { label: "Material", value: quote.material, icon: Layers },
@@ -219,7 +227,12 @@ export default function PublicQuotePage() {
           {/* Door Animation Preview */}
           {quote.door_type && (
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden mb-6">
-              <DoorTypeAnimation doorType={quote.door_type} compact={false} />
+              <DoorTypeAnimation
+                doorType={quote.door_type}
+                compact={false}
+                panelCount={itemPanelCount}
+                panelLayout={itemPanelLayout}
+              />
             </div>
           )}
 

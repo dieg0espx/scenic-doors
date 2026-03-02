@@ -207,7 +207,12 @@ function ItemCard({
 
             {/* Door Animation */}
             <div className="my-3 sm:my-4 rounded-xl border border-ocean-200 overflow-hidden">
-              <DoorTypeAnimation doorType={item.doorTypeSlug} compact />
+              <DoorTypeAnimation
+                doorType={item.doorTypeSlug}
+                compact
+                panelCount={item.panelCount}
+                panelLayout={item.panelLayout}
+              />
             </div>
 
             {/* Panel Diagram */}

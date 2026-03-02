@@ -51,6 +51,12 @@ interface PortalQuoteViewProps {
 export default function PortalQuoteView({ quote, photos }: PortalQuoteViewProps) {
   const total = Number(quote.grand_total || quote.cost || 0);
 
+  // Extract config from first item (full quotes store panelCount, panelLayout, etc.)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const firstItem: any = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items[0] : null;
+  const itemPanelCount: number | undefined = firstItem?.panelCount;
+  const itemPanelLayout: string | undefined = firstItem?.panelLayout;
+
   const specs = [
     { label: "Door Type", value: quote.door_type, icon: DoorOpen },
     { label: "Material", value: quote.material, icon: Layers },
@@ -72,7 +78,12 @@ export default function PortalQuoteView({ quote, photos }: PortalQuoteViewProps)
               Door Preview
             </h3>
           </div>
-          <DoorTypeAnimation doorType={quote.door_type} compact={false} />
+          <DoorTypeAnimation
+            doorType={quote.door_type}
+            compact={false}
+            panelCount={itemPanelCount}
+            panelLayout={itemPanelLayout}
+          />
         </div>
       )}
 
