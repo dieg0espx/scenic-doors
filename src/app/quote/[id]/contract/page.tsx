@@ -169,6 +169,9 @@ export default function ContractPage() {
     day: "numeric",
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fi: any = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items[0] : null;
+
   return (
     <div className="min-h-screen bg-[#0d1117] py-6 sm:py-16 px-4 relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-amber-500/[0.03] rounded-full blur-3xl -translate-y-1/2" />
@@ -221,27 +224,28 @@ export default function ContractPage() {
                   <span className="w-5 h-5 rounded-full bg-violet-500/15 text-violet-400 text-[10px] font-bold flex items-center justify-center shrink-0">1</span>
                   <h3 className="text-white font-semibold text-sm">Project Specifications</h3>
                 </div>
-                {quote.door_type && (() => {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  const fi: any = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items[0] : null;
-                  return (
-                    <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden mb-4">
-                      <DoorTypeAnimation
-                        doorType={quote.door_type}
-                        compact
-                        panelCount={fi?.panelCount}
-                        panelLayout={fi?.panelLayout}
-                      />
-                    </div>
-                  );
-                })()}
+                {quote.door_type && (
+                  <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden mb-4">
+                    <DoorTypeAnimation
+                      doorType={quote.door_type}
+                      compact
+                      panelCount={fi?.panelCount}
+                      panelLayout={fi?.panelLayout}
+                    />
+                  </div>
+                )}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {[
                     { label: "Door Type", value: quote.door_type },
                     { label: "Material", value: quote.material },
-                    { label: "Color", value: quote.color },
-                    { label: "Glass", value: quote.glass_type },
-                    { label: "Size", value: quote.size },
+                    { label: "Overall Size", value: fi?.width && fi?.height ? `${fi.width}" x ${fi.height}"` : quote.size },
+                    ...(fi?.panelCount ? [{ label: "Panels", value: String(fi.panelCount) }] : []),
+                    ...(fi?.panelLayout ? [{ label: "Panel Layout", value: fi.panelLayout }] : []),
+                    { label: "Frame Color", value: fi?.exteriorFinish || quote.color },
+                    ...(fi?.interiorFinish && fi.interiorFinish !== fi.exteriorFinish ? [{ label: "Interior Color", value: fi.interiorFinish }] : []),
+                    { label: "Glass", value: fi?.glassType || quote.glass_type },
+                    ...(fi?.hardwareFinish ? [{ label: "Hardware", value: fi.hardwareFinish }] : []),
+                    ...(fi?.systemType ? [{ label: "System Type", value: fi.systemType }] : []),
                   ].map(({ label, value }) => (
                     <div key={label} className="flex items-baseline gap-2">
                       <span className="text-white/25 text-xs font-medium shrink-0">{label}:</span>

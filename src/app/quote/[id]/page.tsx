@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { getQuoteById, markQuoteViewed, updateQuoteStatus } from "@/lib/actions/quotes";
-import { FileText, CheckCircle2, XCircle, DoorOpen, Layers, Palette, GlassWater, Ruler, ArrowRight, Truck, MapPin, Clock } from "lucide-react";
+import { FileText, CheckCircle2, XCircle, DoorOpen, Layers, Palette, GlassWater, Ruler, ArrowRight, Truck, MapPin, Clock, PanelLeft, Wrench } from "lucide-react";
 import ProgressStepper from "@/components/ProgressStepper";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
@@ -182,10 +182,45 @@ export default function PublicQuotePage() {
   const specs = [
     { label: "Door Type", value: quote.door_type, icon: DoorOpen },
     { label: "Material", value: quote.material, icon: Layers },
-    { label: "Color", value: quote.color, icon: Palette },
-    { label: "Glass Type", value: quote.glass_type, icon: GlassWater },
-    { label: "Size", value: quote.size, icon: Ruler },
-  ];
+    {
+      label: "Overall Size",
+      value: firstItem?.width && firstItem?.height
+        ? `${firstItem.width}" x ${firstItem.height}"`
+        : quote.size,
+      icon: Ruler,
+    },
+    {
+      label: "Panels",
+      value: firstItem?.panelCount ? String(firstItem.panelCount) : null,
+      icon: PanelLeft,
+    },
+    {
+      label: "Panel Layout",
+      value: firstItem?.panelLayout || null,
+      icon: PanelLeft,
+    },
+    {
+      label: "Frame Color",
+      value: firstItem?.exteriorFinish || quote.color,
+      icon: Palette,
+    },
+    ...(firstItem?.interiorFinish && firstItem.interiorFinish !== firstItem.exteriorFinish
+      ? [{ label: "Interior Color", value: firstItem.interiorFinish as string, icon: Palette }]
+      : []),
+    {
+      label: "Glass Type",
+      value: firstItem?.glassType || quote.glass_type,
+      icon: GlassWater,
+    },
+    {
+      label: "Hardware",
+      value: firstItem?.hardwareFinish || null,
+      icon: Wrench,
+    },
+    ...(firstItem?.systemType
+      ? [{ label: "System Type", value: firstItem.systemType as string, icon: Layers }]
+      : []),
+  ].filter((s) => s.value);
 
   return (
     <div className="min-h-screen bg-[#0d1117] py-6 sm:py-16 px-4 relative overflow-hidden">
