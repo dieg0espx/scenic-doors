@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { updateDeliveryAddress } from "@/lib/actions/quotes";
 import type { QuotePhoto } from "@/lib/types";
+import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 interface QuoteData {
   id: string;
@@ -63,6 +64,18 @@ export default function PortalQuoteView({ quote, photos }: PortalQuoteViewProps)
 
   return (
     <div className="space-y-6">
+      {/* Door Preview */}
+      {quote.door_type && (
+        <div className="bg-white rounded-xl border border-ocean-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-ocean-100">
+            <h3 className="text-sm font-semibold text-ocean-900 uppercase tracking-wider">
+              Door Preview
+            </h3>
+          </div>
+          <DoorTypeAnimation doorType={quote.door_type} compact={false} />
+        </div>
+      )}
+
       {/* Specs Grid */}
       <div className="bg-white rounded-xl border border-ocean-200 p-5 sm:p-6">
         <h3 className="text-sm font-semibold text-ocean-900 mb-4 uppercase tracking-wider">

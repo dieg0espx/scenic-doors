@@ -6,11 +6,12 @@ import { ArrowLeft, ArrowRight, Check, RefreshCw } from "lucide-react";
 import type { ConfiguredItem, WizardAction } from "@/lib/quote-wizard/types";
 import {
   GLASS_MODIFIERS,
-  POCKET_UPCHARGE,
+  RATES_PER_SQFT,
   PRODUCT_CONFIGS,
   getAvailablePanelCounts,
   getPanelLayouts,
   calculateItemTotal,
+  calculateSquareFeet,
 } from "@/lib/quote-wizard/pricing";
 import { validateConfiguration, type ValidationErrors } from "@/lib/quote-wizard/validation";
 import { PRODUCTS } from "@/lib/quote-wizard/product-data";
@@ -127,10 +128,14 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
   function handleSave() {
     const panels = config.hasPanelCount ? item.panelCount : 1;
     const glassMod = GLASS_MODIFIERS[item.glassType] ?? 0;
+    const sqft = calculateSquareFeet(item.width, item.height);
+    const rate = RATES_PER_SQFT[item.doorTypeSlug] ?? 0;
     const updatedItem: ConfiguredItem = {
       ...item,
       panelCount: panels,
       glassPriceModifier: glassMod,
+      ratePerSqFt: rate,
+      squareFeet: sqft,
       itemTotal: calculateItemTotal({ ...item, panelCount: panels, glassPriceModifier: glassMod }),
     };
     const validationErrors = validateConfiguration(updatedItem);
@@ -140,7 +145,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
     }
     dispatch({
       type: "UPDATE_CURRENT_ITEM",
-      payload: { panelCount: panels, glassPriceModifier: glassMod, itemTotal: updatedItem.itemTotal },
+      payload: { panelCount: panels, glassPriceModifier: glassMod, ratePerSqFt: rate, squareFeet: sqft, itemTotal: updatedItem.itemTotal },
     });
     dispatch({ type: "SAVE_CURRENT_ITEM" });
     dispatch({ type: "SET_STEP", payload: 5 });
@@ -289,7 +294,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                     )}
                     <p className="font-semibold text-sm text-ocean-900 pr-6">Pocket Door System</p>
                     <p className="text-xs text-ocean-500 mt-1">
-                      (Upcharge: ${POCKET_UPCHARGE.toLocaleString()}) Do not include pocket area in width; our system will calculate it.
+                      Do not include pocket area in width; our system will calculate it.
                     </p>
                   </button>
                 </div>
@@ -335,7 +340,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
               <div>
                 <label className="block text-sm font-semibold text-ocean-800 mb-1">Panel Count</label>
                 <p className="text-xs text-ocean-400 mb-3">
-                  Usable opening = width &minus; {config.usableOpeningOffset}&quot;. Per-panel must be {config.panelMinWidth}&quot;&ndash;{config.panelMaxWidth}&quot;.
+                  Per-panel width must be {config.panelMinWidth}&quot;&ndash;{config.panelMaxWidth}&quot;.
                 </p>
                 {availablePanelCounts.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
@@ -438,16 +443,7 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                 <p className="text-xs text-ocean-400 mb-3">See how your door configuration looks and operates.</p>
                 <div className="rounded-xl border border-ocean-200 overflow-hidden bg-white">
                   {item.doorTypeSlug === "bi-fold" && (
-                    <BifoldDoorAnimation
-                      panelCountOverride={item.panelCount > 0 ? item.panelCount : undefined}
-                      foldDirectionOverride={
-                        item.panelLayout?.includes('Split') ? 'center'
-                        : item.panelLayout?.includes('Right') ? 'right'
-                        : item.panelLayout?.includes('Left') ? 'left'
-                        : undefined
-                      }
-                      compact
-                    />
+                    <BifoldDoorAnimation />
                   )}
                   {item.doorTypeSlug === "slide-stack" && (
                     <SlideStackDoorAnimation

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getDashboardMetrics, getQuotesForUser } from "@/lib/actions/quotes";
 import { getCurrentAdminUser } from "@/lib/auth";
+import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 export const dynamic = "force-dynamic";
 
@@ -77,13 +78,6 @@ export default async function AdminDashboard() {
   ]);
 
   const latestQuotes = recentQuotes.slice(0, 10);
-
-  // Pipeline breakdown counts
-  const pipelineCounts = { new: 0, hot: 0, warm: 0, cold: 0 };
-  for (const q of recentQuotes) {
-    const s = q.lead_status || "new";
-    if (s in pipelineCounts) pipelineCounts[s as keyof typeof pipelineCounts]++;
-  }
 
   // Follow-up reminders
   const today = new Date().toISOString().split("T")[0];
@@ -225,26 +219,6 @@ export default async function AdminDashboard() {
         })}
       </div>
 
-      {/* Pipeline Breakdown */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-6">
-        {(["new", "hot", "warm", "cold"] as const).map((status) => {
-          const sc = leadStatusConfig[status];
-          return (
-            <Link
-              key={status}
-              href={`/admin/quotes?status=${status}`}
-              className={`group rounded-xl border border-white/[0.06] bg-white/[0.015] p-3 sm:p-4 hover:bg-white/[0.03] transition-colors`}
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <span className={`w-2 h-2 rounded-full ${sc.dot}`} />
-                <span className={`text-xs font-medium ${sc.text}`}>{sc.label}</span>
-              </div>
-              <p className="text-xl font-bold text-white">{pipelineCounts[status]}</p>
-            </Link>
-          );
-        })}
-      </div>
-
       {/* Follow-Up Reminders */}
       {followUpsDue.length > 0 && (
         <div className="rounded-2xl border border-amber-500/20 bg-amber-500/[0.04] mb-6">
@@ -347,6 +321,11 @@ export default async function AdminDashboard() {
                     <div className={`w-8 h-8 rounded-lg ${sc.bg} flex items-center justify-center shrink-0`}>
                       <span className={`w-2 h-2 rounded-full ${sc.dot}`} />
                     </div>
+                    {q.door_type && (
+                      <div className="hidden sm:block w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-white/[0.03] border border-white/[0.06]">
+                        <DoorTypeAnimation doorType={q.door_type} compact />
+                      </div>
+                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-white text-sm font-medium truncate">
