@@ -45,7 +45,7 @@ export async function scheduleFollowUps(
     .limit(1);
 
   if (existing && existing.length > 0) {
-    throw new Error("Follow-ups already scheduled for this quote");
+    return; // Already scheduled, skip silently
   }
 
   const now = new Date();
