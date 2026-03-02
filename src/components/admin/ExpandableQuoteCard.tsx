@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import type { Quote } from "@/lib/types";
 import { deleteQuote, updateQuoteLeadStatus } from "@/lib/actions/quotes";
-import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 const LEAD_STAGES = ["new", "contacted", "in_progress", "not_interested"] as const;
 
@@ -233,12 +232,6 @@ export default function ExpandableQuoteCard({
             className="overflow-hidden"
           >
             <div className="px-4 sm:px-5 pb-4 border-t border-white/[0.04]">
-              {/* Door Animation */}
-              {quote.door_type && (
-                <div className="mt-4 mb-3 rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
-                  <DoorTypeAnimation doorType={quote.door_type} compact />
-                </div>
-              )}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
                 {/* Activity */}
                 <div className="space-y-2">

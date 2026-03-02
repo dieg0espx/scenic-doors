@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { getDashboardMetrics, getQuotesForUser } from "@/lib/actions/quotes";
 import { getCurrentAdminUser } from "@/lib/auth";
-import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 export const dynamic = "force-dynamic";
 
@@ -321,11 +320,6 @@ export default async function AdminDashboard() {
                     <div className={`w-8 h-8 rounded-lg ${sc.bg} flex items-center justify-center shrink-0`}>
                       <span className={`w-2 h-2 rounded-full ${sc.dot}`} />
                     </div>
-                    {q.door_type && (
-                      <div className="hidden sm:block w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-white/[0.03] border border-white/[0.06]">
-                        <DoorTypeAnimation doorType={q.door_type} compact />
-                      </div>
-                    )}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-white text-sm font-medium truncate">
