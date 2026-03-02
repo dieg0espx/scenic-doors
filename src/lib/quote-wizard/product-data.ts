@@ -51,15 +51,15 @@ export const PRODUCTS: Product[] = [
     ],
     ratePerSqFt: 121.785714,
   },
-  {
-    name: "Awning Window",
-    slug: "awning-window",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/v1771414503/awning_window_ndamee.png",
-    features: [
-      "Weather protection",
-      "Enhanced security",
-      "Energy-efficient",
-    ],
-    ratePerSqFt: 95,
-  },
+  // {
+  //   name: "Awning Window",
+  //   slug: "awning-window",
+  //   image: "https://res.cloudinary.com/dku1gnuat/image/upload/v1771414503/awning_window_ndamee.png",
+  //   features: [
+  //     "Weather protection",
+  //     "Enhanced security",
+  //     "Energy-efficient",
+  //   ],
+  //   ratePerSqFt: 95,
+  // },
 ];
