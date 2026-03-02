@@ -12,14 +12,14 @@ import { FileText } from "lucide-react";
 
 interface Props {
   quotes: Quote[];
-  counts: Record<string, number>;
   intentCounts: Record<string, number>;
+  statusCounts: Record<string, number>;
   userNameMap?: Record<string, string>;
 }
 
 const STORAGE_KEY = "scenic-quote-columns";
 
-export default function QuotesPageClient({ quotes, counts, intentCounts, userNameMap = {} }: Props) {
+export default function QuotesPageClient({ quotes, intentCounts, statusCounts, userNameMap = {} }: Props) {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [expandAll, setExpandAll] = useState(false);
   const [showColumnModal, setShowColumnModal] = useState(false);
@@ -84,8 +84,8 @@ export default function QuotesPageClient({ quotes, counts, intentCounts, userNam
   return (
     <div className="space-y-4">
       <QuoteSearchBar
-        statusCounts={counts}
         intentCounts={intentCounts}
+        statusCounts={statusCounts}
         onExportCSV={handleExportCSV}
         onToggleColumns={() => setShowColumnModal(true)}
         expandAll={expandAll}

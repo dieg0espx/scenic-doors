@@ -11,6 +11,7 @@ interface StepContactInfoProps {
   contact: ContactInfo;
   dispatch: React.Dispatch<WizardAction>;
   isSubmitting: boolean;
+  hasUrlReferral?: boolean;
 }
 
 const TIMELINE_OPTIONS = [
@@ -106,7 +107,7 @@ function Dropdown({
   );
 }
 
-export default function StepContactInfo({ contact, dispatch, isSubmitting }: StepContactInfoProps) {
+export default function StepContactInfo({ contact, dispatch, isSubmitting, hasUrlReferral }: StepContactInfoProps) {
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   function handleChange(field: keyof ContactInfo, value: string) {
@@ -253,7 +254,7 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className={hasUrlReferral ? "" : "grid sm:grid-cols-2 gap-4"}>
           <div>
             <label className="block text-sm font-medium text-ocean-700 mb-1.5">
               ZIP Code <span className="text-red-400">*</span>
@@ -268,18 +269,20 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting }: Ste
             />
             {errors.zip && <p className="mt-1 text-xs text-red-500">{errors.zip}</p>}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-ocean-700 mb-1.5">
-              Referral Code
-            </label>
-            <input
-              type="text"
-              value={contact.referralCode}
-              onChange={(e) => handleChange("referralCode", e.target.value)}
-              placeholder="Optional"
-              className={inputClass("referralCode")}
-            />
-          </div>
+          {!hasUrlReferral && (
+            <div>
+              <label className="block text-sm font-medium text-ocean-700 mb-1.5">
+                Referral Code
+              </label>
+              <input
+                type="text"
+                value={contact.referralCode}
+                onChange={(e) => handleChange("referralCode", e.target.value)}
+                placeholder="Optional"
+                className={inputClass("referralCode")}
+              />
+            </div>
+          )}
         </div>
 
         <div>
