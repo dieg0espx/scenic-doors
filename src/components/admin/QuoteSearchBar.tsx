@@ -17,11 +17,9 @@ import {
 
 const STATUS_OPTIONS = [
   { key: "new", label: "New", dot: "bg-blue-400" },
-  { key: "hot", label: "Hot", dot: "bg-red-400" },
-  { key: "warm", label: "Warm", dot: "bg-amber-400" },
-  { key: "cold", label: "Cold", dot: "bg-sky-400" },
-  { key: "hold", label: "Hold", dot: "bg-gray-400" },
-  { key: "archived", label: "Archived", dot: "bg-zinc-500" },
+  { key: "contacted", label: "Contacted", dot: "bg-amber-400" },
+  { key: "in_progress", label: "In Progress", dot: "bg-violet-400" },
+  { key: "not_interested", label: "Not Interested", dot: "bg-gray-400" },
 ];
 
 const INTENT_OPTIONS = [
@@ -171,8 +169,8 @@ function FilterDropdown({
 /* ── main search bar ── */
 
 interface Props {
-  statusCounts: Record<string, number>;
   intentCounts: Record<string, number>;
+  statusCounts: Record<string, number>;
   onExportCSV: () => void;
   onToggleColumns: () => void;
   expandAll: boolean;
@@ -180,8 +178,8 @@ interface Props {
 }
 
 export default function QuoteSearchBar({
-  statusCounts,
   intentCounts,
+  statusCounts,
   onExportCSV,
   onToggleColumns,
   expandAll,

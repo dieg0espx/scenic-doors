@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, FileText, DollarSign, TrendingUp, Users, Clock } from "lucide-react";
+import { Plus, FileText, DollarSign } from "lucide-react";
 import { getQuotesForUser } from "@/lib/actions/quotes";
 import { getAdminUsers } from "@/lib/actions/admin-users";
 import { getCurrentAdminUser } from "@/lib/auth";
@@ -35,27 +35,19 @@ export default async function QuotesPage({
     due_today: params.due_today === "true",
   });
 
-  // Count quotes by lead_status (scoped to user's visible quotes)
+  // Count quotes by intent level and status (scoped to user's visible quotes)
   const allQuotes = await getQuotesForUser(userId, userName, userRole);
-  const counts: Record<string, number> = {};
   const intentCounts: Record<string, number> = {};
+  const statusCounts: Record<string, number> = {};
   for (const q of allQuotes) {
-    const s = q.lead_status || "new";
-    counts[s] = (counts[s] || 0) + 1;
     const intent = q.intent_level || "full";
     intentCounts[intent] = (intentCounts[intent] || 0) + 1;
+    const status = q.lead_status || "new";
+    statusCounts[status] = (statusCounts[status] || 0) + 1;
   }
 
   // Compute summary stats
   const totalValue = allQuotes.reduce((sum, q) => sum + Number(q.grand_total || q.cost || 0), 0);
-  const hotCount = counts["hot"] || 0;
-  const newThisWeek = allQuotes.filter((q) => {
-    const created = new Date(q.created_at);
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    return created >= weekAgo;
-  }).length;
-  const pendingApproval = allQuotes.filter((q) => q.status === "pending_approval").length;
 
   const stats = [
     {
@@ -72,27 +64,6 @@ export default async function QuotesPage({
       color: "text-emerald-400",
       bg: "bg-emerald-500/10",
     },
-    {
-      label: "Hot Leads",
-      value: hotCount.toString(),
-      icon: TrendingUp,
-      color: "text-red-400",
-      bg: "bg-red-500/10",
-    },
-    {
-      label: "New This Week",
-      value: newThisWeek.toString(),
-      icon: Users,
-      color: "text-sky-400",
-      bg: "bg-sky-500/10",
-    },
-    ...(pendingApproval > 0 ? [{
-      label: "Pending Approval",
-      value: pendingApproval.toString(),
-      icon: Clock,
-      color: "text-amber-400",
-      bg: "bg-amber-500/10",
-    }] : []),
   ];
 
   return (
@@ -119,7 +90,7 @@ export default async function QuotesPage({
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -136,7 +107,7 @@ export default async function QuotesPage({
         })}
       </div>
 
-      <QuotesPageClient quotes={quotes} counts={counts} intentCounts={intentCounts} userNameMap={userNameMap} />
+      <QuotesPageClient quotes={quotes} intentCounts={intentCounts} statusCounts={statusCounts} userNameMap={userNameMap} />
     </div>
   );
 }

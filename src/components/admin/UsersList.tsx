@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Users, Trash2, ChevronDown, X, Plus, Save, KeyRound } from "lucide-react";
+import { Search, Users, Trash2, ChevronDown, X, Plus, Save, KeyRound, Link2, Check } from "lucide-react";
 import type { AdminUser } from "@/lib/types";
 import { deleteAdminUser, updateAdminUser, assignPassword, resetPassword } from "@/lib/actions/admin-users";
 import CustomSelect from "@/components/admin/CustomSelect";
@@ -41,6 +41,45 @@ interface UserStats {
 interface Props {
   users: AdminUser[];
   userStats?: UserStats;
+}
+
+/* ── Quote Link Row ──────────────────────────────────── */
+function QuoteLinkRow({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://scenicdoors.com";
+  const link = `${origin}/quote?ref=${encodeURIComponent(code)}`;
+
+  function handleCopy() {
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="pt-2">
+      <label className="text-[11px] font-medium text-white/30 mb-1 block uppercase tracking-wider">Quote Link</label>
+      <div className="flex gap-2">
+        <input
+          readOnly
+          value={link}
+          className="flex-1 px-3 py-2 rounded-lg bg-white/[0.03] border border-white/[0.08] text-white/60 text-xs font-mono truncate focus:outline-none"
+        />
+        <button
+          type="button"
+          onClick={handleCopy}
+          className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all cursor-pointer active:scale-[0.98] ${
+            copied
+              ? "border-emerald-500/30 text-emerald-300 bg-emerald-500/10"
+              : "border-white/[0.08] text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
+          }`}
+        >
+          {copied ? <Check className="w-3.5 h-3.5" /> : <Link2 className="w-3.5 h-3.5" />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /* ── Expandable User Card ─────────────────────────────── */
@@ -327,6 +366,11 @@ function UserCard({ user, stats, onRefresh }: { user: AdminUser; stats?: { quote
               <span className="text-xs text-white/30">{stats.quotes} quote{stats.quotes !== 1 ? "s" : ""}</span>
               <span className="text-xs text-white/30">{stats.orders} order{stats.orders !== 1 ? "s" : ""}</span>
             </div>
+          )}
+
+          {/* Quote Link */}
+          {(user.prefix || (user.referral_codes && user.referral_codes.length > 0)) && (
+            <QuoteLinkRow code={user.referral_codes?.[0] || user.prefix || ""} />
           )}
 
           {/* Actions */}

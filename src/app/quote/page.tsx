@@ -7,6 +7,11 @@ export const metadata: Metadata = {
     "Configure your premium doors and windows and get an instant quote estimate. Choose from multi-slide, bi-fold, pocket doors, and more.",
 };
 
-export default function QuotePage() {
-  return <QuoteWizard />;
+export default async function QuotePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>;
+}) {
+  const params = await searchParams;
+  return <QuoteWizard referralCode={params.ref} />;
 }
