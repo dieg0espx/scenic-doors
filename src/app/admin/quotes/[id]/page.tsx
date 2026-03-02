@@ -44,7 +44,6 @@ import AdminPortalManager from "@/components/admin/AdminPortalManager";
 import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
 import PortalLinkBar from "@/components/admin/PortalLinkBar";
 import QuoteShareCard from "@/components/admin/QuoteShareCard";
-import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 export const dynamic = "force-dynamic";
 
@@ -359,11 +358,6 @@ export default async function QuoteDetailPage({
               <h2 className="text-base font-semibold text-white">Door Specifications</h2>
             </div>
             <div className="p-4 sm:p-6">
-              {quote.door_type && (
-                <div className="mb-4 rounded-xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
-                  <DoorTypeAnimation doorType={quote.door_type} compact={false} />
-                </div>
-              )}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {specs.map(({ label, value, icon: Icon }) => (
                   <div key={label} className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-2.5 sm:p-3">
