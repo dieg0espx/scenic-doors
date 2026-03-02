@@ -45,7 +45,7 @@ export async function scheduleFollowUps(
     .limit(1);
 
   if (existing && existing.length > 0) {
-    return; // Already scheduled, skip silently
+    return []; // Already scheduled, skip silently
   }
 
   const now = new Date();
