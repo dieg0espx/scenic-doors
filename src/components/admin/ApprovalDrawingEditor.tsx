@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Save, Download, Send, Loader2, CheckCircle2 } from "lucide-react";
+import { Save, Download, Send, Loader2, CheckCircle2, Eye, X } from "lucide-react";
 import { updateApprovalDrawingAndSyncQuote } from "@/lib/actions/approval-drawings";
 import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
 import type { ApprovalDrawing } from "@/lib/types";
@@ -287,15 +287,7 @@ export default function ApprovalDrawingEditor({
                 </div>
               </div>
               {drawing.signature_data && (
-                <div>
-                  <span className="text-gray-400 text-xs">Signature</span>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={drawing.signature_data}
-                    alt="Customer signature"
-                    className="h-16 mt-1 border border-gray-200 rounded bg-white"
-                  />
-                </div>
+                <SignaturePreview src={drawing.signature_data} />
               )}
             </div>
           )}
@@ -505,5 +497,54 @@ function CheckBtn({
       </span>
       {label}
     </button>
+  );
+}
+
+function SignaturePreview({ src }: { src: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div>
+      <span className="text-gray-400 text-xs">Signature</span>
+      <div className="mt-1 flex items-center gap-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt="Customer signature"
+          className="h-8 w-auto border border-gray-200 rounded bg-white object-contain"
+        />
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-700 font-medium cursor-pointer"
+        >
+          <Eye className="w-3 h-3" />
+          View full
+        </button>
+      </div>
+
+      {/* Expanded overlay */}
+      {expanded && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setExpanded(false)}>
+          <div className="relative bg-white rounded-xl p-4 shadow-2xl max-w-md w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-gray-700">Customer Signature</span>
+              <button
+                onClick={() => setExpanded(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={src}
+              alt="Customer signature"
+              className="w-full border border-gray-200 rounded bg-white"
+            />
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
