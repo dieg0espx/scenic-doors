@@ -95,10 +95,11 @@ export async function generateApprovalDrawingPdf(data: ApprovalPdfInput) {
     data.slide_direction === "left" || data.slide_direction === "bi-part";
   const slidesRight =
     data.slide_direction === "right" || data.slide_direction === "bi-part";
+  const swingStr = data.in_swing || "";
   const inSwing =
-    data.in_swing === "interior" || data.in_swing === "in-swing";
+    swingStr.includes("interior") || swingStr.includes("in-swing");
   const outSwing =
-    data.in_swing === "exterior" || data.in_swing === "out-swing";
+    swingStr.includes("exterior") || swingStr.includes("out-swing");
 
   // Lead panel: derive from slide direction
   let leadLeft =
@@ -106,8 +107,8 @@ export async function generateApprovalDrawingPdf(data: ApprovalPdfInput) {
   let leadRight =
     data.slide_direction === "right" || data.slide_direction === "bi-part";
 
-  const frameColor = normalizeFrameColor(data.frame_color);
-  const hwColor = normalizeHardwareColor(data.hardware_color || data.frame_color);
+  const frameColorStr = data.frame_color || "";
+  const hwColorStr = data.hardware_color || data.frame_color || "";
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -149,22 +150,24 @@ export async function generateApprovalDrawingPdf(data: ApprovalPdfInput) {
   y += 11;
 
   // Row 6: Frame Color
+  const fcLower = frameColorStr.toLowerCase();
   doc.text("Frame Color", labelX, y + 4);
-  drawCheckbox(doc, valX, y, frameColor === "black");
+  drawCheckbox(doc, valX, y, fcLower.includes("black"));
   doc.text("Black", valX + 7, y + 4);
-  drawCheckbox(doc, col2LabelX, y, frameColor === "white");
+  drawCheckbox(doc, col2LabelX, y, fcLower.includes("white"));
   doc.text("White", col2LabelX + 7, y + 4);
-  drawCheckbox(doc, col2ValX, y, frameColor === "bronze");
+  drawCheckbox(doc, col2ValX, y, fcLower.includes("bronze"));
   doc.text("Bronze", col2ValX + 7, y + 4);
   y += 11;
 
   // Row 7: Hardware Color
+  const hwLower = hwColorStr.toLowerCase();
   doc.text("Hardware Color", labelX, y + 4);
-  drawCheckbox(doc, valX, y, hwColor === "black");
+  drawCheckbox(doc, valX, y, hwLower.includes("black"));
   doc.text("Black", valX + 7, y + 4);
-  drawCheckbox(doc, col2LabelX, y, hwColor === "white");
+  drawCheckbox(doc, col2LabelX, y, hwLower.includes("white"));
   doc.text("White", col2LabelX + 7, y + 4);
-  drawCheckbox(doc, col2ValX, y, hwColor === "silver");
+  drawCheckbox(doc, col2ValX, y, hwLower.includes("silver"));
   doc.text("Silver", col2ValX + 7, y + 4);
   y += 16;
 
@@ -358,19 +361,3 @@ function drawBlueBar(
   doc.rect(x, y, w, h, "F");
 }
 
-function normalizeFrameColor(color?: string): string {
-  if (!color) return "black";
-  const c = color.toLowerCase();
-  if (c.includes("white")) return "white";
-  if (c.includes("bronze")) return "bronze";
-  return "black";
-}
-
-function normalizeHardwareColor(color?: string): string {
-  if (!color) return "black";
-  const c = color.toLowerCase();
-  if (c.includes("white")) return "white";
-  if (c.includes("silver") || c.includes("chrome") || c.includes("stainless"))
-    return "silver";
-  return "black";
-}
