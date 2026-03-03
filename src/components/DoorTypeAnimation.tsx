@@ -13,9 +13,13 @@ const SLUG_MAP: Record<string, string> = {
 
 const NAME_MAP: Record<string, string> = {
   "multi-slide & pocket": "sliding",
+  "multi-slide & pocket systems": "sliding",
   "ultra slim multi-slide": "sliding",
+  "ultra slim multi-slide & pocket systems": "sliding",
   "bi-fold doors": "bifold",
+  "bi-fold": "bifold",
   "slide-&-stack": "slidestack",
+  "slide & stack": "slidestack",
 };
 
 function resolveType(doorType: string): string | null {

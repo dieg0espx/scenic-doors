@@ -375,10 +375,22 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
         : items.map((item) => ({
             id: item.id,
             name: item.doorType,
+            doorTypeSlug: item.doorTypeSlug,
             description: `${item.width}" x ${item.height}" | ${item.exteriorFinish}${item.exteriorFinish === "Two-tone" && item.interiorFinish ? ` / ${item.interiorFinish} interior` : ""} | ${item.glassType} | ${item.hardwareFinish}${item.roomName ? ` | ${item.roomName}` : ""}`,
             quantity: 1,
             unit_price: item.itemTotal,
             total: item.itemTotal,
+            width: item.width,
+            height: item.height,
+            panelCount: item.panelCount,
+            panelLayout: item.panelLayout,
+            systemType: item.systemType,
+            exteriorFinish: item.exteriorFinish,
+            interiorFinish: item.interiorFinish,
+            glassType: item.glassType,
+            hardwareFinish: item.hardwareFinish,
+            ratePerSqFt: item.ratePerSqFt,
+            squareFeet: item.squareFeet,
           }));
 
       const mediumNotes = isMedium
