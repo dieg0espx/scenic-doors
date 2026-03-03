@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendManufacturingStartedEmail } from "@/lib/email";
+import { sendManufacturingStartedEmail, sendDeliveryThankYouEmail } from "@/lib/email";
 import { recordEmailSent } from "@/lib/actions/email-history";
 
 export async function createOrder({
@@ -203,6 +203,71 @@ export async function startManufacturing(orderId: string): Promise<void> {
         recipient_email: quote.client_email,
         subject: `Your Doors Are Now in Manufacturing — ${order.order_number}`,
         type: "manufacturing_started",
+      });
+    } catch {
+      // Don't fail if email fails
+    }
+  }
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath(`/portal/${order.quote_id}`);
+}
+
+export async function markAsDelivered(orderId: string): Promise<void> {
+  const supabase = await createClient();
+
+  // Fetch order with quote data
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*, quotes(quote_number, client_name, client_email, door_type)")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) throw new Error("Order not found");
+
+  const now = new Date().toISOString();
+  const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string } | null;
+
+  // Update order_tracking stage to delivered
+  await supabase
+    .from("order_tracking")
+    .update({
+      stage: "delivered",
+      delivered_at: now,
+      updated_at: now,
+    })
+    .eq("quote_id", order.quote_id);
+
+  // Update portal stage
+  await supabase
+    .from("quotes")
+    .update({ portal_stage: "delivered" })
+    .eq("id", order.quote_id);
+
+  // Update order status to completed
+  await supabase
+    .from("orders")
+    .update({ status: "completed" })
+    .eq("id", orderId);
+
+  // Send thank-you email to client
+  if (quote?.client_email) {
+    try {
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      await sendDeliveryThankYouEmail({
+        clientName: quote.client_name,
+        clientEmail: quote.client_email,
+        quoteNumber: quote.quote_number,
+        orderNumber: order.order_number,
+        portalUrl: `${origin}/portal/${order.quote_id}`,
+      });
+
+      await recordEmailSent({
+        quote_id: order.quote_id,
+        recipient_email: quote.client_email,
+        subject: `Your Order Has Been Delivered — ${order.order_number} | Scenic Doors`,
+        type: "delivery_thank_you",
       });
     } catch {
       // Don't fail if email fails

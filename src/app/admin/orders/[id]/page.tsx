@@ -22,6 +22,7 @@ import SendBalanceButton from "@/components/SendBalanceButton";
 import SendDepositButton from "@/components/SendDepositButton";
 import StartManufacturingButton from "@/components/StartManufacturingButton";
 import TrackingCodeInput from "@/components/TrackingCodeInput";
+import MarkDeliveredButton from "@/components/MarkDeliveredButton";
 import OrderDownloads from "@/components/OrderDownloads";
 import { getQuoteDocuments } from "@/lib/actions/quote-documents";
 import AdminPortalManager from "@/components/admin/AdminPortalManager";
@@ -82,9 +83,6 @@ function getProgressIndex(opts: {
   trackingStage?: string;
   orderStatus?: string;
 }) {
-  // Order status "completed" means fully done
-  if (opts.orderStatus === "completed") return 5;
-
   // Tracking stage is the most reliable source
   if (opts.trackingStage === "delivered") return 5;
   if (opts.trackingStage === "shipping") return 4;
@@ -197,6 +195,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const canSendBalance = advancePaid && !hasBalancePayment && remaining > 0;
   const manufacturingStarted = !!tracking?.manufacturing_started_at;
   const canStartManufacturing = advancePaid && !manufacturingStarted;
+  const isDelivered = tracking?.stage === "delivered";
+  const canMarkDelivered = tracking?.stage === "shipping" && !isDelivered;
 
   const progressIndex = getProgressIndex({
     advancePaid,
@@ -718,7 +718,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             />
           )}
 
-          {/* Order Operations — Manufacturing + Shipping */}
+          {/* Order Operations — Manufacturing + Shipping + Delivery */}
           {(canStartManufacturing || manufacturingStarted) && (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
               <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
@@ -765,6 +765,41 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       initialTrackingNumber={tracking.tracking_number}
                       initialCarrier={tracking.shipping_carrier}
                     />
+                  </div>
+                )}
+
+                {/* Mark as Delivered */}
+                {canMarkDelivered && (
+                  <div>
+                    <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Delivery
+                    </p>
+                    <p className="text-white/35 text-xs mb-3">
+                      Order has been shipped. Mark as delivered to complete the order and notify the client.
+                    </p>
+                    <MarkDeliveredButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
+                  </div>
+                )}
+
+                {/* Delivered confirmation */}
+                {isDelivered && (
+                  <div>
+                    <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Delivery
+                    </p>
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                      <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium text-sm">Delivered</p>
+                        {tracking?.delivered_at && (
+                          <p className="text-white/30 text-xs">
+                            {new Date(tracking.delivered_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
