@@ -92,14 +92,25 @@ export default function ApprovalDrawingEditor({
   }
 
   // Derived values for the diagram and checkboxes
-  const slidesLeft =
-    form.slide_direction === "left" || form.slide_direction === "bi-part";
-  const slidesRight =
-    form.slide_direction === "right" || form.slide_direction === "bi-part";
-  const leadLeft =
-    form.slide_direction === "left" || form.slide_direction === "bi-part";
-  const leadRight =
-    form.slide_direction === "right" || form.slide_direction === "bi-part";
+  const dirParts = form.slide_direction.split(",").map((v) => v.trim());
+  const slidesLeft = dirParts.includes("left") || dirParts.includes("bi-part");
+  const slidesRight = dirParts.includes("right") || dirParts.includes("bi-part");
+
+  function toggleSlideDirection(side: "left" | "right") {
+    const current = new Set(dirParts.filter((v) => v === "left" || v === "right"));
+    // Expand "bi-part" to both
+    if (dirParts.includes("bi-part")) { current.add("left"); current.add("right"); }
+    if (current.has(side)) current.delete(side); else current.add(side);
+    if (current.size === 0) current.add(side); // must have at least one
+    setForm({ ...form, slide_direction: Array.from(current).join(",") });
+  }
+
+  const swingParts = form.in_swing.split(",").map((v) => v.trim());
+  const isInSwing = swingParts.includes("interior") || swingParts.includes("in-swing");
+  const isOutSwing = swingParts.includes("exterior") || swingParts.includes("out-swing");
+
+  const leadLeft = slidesLeft;
+  const leadRight = slidesRight;
 
   return (
     <div className="space-y-3">
@@ -108,7 +119,7 @@ export default function ApprovalDrawingEditor({
         {/* Title Bar */}
         <div className="bg-gray-900 text-white px-5 py-3 text-center">
           <h3 className="text-sm font-bold tracking-wider">
-            SCENIC DOORS &ndash; SLIDE &amp; STACK APPROVAL
+            SCENIC DOORS &ndash; {(drawing.system_type || "APPROVAL DRAWING").toUpperCase()} APPROVAL
           </h3>
         </div>
 
@@ -163,53 +174,40 @@ export default function ApprovalDrawingEditor({
 
             {/* Opening Direction */}
             <SpecRadioRow label="Opening Direction">
-              <RadioBtn
+              <CheckBtn
                 label="Slides Left"
-                checked={slidesLeft && !slidesRight}
+                checked={slidesLeft}
                 disabled={isSigned}
-                onChange={() =>
-                  setForm({ ...form, slide_direction: "left" })
-                }
+                onChange={() => toggleSlideDirection("left")}
               />
-              <RadioBtn
+              <CheckBtn
                 label="Slides Right"
-                checked={slidesRight && !slidesLeft}
+                checked={slidesRight}
                 disabled={isSigned}
-                onChange={() =>
-                  setForm({ ...form, slide_direction: "right" })
-                }
-              />
-              <RadioBtn
-                label="Bi-Part"
-                checked={slidesLeft && slidesRight}
-                disabled={isSigned}
-                onChange={() =>
-                  setForm({ ...form, slide_direction: "bi-part" })
-                }
+                onChange={() => toggleSlideDirection("right")}
               />
             </SpecRadioRow>
 
-            {/* In-Swing / Out-Swing (multi-select) */}
-            <SpecRadioRow label="Swing Direction">
+            {/* In-Swing / Out-Swing */}
+            <div className="flex flex-wrap gap-2 -mt-2">
               <CheckBtn
                 label="In-Swing"
-                checked={form.in_swing.includes("interior") || form.in_swing.includes("in-swing")}
+                checked={isInSwing}
                 disabled={isSigned}
                 onChange={() => setForm({ ...form, in_swing: toggleCsv(form.in_swing, "interior") })}
               />
               <CheckBtn
                 label="Out-Swing"
-                checked={form.in_swing.includes("exterior") || form.in_swing.includes("out-swing")}
+                checked={isOutSwing}
                 disabled={isSigned}
                 onChange={() => setForm({ ...form, in_swing: toggleCsv(form.in_swing, "exterior") })}
               />
-            </SpecRadioRow>
+            </div>
 
             {/* Lead Panel Location */}
             <SpecRadioRow label="Lead Panel Location">
-              <RadioBtn label="Left" checked={leadLeft && !leadRight} disabled />
-              <RadioBtn label="Right" checked={leadRight && !leadLeft} disabled />
-              <RadioBtn label="Both" checked={leadLeft && leadRight} disabled />
+              <CheckBtn label="Left" checked={leadLeft} disabled />
+              <CheckBtn label="Right" checked={leadRight} disabled />
             </SpecRadioRow>
 
             {/* Frame Color (multi-select) */}
@@ -360,7 +358,7 @@ function DoorDiagram({
   slideDirection: string;
 }) {
   const panels = Math.max(1, panelCount);
-  const slidesRight = slideDirection === "right";
+  const slidesRight = slideDirection.includes("right") && !slideDirection.includes("left");
 
   return (
     <div className="bg-[#3a3a40] rounded-lg p-[6px] shadow-inner">

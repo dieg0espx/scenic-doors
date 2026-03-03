@@ -91,10 +91,9 @@ export async function generateApprovalDrawingPdf(data: ApprovalPdfInput) {
   const col2ValX = col2LabelX + 42;
 
   // Derive checkbox states
-  const slidesLeft =
-    data.slide_direction === "left" || data.slide_direction === "bi-part";
-  const slidesRight =
-    data.slide_direction === "right" || data.slide_direction === "bi-part";
+  const dirStr = data.slide_direction || "";
+  const slidesLeft = dirStr.includes("left") || dirStr.includes("bi-part");
+  const slidesRight = dirStr.includes("right") || dirStr.includes("bi-part");
   const swingStr = data.in_swing || "";
   const inSwing =
     swingStr.includes("interior") || swingStr.includes("in-swing");
@@ -102,10 +101,8 @@ export async function generateApprovalDrawingPdf(data: ApprovalPdfInput) {
     swingStr.includes("exterior") || swingStr.includes("out-swing");
 
   // Lead panel: derive from slide direction
-  let leadLeft =
-    data.slide_direction === "left" || data.slide_direction === "bi-part";
-  let leadRight =
-    data.slide_direction === "right" || data.slide_direction === "bi-part";
+  const leadLeft = slidesLeft;
+  const leadRight = slidesRight;
 
   const frameColorStr = data.frame_color || "";
   const hwColorStr = data.hardware_color || data.frame_color || "";
@@ -230,7 +227,7 @@ function drawDoorDiagram(
   data: ApprovalPdfInput,
 ) {
   const panels = Math.max(1, data.panel_count);
-  const slidesRight = data.slide_direction === "right";
+  const slidesRight = data.slide_direction.includes("right") && !data.slide_direction.includes("left");
 
   // Outer frame shadow (subtle 3-D effect)
   doc.setFillColor(42, 42, 48);
