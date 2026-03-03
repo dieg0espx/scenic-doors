@@ -25,7 +25,7 @@ import { getLayoutImageUrl } from "@/lib/quote-wizard/layout-images";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 import { createQuote, sendQuoteToClient, assignQuote, notifyNewQuote, sendEstimateConfirmation } from "@/lib/actions/quotes";
 import { updateLead } from "@/lib/actions/leads";
-import { getNextSalesRep, getUserByReferralCode } from "@/lib/actions/admin-users";
+import { getUserByReferralCode } from "@/lib/actions/admin-users";
 import { scheduleFollowUps } from "@/lib/actions/follow-ups";
 
 interface StepQuoteSummaryProps {
@@ -430,18 +430,13 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
         await updateLead(leadId, { has_quote: true });
       }
 
-      // Assign to referral user or fall back to round-robin
-      try {
-        if (referralUser) {
+      // Assign to referral user only (no auto round-robin)
+      if (referralUser) {
+        try {
           await assignQuote(quote.id, referralUser.id);
-        } else {
-          const rep = await getNextSalesRep();
-          if (rep) {
-            await assignQuote(quote.id, rep.id);
-          }
+        } catch {
+          // Don't block the flow if assignment fails
         }
-      } catch {
-        // Don't block the flow if assignment fails
       }
 
       // Send email to client — medium gets confirmation, full gets portal link

@@ -7,7 +7,7 @@ import { PRODUCTS } from "@/lib/quote-wizard/product-data";
 import type { WizardState, WizardAction } from "@/lib/quote-wizard/types";
 import { createQuote, notifyNewQuote, sendEstimateConfirmation, assignQuote } from "@/lib/actions/quotes";
 import { updateLead } from "@/lib/actions/leads";
-import { getUserByReferralCode, getNextSalesRep } from "@/lib/actions/admin-users";
+import { getUserByReferralCode } from "@/lib/actions/admin-users";
 import { scheduleFollowUps } from "@/lib/actions/follow-ups";
 import SlidingDoorAnimation from "@/components/SlidingDoorAnimation";
 import BifoldDoorAnimation from "@/components/BifoldDoorAnimation";
@@ -161,18 +161,13 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
         await updateLead(leadId, { has_quote: true });
       }
 
-      // Assign to referral user or fall back to round-robin
-      try {
-        if (referralUser) {
+      // Assign to referral user only (no auto round-robin)
+      if (referralUser) {
+        try {
           await assignQuote(quote.id, referralUser.id);
-        } else {
-          const rep = await getNextSalesRep();
-          if (rep) {
-            await assignQuote(quote.id, rep.id);
-          }
+        } catch {
+          // Don't block the flow if assignment fails
         }
-      } catch {
-        // Don't block the flow if assignment fails
       }
 
       // Send confirmation email to client (no portal link)
