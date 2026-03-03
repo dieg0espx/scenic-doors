@@ -98,10 +98,8 @@ export default function ApprovalDrawingEditor({
 
   function toggleSlideDirection(side: "left" | "right") {
     const current = new Set(dirParts.filter((v) => v === "left" || v === "right"));
-    // Expand "bi-part" to both
     if (dirParts.includes("bi-part")) { current.add("left"); current.add("right"); }
     if (current.has(side)) current.delete(side); else current.add(side);
-    if (current.size === 0) current.add(side); // must have at least one
     setForm({ ...form, slide_direction: Array.from(current).join(",") });
   }
 
@@ -539,10 +537,6 @@ function CheckBtn({
 function toggleCsv(current: string, value: string): string {
   const values = current.split(",").map((v) => v.trim()).filter(Boolean);
   const idx = values.indexOf(value);
-  if (idx >= 0) {
-    values.splice(idx, 1);
-  } else {
-    values.push(value);
-  }
-  return values.join(",") || value;
+  if (idx >= 0) values.splice(idx, 1); else values.push(value);
+  return values.join(",");
 }

@@ -64,7 +64,16 @@ function toggleCsvCreate(current: string, value: string): string {
   const values = current.split(",").map((v) => v.trim()).filter(Boolean);
   const idx = values.indexOf(value);
   if (idx >= 0) values.splice(idx, 1); else values.push(value);
-  return values.join(",") || value;
+  return values.join(",");
+}
+
+function normalizeColor(color: string): string {
+  const c = color.toLowerCase();
+  if (c.includes("bronze")) return "Bronze";
+  if (c.includes("black")) return "Black";
+  if (c.includes("white")) return "White";
+  if (c.includes("silver")) return "Silver";
+  return color;
 }
 
 export default function AdminPortalManager({
@@ -99,8 +108,8 @@ export default function AdminPortalManager({
     system_type: drawing?.system_type || firstItem?.doorType || "",
     configuration: drawing?.configuration || firstItem?.panelLayout || "",
     additional_notes: drawing?.additional_notes || "",
-    frame_color: drawing?.frame_color || firstItem?.exteriorFinish || quoteColor || "Black",
-    hardware_color: drawing?.hardware_color || firstItem?.hardwareFinish || "Black",
+    frame_color: drawing?.frame_color || normalizeColor(firstItem?.exteriorFinish || quoteColor || "Black"),
+    hardware_color: drawing?.hardware_color || normalizeColor(firstItem?.hardwareFinish || "Black"),
   });
 
   async function handleCreateDrawing() {
