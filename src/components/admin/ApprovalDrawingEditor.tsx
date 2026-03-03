@@ -15,6 +15,29 @@ interface ApprovalDrawingEditorProps {
   sendLoading: boolean;
 }
 
+/* Normalize stored colors like "Bronze (paint)" → "Bronze" */
+function normalizeColor(c: string): string {
+  return c
+    .split(",")
+    .map((v) => {
+      const t = v.trim().toLowerCase();
+      if (t.includes("bronze")) return "Bronze";
+      if (t.includes("black")) return "Black";
+      if (t.includes("white")) return "White";
+      if (t.includes("silver")) return "Silver";
+      return v.trim();
+    })
+    .filter(Boolean)
+    .join(",");
+}
+
+function toggleCsv(current: string, value: string): string {
+  const values = current.split(",").map((v) => v.trim()).filter(Boolean);
+  const idx = values.indexOf(value);
+  if (idx >= 0) values.splice(idx, 1); else values.push(value);
+  return values.join(",");
+}
+
 export default function ApprovalDrawingEditor({
   drawing,
   quoteId,
@@ -29,10 +52,10 @@ export default function ApprovalDrawingEditor({
     overall_width: drawing.overall_width,
     overall_height: drawing.overall_height,
     panel_count: drawing.panel_count,
-    slide_direction: drawing.slide_direction,
-    in_swing: drawing.in_swing,
-    frame_color: drawing.frame_color || "Black",
-    hardware_color: drawing.hardware_color || "Black",
+    slide_direction: drawing.slide_direction || "",
+    in_swing: drawing.in_swing || "",
+    frame_color: normalizeColor(drawing.frame_color || ""),
+    hardware_color: normalizeColor(drawing.hardware_color || ""),
   });
 
   const [saving, setSaving] = useState(false);
@@ -43,10 +66,10 @@ export default function ApprovalDrawingEditor({
     form.overall_width !== drawing.overall_width ||
     form.overall_height !== drawing.overall_height ||
     form.panel_count !== drawing.panel_count ||
-    form.slide_direction !== drawing.slide_direction ||
-    form.in_swing !== drawing.in_swing ||
-    form.frame_color !== (drawing.frame_color || "Black") ||
-    form.hardware_color !== (drawing.hardware_color || "Black");
+    form.slide_direction !== (drawing.slide_direction || "") ||
+    form.in_swing !== (drawing.in_swing || "") ||
+    form.frame_color !== normalizeColor(drawing.frame_color || "") ||
+    form.hardware_color !== normalizeColor(drawing.hardware_color || "");
 
   async function handleSave() {
     setSaving(true);
@@ -90,25 +113,6 @@ export default function ApprovalDrawingEditor({
       setDownloading(false);
     }
   }
-
-  // Derived values for the diagram and checkboxes
-  const dirParts = form.slide_direction.split(",").map((v) => v.trim());
-  const slidesLeft = dirParts.includes("left") || dirParts.includes("bi-part");
-  const slidesRight = dirParts.includes("right") || dirParts.includes("bi-part");
-
-  function toggleSlideDirection(side: "left" | "right") {
-    const current = new Set(dirParts.filter((v) => v === "left" || v === "right"));
-    if (dirParts.includes("bi-part")) { current.add("left"); current.add("right"); }
-    if (current.has(side)) current.delete(side); else current.add(side);
-    setForm({ ...form, slide_direction: Array.from(current).join(",") });
-  }
-
-  const swingParts = form.in_swing.split(",").map((v) => v.trim());
-  const isInSwing = swingParts.includes("interior") || swingParts.includes("in-swing");
-  const isOutSwing = swingParts.includes("exterior") || swingParts.includes("out-swing");
-
-  const leadLeft = slidesLeft;
-  const leadRight = slidesRight;
 
   return (
     <div className="space-y-3">
@@ -171,45 +175,55 @@ export default function ApprovalDrawingEditor({
             />
 
             {/* Opening Direction */}
-            <SpecRadioRow label="Opening Direction">
+            <FieldRow label="Opening Direction">
               <CheckBtn
                 label="Slides Left"
-                checked={slidesLeft}
+                checked={form.slide_direction.includes("left")}
                 disabled={isSigned}
-                onChange={() => toggleSlideDirection("left")}
+                onChange={() => setForm({ ...form, slide_direction: toggleCsv(form.slide_direction, "left") })}
               />
               <CheckBtn
                 label="Slides Right"
-                checked={slidesRight}
+                checked={form.slide_direction.includes("right")}
                 disabled={isSigned}
-                onChange={() => toggleSlideDirection("right")}
+                onChange={() => setForm({ ...form, slide_direction: toggleCsv(form.slide_direction, "right") })}
               />
-            </SpecRadioRow>
+            </FieldRow>
 
-            {/* In-Swing / Out-Swing */}
-            <div className="flex flex-wrap gap-2 -mt-2">
+            {/* Swing Direction */}
+            <FieldRow label="Swing Direction">
               <CheckBtn
                 label="In-Swing"
-                checked={isInSwing}
+                checked={form.in_swing.includes("interior")}
                 disabled={isSigned}
                 onChange={() => setForm({ ...form, in_swing: toggleCsv(form.in_swing, "interior") })}
               />
               <CheckBtn
                 label="Out-Swing"
-                checked={isOutSwing}
+                checked={form.in_swing.includes("exterior")}
                 disabled={isSigned}
                 onChange={() => setForm({ ...form, in_swing: toggleCsv(form.in_swing, "exterior") })}
               />
-            </div>
+            </FieldRow>
 
             {/* Lead Panel Location */}
-            <SpecRadioRow label="Lead Panel Location">
-              <CheckBtn label="Left" checked={leadLeft} disabled />
-              <CheckBtn label="Right" checked={leadRight} disabled />
-            </SpecRadioRow>
+            <FieldRow label="Lead Panel Location">
+              <CheckBtn
+                label="Left"
+                checked={form.slide_direction.includes("left")}
+                disabled={isSigned}
+                onChange={() => setForm({ ...form, slide_direction: toggleCsv(form.slide_direction, "left") })}
+              />
+              <CheckBtn
+                label="Right"
+                checked={form.slide_direction.includes("right")}
+                disabled={isSigned}
+                onChange={() => setForm({ ...form, slide_direction: toggleCsv(form.slide_direction, "right") })}
+              />
+            </FieldRow>
 
-            {/* Frame Color (multi-select) */}
-            <SpecRadioRow label="Frame Color">
+            {/* Frame Color */}
+            <FieldRow label="Frame Color">
               <CheckBtn
                 label="Black"
                 checked={form.frame_color.includes("Black")}
@@ -228,10 +242,10 @@ export default function ApprovalDrawingEditor({
                 disabled={isSigned}
                 onChange={() => setForm({ ...form, frame_color: toggleCsv(form.frame_color, "Bronze") })}
               />
-            </SpecRadioRow>
+            </FieldRow>
 
-            {/* Hardware Color (multi-select) */}
-            <SpecRadioRow label="Hardware Color">
+            {/* Hardware Color */}
+            <FieldRow label="Hardware Color">
               <CheckBtn
                 label="Black"
                 checked={form.hardware_color.includes("Black")}
@@ -250,7 +264,7 @@ export default function ApprovalDrawingEditor({
                 disabled={isSigned}
                 onChange={() => setForm({ ...form, hardware_color: toggleCsv(form.hardware_color, "Silver") })}
               />
-            </SpecRadioRow>
+            </FieldRow>
           </div>
 
           {/* Signature Area */}
@@ -356,7 +370,7 @@ function DoorDiagram({
   slideDirection: string;
 }) {
   const panels = Math.max(1, panelCount);
-  const slidesRight = slideDirection.includes("right") && !slideDirection.includes("left");
+  const onlyRight = slideDirection.includes("right") && !slideDirection.includes("left");
 
   return (
     <div className="bg-[#3a3a40] rounded-lg p-[6px] shadow-inner">
@@ -372,19 +386,14 @@ function DoorDiagram({
                 minHeight: 120,
               }}
             >
-              {/* Top header rail tint */}
               <div
                 className="absolute inset-x-0 top-0"
-                style={{
-                  height: "8%",
-                  backgroundColor: "#bcd0e4",
-                }}
+                style={{ height: "8%", backgroundColor: "#bcd0e4" }}
               />
-              {/* Diagonal line */}
               <div
                 className="absolute inset-0"
                 style={{
-                  background: slidesRight
+                  background: onlyRight
                     ? "linear-gradient(to bottom left, transparent calc(50% - 0.5px), #94a5b6 calc(50% - 0.5px), #94a5b6 calc(50% + 0.5px), transparent calc(50% + 0.5px))"
                     : "linear-gradient(to bottom right, transparent calc(50% - 0.5px), #94a5b6 calc(50% - 0.5px), #94a5b6 calc(50% + 0.5px), transparent calc(50% + 0.5px))",
                 }}
@@ -441,7 +450,7 @@ function SpecInput({
   );
 }
 
-function SpecRadioRow({
+function FieldRow({
   label,
   children,
 }: {
@@ -455,42 +464,6 @@ function SpecRadioRow({
       </span>
       <div className="flex flex-wrap gap-2">{children}</div>
     </div>
-  );
-}
-
-function RadioBtn({
-  label,
-  checked,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  checked: boolean;
-  onChange?: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={disabled ? undefined : onChange}
-      disabled={disabled && !checked}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-        checked
-          ? "bg-blue-100 border-blue-300 text-blue-800"
-          : disabled
-            ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
-            : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100 cursor-pointer"
-      }`}
-    >
-      <span
-        className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
-          checked ? "border-blue-500" : "border-gray-300"
-        }`}
-      >
-        {checked && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-      </span>
-      {label}
-    </button>
   );
 }
 
@@ -509,12 +482,13 @@ function CheckBtn({
     <button
       type="button"
       onClick={disabled ? undefined : onChange}
-      disabled={disabled && !checked}
       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
-        checked
-          ? "bg-blue-100 border-blue-300 text-blue-800"
-          : disabled
-            ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+        disabled
+          ? checked
+            ? "bg-blue-50 border-blue-200 text-blue-600 cursor-not-allowed"
+            : "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+          : checked
+            ? "bg-blue-100 border-blue-300 text-blue-800 cursor-pointer"
             : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100 cursor-pointer"
       }`}
     >
@@ -532,11 +506,4 @@ function CheckBtn({
       {label}
     </button>
   );
-}
-
-function toggleCsv(current: string, value: string): string {
-  const values = current.split(",").map((v) => v.trim()).filter(Boolean);
-  const idx = values.indexOf(value);
-  if (idx >= 0) values.splice(idx, 1); else values.push(value);
-  return values.join(",");
 }

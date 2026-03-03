@@ -306,6 +306,11 @@ export default function AdminPortalManager({
                     <CreateCheck label="Out-Swing" checked={adForm.in_swing.includes("exterior")} onChange={() => setAdForm({ ...adForm, in_swing: toggleCsvCreate(adForm.in_swing, "exterior") })} />
                   </CreateCheckRow>
 
+                  <CreateCheckRow label="Lead Panel Location">
+                    <CreateCheck label="Left" checked={adForm.slide_direction.includes("left")} onChange={() => setAdForm({ ...adForm, slide_direction: toggleCsvCreate(adForm.slide_direction, "left") })} />
+                    <CreateCheck label="Right" checked={adForm.slide_direction.includes("right")} onChange={() => setAdForm({ ...adForm, slide_direction: toggleCsvCreate(adForm.slide_direction, "right") })} />
+                  </CreateCheckRow>
+
                   <CreateCheckRow label="Frame Color">
                     <CreateCheck label="Black" checked={adForm.frame_color.includes("Black")} onChange={() => setAdForm({ ...adForm, frame_color: toggleCsvCreate(adForm.frame_color, "Black") })} />
                     <CreateCheck label="White" checked={adForm.frame_color.includes("White")} onChange={() => setAdForm({ ...adForm, frame_color: toggleCsvCreate(adForm.frame_color, "White") })} />
