@@ -16,7 +16,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { updateDeliveryAddress } from "@/lib/actions/quotes";
-import type { QuotePhoto } from "@/lib/types";
+import type { QuotePhoto, ApprovalDrawing } from "@/lib/types";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 
 interface QuoteData {
@@ -48,40 +48,73 @@ interface QuoteData {
 interface PortalQuoteViewProps {
   quote: QuoteData;
   photos: QuotePhoto[];
+  drawing?: ApprovalDrawing | null;
 }
 
-export default function PortalQuoteView({ quote, photos }: PortalQuoteViewProps) {
+export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteViewProps) {
   const total = Number(quote.grand_total || quote.cost || 0);
 
   // Extract config from first item (full quotes store panelCount, panelLayout, etc.)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const firstItem: any = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items[0] : null;
-  const itemPanelCount: number | undefined = firstItem?.panelCount;
-  const itemPanelLayout: string | undefined = firstItem?.panelLayout;
+  const itemPanelCount: number | undefined = drawing?.panel_count ?? firstItem?.panelCount;
+  const itemPanelLayout: string | undefined = drawing?.configuration ?? firstItem?.panelLayout;
+
+  const directionLabels: Record<string, string> = {
+    left: "Slides Left",
+    right: "Slides Right",
+    "bi-part": "Bi-Part",
+  };
+  const swingLabels: Record<string, string> = {
+    interior: "In-Swing",
+    exterior: "Out-Swing",
+    "in-swing": "In-Swing",
+    "out-swing": "Out-Swing",
+  };
 
   const specs = [
     { label: "Door Type", value: quote.door_type, icon: DoorOpen },
     { label: "Material", value: quote.material, icon: Layers },
     {
       label: "Overall Size",
-      value: firstItem?.width && firstItem?.height
-        ? `${firstItem.width}" x ${firstItem.height}"`
-        : quote.size,
+      value: drawing
+        ? `${drawing.overall_width}" x ${drawing.overall_height}"`
+        : firstItem?.width && firstItem?.height
+          ? `${firstItem.width}" x ${firstItem.height}"`
+          : quote.size,
       icon: Ruler,
     },
     {
       label: "Panels",
-      value: firstItem?.panelCount ? String(firstItem.panelCount) : null,
+      value: drawing
+        ? String(drawing.panel_count)
+        : firstItem?.panelCount
+          ? String(firstItem.panelCount)
+          : null,
       icon: PanelLeft,
     },
     {
       label: "Panel Layout",
-      value: firstItem?.panelLayout || null,
+      value: drawing?.configuration || firstItem?.panelLayout || null,
+      icon: PanelLeft,
+    },
+    {
+      label: "Opening Direction",
+      value: drawing
+        ? directionLabels[drawing.slide_direction] || drawing.slide_direction
+        : null,
+      icon: PanelLeft,
+    },
+    {
+      label: "Swing",
+      value: drawing
+        ? swingLabels[drawing.in_swing] || drawing.in_swing
+        : null,
       icon: PanelLeft,
     },
     {
       label: "Frame Color",
-      value: firstItem?.exteriorFinish || quote.color,
+      value: drawing?.frame_color || firstItem?.exteriorFinish || quote.color,
       icon: Palette,
     },
     ...(firstItem?.interiorFinish && firstItem.interiorFinish !== firstItem.exteriorFinish
@@ -94,11 +127,11 @@ export default function PortalQuoteView({ quote, photos }: PortalQuoteViewProps)
     },
     {
       label: "Hardware",
-      value: firstItem?.hardwareFinish || null,
+      value: drawing?.hardware_color || firstItem?.hardwareFinish || null,
       icon: Wrench,
     },
-    ...(firstItem?.systemType
-      ? [{ label: "System Type", value: firstItem.systemType as string, icon: Layers }]
+    ...(drawing?.system_type || firstItem?.systemType
+      ? [{ label: "System Type", value: (drawing?.system_type || firstItem?.systemType) as string, icon: Layers }]
       : []),
   ].filter((s) => s.value);
 

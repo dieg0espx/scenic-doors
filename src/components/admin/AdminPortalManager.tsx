@@ -132,9 +132,11 @@ export default function AdminPortalManager({
         slide_direction: drawing.slide_direction,
         in_swing: drawing.in_swing,
         frame_color: quoteColor,
+        hardware_color: drawing.hardware_color,
         customer_name: drawing.customer_name,
         signature_data: drawing.signature_data,
         signed_at: drawing.signed_at,
+        system_type: drawing.system_type,
       });
       doc.save(`Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
     } catch {

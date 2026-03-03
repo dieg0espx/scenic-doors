@@ -32,6 +32,8 @@ export interface ApprovalPdfInput {
   customer_name?: string | null;
   signature_data?: string | null;
   signed_at?: string | null;
+  door_type?: string;
+  system_type?: string;
 }
 
 /* ================================================================
@@ -60,7 +62,8 @@ export async function generateApprovalDrawingPdf(data: ApprovalPdfInput) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.setTextColor(25, 25, 25);
-  doc.text("SCENIC DOORS \u2013 SLIDE & STACK APPROVAL", pw / 2, y + 5, {
+  const titleLabel = data.door_type || data.system_type || "APPROVAL DRAWING";
+  doc.text(`SCENIC DOORS \u2013 ${titleLabel.toUpperCase()} APPROVAL`, pw / 2, y + 5, {
     align: "center",
   });
 
