@@ -108,13 +108,15 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
     {
       label: "Swing",
       value: drawing
-        ? swingLabels[drawing.in_swing] || drawing.in_swing
+        ? drawing.in_swing.split(",").map((v) => swingLabels[v.trim()] || v.trim()).join(", ")
         : null,
       icon: PanelLeft,
     },
     {
       label: "Frame Color",
-      value: drawing?.frame_color || firstItem?.exteriorFinish || quote.color,
+      value: drawing?.frame_color
+        ? drawing.frame_color.split(",").map((v) => v.trim()).join(", ")
+        : firstItem?.exteriorFinish || quote.color,
       icon: Palette,
     },
     ...(firstItem?.interiorFinish && firstItem.interiorFinish !== firstItem.exteriorFinish
@@ -127,7 +129,9 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
     },
     {
       label: "Hardware",
-      value: drawing?.hardware_color || firstItem?.hardwareFinish || null,
+      value: drawing?.hardware_color
+        ? drawing.hardware_color.split(",").map((v) => v.trim()).join(", ")
+        : firstItem?.hardwareFinish || null,
       icon: Wrench,
     },
     ...(drawing?.system_type || firstItem?.systemType

@@ -189,25 +189,19 @@ export default function ApprovalDrawingEditor({
               />
             </SpecRadioRow>
 
-            {/* In-Swing / Out-Swing */}
+            {/* In-Swing / Out-Swing (multi-select) */}
             <SpecRadioRow label="Swing Direction">
-              <RadioBtn
+              <CheckBtn
                 label="In-Swing"
-                checked={
-                  form.in_swing === "interior" ||
-                  form.in_swing === "in-swing"
-                }
+                checked={form.in_swing.includes("interior") || form.in_swing.includes("in-swing")}
                 disabled={isSigned}
-                onChange={() => setForm({ ...form, in_swing: "interior" })}
+                onChange={() => setForm({ ...form, in_swing: toggleCsv(form.in_swing, "interior") })}
               />
-              <RadioBtn
+              <CheckBtn
                 label="Out-Swing"
-                checked={
-                  form.in_swing === "exterior" ||
-                  form.in_swing === "out-swing"
-                }
+                checked={form.in_swing.includes("exterior") || form.in_swing.includes("out-swing")}
                 disabled={isSigned}
-                onChange={() => setForm({ ...form, in_swing: "exterior" })}
+                onChange={() => setForm({ ...form, in_swing: toggleCsv(form.in_swing, "exterior") })}
               />
             </SpecRadioRow>
 
@@ -218,55 +212,47 @@ export default function ApprovalDrawingEditor({
               <RadioBtn label="Both" checked={leadLeft && leadRight} disabled />
             </SpecRadioRow>
 
-            {/* Frame Color */}
+            {/* Frame Color (multi-select) */}
             <SpecRadioRow label="Frame Color">
-              <RadioBtn
+              <CheckBtn
                 label="Black"
-                checked={form.frame_color === "Black"}
+                checked={form.frame_color.includes("Black")}
                 disabled={isSigned}
-                onChange={() => setForm({ ...form, frame_color: "Black" })}
+                onChange={() => setForm({ ...form, frame_color: toggleCsv(form.frame_color, "Black") })}
               />
-              <RadioBtn
+              <CheckBtn
                 label="White"
-                checked={form.frame_color === "White"}
+                checked={form.frame_color.includes("White")}
                 disabled={isSigned}
-                onChange={() => setForm({ ...form, frame_color: "White" })}
+                onChange={() => setForm({ ...form, frame_color: toggleCsv(form.frame_color, "White") })}
               />
-              <RadioBtn
+              <CheckBtn
                 label="Bronze"
-                checked={form.frame_color === "Bronze"}
+                checked={form.frame_color.includes("Bronze")}
                 disabled={isSigned}
-                onChange={() =>
-                  setForm({ ...form, frame_color: "Bronze" })
-                }
+                onChange={() => setForm({ ...form, frame_color: toggleCsv(form.frame_color, "Bronze") })}
               />
             </SpecRadioRow>
 
-            {/* Hardware Color */}
+            {/* Hardware Color (multi-select) */}
             <SpecRadioRow label="Hardware Color">
-              <RadioBtn
+              <CheckBtn
                 label="Black"
-                checked={form.hardware_color === "Black"}
+                checked={form.hardware_color.includes("Black")}
                 disabled={isSigned}
-                onChange={() =>
-                  setForm({ ...form, hardware_color: "Black" })
-                }
+                onChange={() => setForm({ ...form, hardware_color: toggleCsv(form.hardware_color, "Black") })}
               />
-              <RadioBtn
+              <CheckBtn
                 label="White"
-                checked={form.hardware_color === "White"}
+                checked={form.hardware_color.includes("White")}
                 disabled={isSigned}
-                onChange={() =>
-                  setForm({ ...form, hardware_color: "White" })
-                }
+                onChange={() => setForm({ ...form, hardware_color: toggleCsv(form.hardware_color, "White") })}
               />
-              <RadioBtn
+              <CheckBtn
                 label="Silver"
-                checked={form.hardware_color === "Silver"}
+                checked={form.hardware_color.includes("Silver")}
                 disabled={isSigned}
-                onChange={() =>
-                  setForm({ ...form, hardware_color: "Silver" })
-                }
+                onChange={() => setForm({ ...form, hardware_color: toggleCsv(form.hardware_color, "Silver") })}
               />
             </SpecRadioRow>
           </div>
@@ -510,4 +496,55 @@ function RadioBtn({
       {label}
     </button>
   );
+}
+
+function CheckBtn({
+  label,
+  checked,
+  onChange,
+  disabled,
+}: {
+  label: string;
+  checked: boolean;
+  onChange?: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={disabled ? undefined : onChange}
+      disabled={disabled && !checked}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+        checked
+          ? "bg-blue-100 border-blue-300 text-blue-800"
+          : disabled
+            ? "bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed"
+            : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100 cursor-pointer"
+      }`}
+    >
+      <span
+        className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center ${
+          checked ? "border-blue-500 bg-blue-500" : "border-gray-300"
+        }`}
+      >
+        {checked && (
+          <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        )}
+      </span>
+      {label}
+    </button>
+  );
+}
+
+function toggleCsv(current: string, value: string): string {
+  const values = current.split(",").map((v) => v.trim()).filter(Boolean);
+  const idx = values.indexOf(value);
+  if (idx >= 0) {
+    values.splice(idx, 1);
+  } else {
+    values.push(value);
+  }
+  return values.join(",") || value;
 }
