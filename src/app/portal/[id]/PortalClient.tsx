@@ -182,7 +182,7 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-8">
         {activeTab === "quote" && (
-          <PortalQuoteView quote={quote} photos={photos} />
+          <PortalQuoteView quote={quote} photos={photos} drawing={drawing} />
         )}
         {activeTab === "photos" && (
           <PortalPhotos quoteId={quoteId} photos={photos} setPhotos={setPhotos} />

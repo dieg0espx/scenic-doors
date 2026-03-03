@@ -46,6 +46,7 @@ interface DrawingData {
   customer_name?: string | null;
   signature_data?: string | null;
   signed_at?: string | null;
+  system_type?: string;
 }
 
 interface Props {
@@ -109,6 +110,7 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
         customer_name: drawing.customer_name,
         signature_data: drawing.signature_data,
         signed_at: drawing.signed_at,
+        system_type: drawing.system_type,
       });
       doc.save(`Approval-Drawing-${(quoteId || order.order_number).slice(0, 8)}.pdf`);
     } catch (err) {

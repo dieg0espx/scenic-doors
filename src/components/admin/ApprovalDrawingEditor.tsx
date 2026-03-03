@@ -81,6 +81,7 @@ export default function ApprovalDrawingEditor({
         customer_name: drawing.customer_name,
         signature_data: drawing.signature_data,
         signed_at: drawing.signed_at,
+        system_type: drawing.system_type,
       });
       doc.save(`Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
     } catch {
