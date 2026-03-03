@@ -24,7 +24,6 @@ import {
   ArrowRightLeft,
   Move,
   Wrench,
-  Paperclip,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -33,7 +32,6 @@ import { getEmailHistory } from "@/lib/actions/email-history";
 import { getApprovalDrawing } from "@/lib/actions/approval-drawings";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
 import { getQuoteDocuments } from "@/lib/actions/quote-documents";
-import DocumentUploader from "@/components/admin/DocumentUploader";
 import { getFollowUps } from "@/lib/actions/follow-ups";
 import { getQuoteNotes } from "@/lib/actions/quote-notes";
 import { getQuoteTasks } from "@/lib/actions/quote-tasks";
@@ -564,21 +562,6 @@ export default async function QuoteDetailPage({
             </div>
           </div>
 
-          {/* Attachments */}
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                <Paperclip className="w-4 h-4 text-violet-400" />
-              </div>
-              <h2 className="text-base font-semibold text-white">Attachments</h2>
-              {documents.length > 0 && (
-                <span className="text-white/20 text-xs font-medium ml-auto">{documents.length}</span>
-              )}
-            </div>
-            <div className="p-4 sm:p-6">
-              <DocumentUploader quoteId={id} initialDocuments={documents} />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -600,6 +583,7 @@ export default async function QuoteDetailPage({
         drawing={drawing}
         photos={photos}
         followUps={followUps}
+        documents={documents}
       />
     </div>
   );

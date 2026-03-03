@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Package, User, Mail, DoorOpen, Layers, Palette, GlassWater,
   Ruler, ScrollText, CreditCard, Truck, MapPin, ArrowRightLeft, PanelLeft,
-  Wrench, Move, Factory, CheckCircle2, Clock, Download, Paperclip,
+  Wrench, Move, Factory, CheckCircle2, Clock, Download,
   Phone, Hash, DollarSign, Send, Users, FileText,
 } from "lucide-react";
 import { getOrderById, syncOrderStatus } from "@/lib/actions/orders";
@@ -23,7 +23,6 @@ import SendDepositButton from "@/components/SendDepositButton";
 import StartManufacturingButton from "@/components/StartManufacturingButton";
 import TrackingCodeInput from "@/components/TrackingCodeInput";
 import OrderDownloads from "@/components/OrderDownloads";
-import DocumentUploader from "@/components/admin/DocumentUploader";
 import { getQuoteDocuments } from "@/lib/actions/quote-documents";
 import AdminPortalManager from "@/components/admin/AdminPortalManager";
 import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
@@ -865,21 +864,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             quoteId={order.quote_id}
           />
 
-          {/* Uploaded Documents */}
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                <Paperclip className="w-4 h-4 text-violet-400" />
-              </div>
-              <h2 className="text-base font-semibold text-white">Attachments</h2>
-              {documents.length > 0 && (
-                <span className="text-white/20 text-xs font-medium ml-auto">{documents.length}</span>
-              )}
-            </div>
-            <div className="p-5 sm:p-6">
-              <DocumentUploader quoteId={order.quote_id} initialDocuments={documents} />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -901,6 +885,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         drawing={drawing}
         photos={photos}
         followUps={followUps}
+        documents={documents}
       />
     </div>
   );

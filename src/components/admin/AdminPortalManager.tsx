@@ -14,6 +14,7 @@ import {
   Upload,
   Download,
   X,
+  Paperclip,
 } from "lucide-react";
 import {
   createApprovalDrawing,
@@ -21,6 +22,7 @@ import {
 } from "@/lib/actions/approval-drawings";
 import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
 import ApprovalDrawingEditor from "@/components/admin/ApprovalDrawingEditor";
+import DocumentUploader from "@/components/admin/DocumentUploader";
 import { addQuotePhoto, deleteQuotePhoto } from "@/lib/actions/quote-photos";
 import { scheduleFollowUps } from "@/lib/actions/follow-ups";
 import type { ApprovalDrawing, QuotePhoto, FollowUpEntry } from "@/lib/types";
@@ -51,6 +53,8 @@ interface AdminPortalManagerProps {
   drawing: ApprovalDrawing | null;
   photos: QuotePhoto[];
   followUps: FollowUpEntry[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  documents?: any[];
 }
 
 function deriveSlideDirection(item: QuoteItem): string {
@@ -84,6 +88,7 @@ export default function AdminPortalManager({
   drawing: initialDrawing,
   photos: initialPhotos,
   followUps: initialFollowUps,
+  documents = [],
 }: AdminPortalManagerProps) {
   const [drawing, setDrawing] = useState(initialDrawing);
   const [photos, setPhotos] = useState(initialPhotos);
@@ -424,6 +429,17 @@ export default function AdminPortalManager({
             </Btn>
           </div>
         </div>
+      </Section>
+
+      {/* Attachments */}
+      <Section
+        title="Attachments"
+        icon={<Paperclip className="w-4 h-4 text-violet-400" />}
+        isOpen={openSection === "attachments"}
+        onToggle={() => toggleSection("attachments")}
+        badge={`${documents.length}`}
+      >
+        <DocumentUploader quoteId={quoteId} initialDocuments={documents} />
       </Section>
 
       {/* Follow-ups */}
