@@ -126,16 +126,8 @@ export default function ApprovalDrawingEditor({
         </div>
 
         <div className="p-5 space-y-5">
-          {/* Outside View Subtitle */}
-          <p className="text-center text-xs font-bold text-gray-600 uppercase tracking-widest">
-            Outside View
-          </p>
-
-          {/* Door Diagram */}
-          <DoorDiagram
-            panelCount={form.panel_count}
-            slideDirection={form.slide_direction}
-          />
+          {/* Door Diagram — compact preview */}
+          <DiagramPreview panelCount={form.panel_count} slideDirection={form.slide_direction} />
 
           {/* Specs Form */}
           <div className="space-y-4">
@@ -354,12 +346,59 @@ export default function ApprovalDrawingEditor({
 
 /* ── Door Diagram (HTML/CSS) ── */
 
+function DiagramPreview({ panelCount, slideDirection }: { panelCount: number; slideDirection: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div>
+      {/* Small preview */}
+      <div className="flex items-center gap-2">
+        <div className="w-28 shrink-0">
+          <DoorDiagram panelCount={panelCount} slideDirection={slideDirection} mini />
+        </div>
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Outside View</p>
+          <p className="text-xs text-gray-600 font-medium">{panelCount} panel{panelCount !== 1 ? "s" : ""}</p>
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-700 font-medium cursor-pointer mt-0.5"
+          >
+            <Eye className="w-3 h-3" />
+            View full
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded overlay */}
+      {expanded && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setExpanded(false)}>
+          <div className="relative bg-white rounded-xl p-5 shadow-2xl max-w-lg w-full mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <span className="text-sm font-semibold text-gray-700">Outside View</span>
+                <span className="text-xs text-gray-400 ml-2">{panelCount} panel{panelCount !== 1 ? "s" : ""}</span>
+              </div>
+              <button onClick={() => setExpanded(false)} className="p-1 text-gray-400 hover:text-gray-600 cursor-pointer">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <DoorDiagram panelCount={panelCount} slideDirection={slideDirection} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function DoorDiagram({
   panelCount,
   slideDirection,
+  mini,
 }: {
   panelCount: number;
   slideDirection: string;
+  mini?: boolean;
 }) {
   const panels = Math.max(1, panelCount);
   const onlyRight = slideDirection.includes("right") && !slideDirection.includes("left");
@@ -375,7 +414,7 @@ function DoorDiagram({
               style={{
                 backgroundColor: "#c6daea",
                 aspectRatio: "1 / 2.2",
-                minHeight: 120,
+                minHeight: mini ? 40 : 120,
               }}
             >
               <div
