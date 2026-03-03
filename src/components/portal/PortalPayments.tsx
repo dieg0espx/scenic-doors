@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Clock, DollarSign, Download, Loader2 } from "lucide-react";
+import { CheckCircle2, Clock, CreditCard, DollarSign, Download, Loader2 } from "lucide-react";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import type { OrderTracking } from "@/lib/types";
 
@@ -228,11 +228,20 @@ function PaymentCard({
           })}
         </p>
       )}
+      {invoiceSent && !paid && payment && (
+        <a
+          href={`/invoice/${payment.id}`}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-semibold transition-colors bg-primary-600 text-white hover:bg-primary-700"
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          Pay Invoice
+        </a>
+      )}
       {payment && quoteInfo && (
         <button
           onClick={handleDownload}
           disabled={downloading}
-          className={`mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 ${
+          className={`${invoiceSent && !paid ? "mt-2" : "mt-3"} w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 ${
             paid
               ? "bg-green-100 text-green-700 hover:bg-green-200"
               : "bg-ocean-100 text-ocean-600 hover:bg-ocean-200"
