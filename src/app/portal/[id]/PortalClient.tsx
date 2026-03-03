@@ -188,7 +188,7 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
           <PortalPhotos quoteId={quoteId} photos={photos} setPhotos={setPhotos} />
         )}
         {activeTab === "approval" && (
-          <PortalApprovalDrawing drawing={drawing} quoteName={quote.client_name} quoteId={quoteId} quoteColor={quote.color} portalStage={quote.portal_stage} />
+          <PortalApprovalDrawing drawing={drawing} quoteName={quote.client_name} quoteId={quoteId} quoteColor={quote.color} quoteDoorType={quote.door_type} portalStage={quote.portal_stage} />
         )}
         {activeTab === "payments" && (
           <PortalPayments
