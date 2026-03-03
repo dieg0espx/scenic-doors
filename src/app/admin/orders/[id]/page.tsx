@@ -5,11 +5,19 @@ import {
   ArrowLeft, Package, User, Mail, DoorOpen, Layers, Palette, GlassWater,
   Ruler, ScrollText, CreditCard, Truck, MapPin, ArrowRightLeft, PanelLeft,
   Wrench, Move, Factory, CheckCircle2, Clock, Download, Paperclip,
+  Phone, Hash, DollarSign, Send, Users, FileText,
 } from "lucide-react";
 import { getOrderById, syncOrderStatus } from "@/lib/actions/orders";
 import { getPaymentsByQuoteId } from "@/lib/actions/payments";
 import { getApprovalDrawing } from "@/lib/actions/approval-drawings";
 import { getOrderTracking } from "@/lib/actions/order-tracking";
+import { getEmailHistory } from "@/lib/actions/email-history";
+import { getQuotePhotos } from "@/lib/actions/quote-photos";
+import { getFollowUps } from "@/lib/actions/follow-ups";
+import { getQuoteNotes } from "@/lib/actions/quote-notes";
+import { getQuoteTasks } from "@/lib/actions/quote-tasks";
+import { getAdminUsers } from "@/lib/actions/admin-users";
+import { getCurrentAdminUser } from "@/lib/auth";
 import SendBalanceButton from "@/components/SendBalanceButton";
 import SendDepositButton from "@/components/SendDepositButton";
 import StartManufacturingButton from "@/components/StartManufacturingButton";
@@ -17,6 +25,10 @@ import TrackingCodeInput from "@/components/TrackingCodeInput";
 import OrderDownloads from "@/components/OrderDownloads";
 import DocumentUploader from "@/components/admin/DocumentUploader";
 import { getQuoteDocuments } from "@/lib/actions/quote-documents";
+import AdminPortalManager from "@/components/admin/AdminPortalManager";
+import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
+import PortalLinkBar from "@/components/admin/PortalLinkBar";
+import QuoteShareCard from "@/components/admin/QuoteShareCard";
 
 export const dynamic = "force-dynamic";
 
@@ -139,11 +151,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = await getOrderById(id);
   if (!order) notFound();
 
-  const [payments, drawing, tracking, documents] = await Promise.all([
+  const [payments, drawing, tracking, documents, emails, photos, followUps, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
     getPaymentsByQuoteId(order.quote_id),
     getApprovalDrawing(order.quote_id).catch(() => null),
     getOrderTracking(order.quote_id).catch(() => null),
     getQuoteDocuments(order.quote_id).catch(() => []),
+    getEmailHistory(order.quote_id),
+    getQuotePhotos(order.quote_id).catch(() => []),
+    getFollowUps(order.quote_id).catch(() => []),
+    getQuoteNotes(order.quote_id).catch(() => []),
+    getQuoteTasks(order.quote_id).catch(() => []),
+    getAdminUsers(),
+    getCurrentAdminUser(),
   ]);
 
   // Sync order status based on actual payment states
@@ -152,6 +171,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const quote = order.quotes as Record<string, unknown> | null;
   const contract = order.contracts as Record<string, unknown> | null;
+
+  const isAdmin = currentAdminUser?.role === "admin";
+  const salesReps = allAdminUsers
+    .filter((u) => u.role === "sales" && u.status === "active")
+    .map((u) => ({ id: u.id, name: u.name }));
+
+  // Resolve shared_with IDs to names for display
+  const sharedWithIds: string[] = (quote?.shared_with as string[]) || [];
+  const sharedWithNames = sharedWithIds
+    .map((uid: string) => allAdminUsers.find((u) => u.id === uid)?.name)
+    .filter(Boolean) as string[];
+  const assignedRepName = (quote as Record<string, unknown> & { admin_users?: { name: string } })?.admin_users?.name
+    || allAdminUsers.find((u) => u.id === (quote?.assigned_to as string))?.name || null;
 
   const cost = Number(quote?.grand_total ?? quote?.cost ?? 0);
   const totalPaid = payments
@@ -187,18 +219,77 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     "out-swing": "Out-Swing",
   };
 
+  // Extract detailed specs from the first quote item (what the client configured)
+  const quoteItems = Array.isArray(quote?.items) ? (quote.items as Record<string, unknown>[]) : [];
+  const itemsCount = quoteItems.length;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const firstItem: Record<string, any> | null = quoteItems.length > 0 ? quoteItems[0] : null;
+
   const specs = [
     { label: "Door Type", value: quote?.door_type as string, icon: DoorOpen },
     { label: "Material", value: quote?.material as string, icon: Layers },
-    { label: "Glass Type", value: quote?.glass_type as string, icon: GlassWater },
-    { label: "Overall Size", value: drawing ? `${drawing.overall_width}" x ${drawing.overall_height}"` : (quote?.size as string), icon: Ruler },
-    { label: "Panels", value: drawing ? String(drawing.panel_count) : null, icon: PanelLeft },
-    { label: "Opening Direction", value: drawing ? directionLabels[drawing.slide_direction] || drawing.slide_direction : null, icon: ArrowRightLeft },
-    { label: "Swing", value: drawing ? swingLabels[drawing.in_swing] || drawing.in_swing : null, icon: Move },
-    { label: "Frame Color", value: drawing?.frame_color || (quote?.color as string), icon: Palette },
-    { label: "Hardware Color", value: drawing?.hardware_color || null, icon: Wrench },
-    ...(drawing?.system_type ? [{ label: "System Type", value: drawing.system_type, icon: Layers }] : []),
-    ...(drawing?.configuration ? [{ label: "Configuration", value: drawing.configuration, icon: PanelLeft }] : []),
+    {
+      label: "Overall Size",
+      value: drawing
+        ? `${drawing.overall_width}" x ${drawing.overall_height}"`
+        : firstItem?.width && firstItem?.height
+          ? `${firstItem.width}" x ${firstItem.height}"`
+          : (quote?.size as string),
+      icon: Ruler,
+    },
+    {
+      label: "Panels",
+      value: drawing
+        ? String(drawing.panel_count)
+        : firstItem?.panelCount
+          ? String(firstItem.panelCount)
+          : null,
+      icon: PanelLeft,
+    },
+    {
+      label: "Panel Layout",
+      value: drawing?.configuration || firstItem?.panelLayout || null,
+      icon: PanelLeft,
+    },
+    {
+      label: "Opening Direction",
+      value: drawing
+        ? directionLabels[drawing.slide_direction] || drawing.slide_direction
+        : null,
+      icon: ArrowRightLeft,
+    },
+    {
+      label: "Swing",
+      value: drawing
+        ? drawing.in_swing.split(",").map((v: string) => swingLabels[v.trim()] || v.trim()).join(", ")
+        : null,
+      icon: Move,
+    },
+    {
+      label: "Frame Color",
+      value: drawing?.frame_color
+        ? drawing.frame_color.split(",").map((v: string) => v.trim()).join(", ")
+        : firstItem?.exteriorFinish || (quote?.color as string),
+      icon: Palette,
+    },
+    ...(firstItem?.interiorFinish && firstItem.interiorFinish !== firstItem.exteriorFinish
+      ? [{ label: "Interior Color", value: firstItem.interiorFinish as string, icon: Palette }]
+      : []),
+    {
+      label: "Glass Type",
+      value: firstItem?.glassType || (quote?.glass_type as string),
+      icon: GlassWater,
+    },
+    {
+      label: "Hardware",
+      value: drawing?.hardware_color
+        ? drawing.hardware_color.split(",").map((v: string) => v.trim()).join(", ")
+        : firstItem?.hardwareFinish || null,
+      icon: Wrench,
+    },
+    ...(drawing?.system_type || firstItem?.systemType
+      ? [{ label: "System Type", value: (drawing?.system_type || firstItem?.systemType) as string, icon: Layers }]
+      : []),
   ].filter((s) => s.value);
 
   const deliveryType = quote?.delivery_type as string | undefined;
@@ -206,25 +297,33 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div>
-      {/* Back Button */}
-      <Link
-        href="/admin/orders"
-        className="inline-flex items-center gap-2 text-white/40 hover:text-white/70 text-sm mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back to Orders
-      </Link>
+      {/* Back + Action bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <Link
+          href="/admin/orders"
+          className="flex items-center gap-2 text-white/40 hover:text-white/70 text-sm transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" /> Back to Orders
+        </Link>
+        <Link
+          href={`/admin/quotes/${order.quote_id}`}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium hover:bg-violet-500/15 transition-colors"
+        >
+          <FileText className="w-3.5 h-3.5" /> View Quote
+        </Link>
+      </div>
 
       {/* ── Header ── */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] mb-6 overflow-hidden">
-        <div className="p-5 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
-                <Package className="w-6 h-6 text-sky-400" />
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
+            <div className="flex items-start gap-3 sm:gap-4 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
+                <Package className="w-5 h-5 sm:w-6 sm:h-6 text-sky-400" />
               </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-white">{order.order_number}</h1>
-                <p className="text-white/35 text-sm mt-0.5">
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-white truncate">{order.order_number}</h1>
+                <p className="text-white/35 text-xs sm:text-sm mt-0.5 truncate">
                   Created {new Date(order.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
                 </p>
               </div>
@@ -232,31 +331,101 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <StatusBadge status={order.status} />
           </div>
 
+          {/* Assigned & Shared With preview */}
+          {(assignedRepName || sharedWithNames.length > 0) && (
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {assignedRepName && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-violet-400/10 text-violet-300 text-xs font-medium">
+                  <User className="w-3 h-3" />
+                  {assignedRepName}
+                </span>
+              )}
+              {sharedWithNames.length > 0 && (
+                <>
+                  {assignedRepName && <span className="text-white/15 text-xs">shared with</span>}
+                  {sharedWithNames.map((name) => (
+                    <span
+                      key={name}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-400/10 text-teal-300 text-xs font-medium"
+                    >
+                      <Users className="w-3 h-3" />
+                      {name}
+                    </span>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+
           {/* Progress Timeline */}
-          <div className="px-2">
+          <div className="px-2 mb-4">
             <ProgressTimeline currentIndex={progressIndex} />
           </div>
+
+          {/* Portal Link */}
+          <PortalLinkBar quoteId={order.quote_id} />
         </div>
       </div>
 
       {/* ── Two-Column Layout ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* ── LEFT COLUMN (main content) ── */}
-        <div className="lg:col-span-7 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 mb-6">
+
+        {/* ── LEFT COLUMN ── */}
+        <div className="lg:col-span-7 space-y-4 sm:space-y-6">
+
+          {/* Customer Info */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                <User className="w-4 h-4 text-violet-400" />
+              </div>
+              <h2 className="text-base font-semibold text-white">Customer</h2>
+              {(quote?.customer_type as string) && (
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-indigo-400/10 text-indigo-300 ml-auto">
+                  {quote?.customer_type as string}
+                </span>
+              )}
+            </div>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-sky-500/20 flex items-center justify-center text-white font-bold text-sm">
+                  {order.client_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-white font-medium text-sm truncate">{order.client_name}</p>
+                  <p className="text-white/40 text-xs truncate">{order.client_email}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {(quote?.customer_phone as string) && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                    <Phone className="w-3.5 h-3.5 text-white/20" />
+                    <span className="text-white/50 text-xs">{quote?.customer_phone as string}</span>
+                  </div>
+                )}
+                {(quote?.customer_zip as string) && (
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] border border-white/[0.04]">
+                    <MapPin className="w-3.5 h-3.5 text-white/20" />
+                    <span className="text-white/50 text-xs">{quote?.customer_zip as string}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* Door Specifications */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
               <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                 <DoorOpen className="w-4 h-4 text-amber-400" />
               </div>
               <h2 className="text-base font-semibold text-white">Door Specifications</h2>
             </div>
-            <div className="p-5 sm:p-6">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 sm:p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {specs.map(({ label, value, icon: Icon }) => (
-                  <div key={label} className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-3 sm:p-3.5">
-                    <div className="flex items-center gap-2 mb-1.5">
+                  <div key={label} className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-2.5 sm:p-3">
+                    <div className="flex items-center gap-2 mb-1">
                       <Icon className="w-3.5 h-3.5 text-white/20" />
                       <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">{label}</p>
                     </div>
@@ -266,6 +435,60 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </div>
             </div>
           </div>
+
+          {/* Line Items */}
+          {quoteItems.length > 0 && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                    <Hash className="w-4 h-4 text-sky-400" />
+                  </div>
+                  <h2 className="text-base font-semibold text-white">Line Items</h2>
+                </div>
+                <span className="text-white/25 text-xs">{itemsCount} item{itemsCount !== 1 ? "s" : ""}</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-white/[0.02]">
+                      <th className="text-left px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Item</th>
+                      <th className="text-right px-2 sm:px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Qty</th>
+                      <th className="text-right px-2 sm:px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold hidden sm:table-cell">Price</th>
+                      <th className="text-right px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.04]">
+                    {quoteItems.map((item, idx) => (
+                      <tr key={(item.id as string) || idx} className="hover:bg-white/[0.01] transition-colors">
+                        <td className="px-3 sm:px-5 py-3 text-white/70">
+                          <span className="line-clamp-2 sm:line-clamp-none">{String(item.name)}</span>
+                          {item.description ? (
+                            <p className="text-white/25 text-xs mt-0.5 hidden sm:block">{String(item.description)}</p>
+                          ) : null}
+                        </td>
+                        <td className="px-2 sm:px-4 py-3 text-right text-white/50">{Number(item.quantity)}</td>
+                        <td className="px-2 sm:px-4 py-3 text-right text-white/50 hidden sm:table-cell">
+                          ${Number(item.unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-3 sm:px-5 py-3 text-right text-white font-medium">
+                          ${Number(item.total).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          {(quote?.notes as string) && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-6">
+              <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-2">Notes</p>
+              <p className="text-sm text-white/50 leading-relaxed">{quote?.notes as string}</p>
+            </div>
+          )}
 
           {/* Contract */}
           {contract && (
@@ -408,60 +631,93 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
 
         {/* ── RIGHT COLUMN (sidebar) ── */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-4 sm:space-y-6">
 
-          {/* Client & Delivery */}
+          {/* Pricing Card */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
-              <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                <User className="w-4 h-4 text-violet-400" />
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-emerald-400" />
               </div>
-              <h2 className="text-base font-semibold text-white">Client</h2>
+              <h2 className="text-base font-semibold text-white">Pricing</h2>
             </div>
-            <div className="p-5 sm:p-6 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-sky-500/20 flex items-center justify-center text-white font-bold text-sm">
-                  {order.client_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-white font-medium text-sm truncate">{order.client_name}</p>
-                  <p className="text-white/40 text-xs truncate">{order.client_email}</p>
-                </div>
+            <div className="p-4 sm:p-6">
+              {/* Grand Total - prominent */}
+              <div className="text-center mb-5 pb-5 border-b border-white/[0.06]">
+                <p className="text-white/30 text-[11px] uppercase tracking-wider font-medium mb-1">Grand Total</p>
+                <p className="text-3xl font-bold text-white">
+                  ${cost.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </p>
               </div>
 
-              <div className="h-px bg-white/[0.04]" />
-
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-white/30 text-xs">Quote</span>
-                  <span className="text-white/60 font-mono text-xs">{(quote?.quote_number as string) || "-"}</span>
-                </div>
-                {deliveryType && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span className="text-white/30 text-xs">Delivery</span>
-                      <span className="text-white/60 text-xs capitalize flex items-center gap-1.5">
-                        {deliveryType === "delivery" ? (
-                          <Truck className="w-3 h-3 text-sky-400" />
-                        ) : (
-                          <MapPin className="w-3 h-3 text-amber-400" />
-                        )}
-                        {deliveryType}
-                      </span>
-                    </div>
-                    {deliveryType === "delivery" && deliveryAddress && (
-                      <div className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-2.5">
-                        <p className="text-white/50 text-xs leading-relaxed flex items-start gap-2">
-                          <MapPin className="w-3 h-3 shrink-0 mt-0.5 text-white/20" />
-                          {formatDeliveryAddress(deliveryAddress)}
-                        </p>
-                      </div>
-                    )}
-                  </>
+              {/* Breakdown */}
+              <div className="space-y-2.5">
+                {Number(quote?.subtotal) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Subtotal</span>
+                    <span className="text-white/60">${Number(quote?.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                {Number(quote?.installation_cost) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Installation</span>
+                    <span className="text-white/60">${Number(quote?.installation_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                {Number(quote?.delivery_cost) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Delivery</span>
+                    <span className="text-white/60">${Number(quote?.delivery_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                {Number(quote?.tax) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Tax</span>
+                    <span className="text-white/60">${Number(quote?.tax).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Delivery Info */}
+          {deliveryType && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <Truck className="w-4 h-4 text-sky-400" />
+                </div>
+                <h2 className="text-base font-semibold text-white">Delivery</h2>
+              </div>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-2 mb-2">
+                  {deliveryType === "delivery" ? (
+                    <Truck className="w-4 h-4 text-sky-400" />
+                  ) : (
+                    <MapPin className="w-4 h-4 text-amber-400" />
+                  )}
+                  <p className="text-white font-medium text-sm capitalize">{deliveryType}</p>
+                </div>
+                {deliveryType === "delivery" && deliveryAddress && (
+                  <div className="rounded-lg bg-white/[0.02] border border-white/[0.04] p-2.5 mt-2">
+                    <p className="text-white/50 text-xs leading-relaxed flex items-start gap-2">
+                      <MapPin className="w-3 h-3 shrink-0 mt-0.5 text-white/20" />
+                      {formatDeliveryAddress(deliveryAddress)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Shared With (admin only) */}
+          {isAdmin && (
+            <QuoteShareCard
+              quoteId={order.quote_id}
+              salesReps={salesReps}
+              initialSharedWith={(quote?.shared_with as string[]) || []}
+            />
+          )}
 
           {/* Order Operations — Manufacturing + Shipping */}
           {(canStartManufacturing || manufacturingStarted) && (
@@ -515,6 +771,50 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </div>
             </div>
           )}
+
+          {/* Email History */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <Send className="w-4 h-4 text-sky-400" />
+                </div>
+                <h2 className="text-base font-semibold text-white">Emails</h2>
+              </div>
+              <span className="text-white/20 text-xs font-medium">{emails.length}</span>
+            </div>
+            <div className="divide-y divide-white/[0.04]">
+              {emails.length === 0 ? (
+                <div className="px-4 sm:px-5 py-6 text-center">
+                  <p className="text-white/25 text-sm">No emails sent yet</p>
+                </div>
+              ) : (
+                emails.slice(0, 5).map((e) => (
+                  <div key={e.id} className="px-4 sm:px-5 py-3 flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-sky-500/[0.06] flex items-center justify-center shrink-0">
+                      <Mail className="w-3.5 h-3.5 text-sky-400/60" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/60 text-xs truncate">{e.subject}</p>
+                      <p className="text-white/20 text-[10px]">
+                        {new Date(e.sent_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+              {emails.length > 5 && (
+                <div className="px-4 sm:px-5 py-2.5 text-center">
+                  <span className="text-white/20 text-[11px]">+{emails.length - 5} more</span>
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Documents / Downloads */}
           <OrderDownloads
@@ -582,6 +882,26 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           </div>
         </div>
       </div>
+
+      {/* ── Notes & Tasks (full-width) ── */}
+      <div className="mb-6">
+        <QuoteNotesAndTasks
+          quoteId={order.quote_id}
+          initialNotes={notes}
+          initialTasks={tasks}
+        />
+      </div>
+
+      {/* ── Portal Management (full-width) ── */}
+      <AdminPortalManager
+        quoteId={order.quote_id}
+        quoteName={order.client_name}
+        quoteColor={(quote?.color as string) || undefined}
+        quoteItems={quoteItems}
+        drawing={drawing}
+        photos={photos}
+        followUps={followUps}
+      />
     </div>
   );
 }
