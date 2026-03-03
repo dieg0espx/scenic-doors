@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { signApprovalDrawing, requestApprovalDrawing } from "@/lib/actions/approval-drawings";
 import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
-import SlideStackDoorAnimation from "@/components/SlideStackDoorAnimation";
+import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 import type { ApprovalDrawing } from "@/lib/types";
 
 interface PortalApprovalDrawingProps {
@@ -19,10 +19,11 @@ interface PortalApprovalDrawingProps {
   quoteName: string;
   quoteId: string;
   quoteColor?: string;
+  quoteDoorType?: string;
   portalStage?: string;
 }
 
-export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quoteColor, portalStage }: PortalApprovalDrawingProps) {
+export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quoteColor, quoteDoorType, portalStage }: PortalApprovalDrawingProps) {
   const [signing, setSigning] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [requesting, setRequesting] = useState(false);
@@ -142,7 +143,7 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
             Download PDF
           </button>
         </div>
-        <DrawingDetails drawing={drawing} />
+        <DrawingDetails drawing={drawing} doorType={quoteDoorType} />
       </div>
     );
   }
@@ -282,7 +283,7 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
         </p>
       </div>
 
-      <DrawingDetails drawing={drawing} onDownload={handleDownloadPdf} downloading={downloading} />
+      <DrawingDetails drawing={drawing} doorType={quoteDoorType} onDownload={handleDownloadPdf} downloading={downloading} />
 
       {/* Sign Section */}
       {!showSignPad ? (
@@ -369,7 +370,7 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
   );
 }
 
-function DrawingDetails({ drawing, onDownload, downloading }: { drawing: ApprovalDrawing; onDownload?: () => void; downloading?: boolean }) {
+function DrawingDetails({ drawing, doorType, onDownload, downloading }: { drawing: ApprovalDrawing; doorType?: string; onDownload?: () => void; downloading?: boolean }) {
   const specs = [
     { label: "Overall Width", value: `${drawing.overall_width}"` },
     { label: "Overall Height", value: `${drawing.overall_height}"` },
@@ -379,6 +380,9 @@ function DrawingDetails({ drawing, onDownload, downloading }: { drawing: Approva
     { label: "System Type", value: drawing.system_type || "—" },
   ];
 
+  // Use the quote's door_type for animation, fall back to drawing's system_type
+  const animDoorType = doorType || drawing.system_type || "";
+
   return (
     <div className="bg-white rounded-xl border border-ocean-200 p-5 sm:p-6">
       <h3 className="text-sm font-semibold text-ocean-900 mb-4 uppercase tracking-wider">
@@ -386,17 +390,16 @@ function DrawingDetails({ drawing, onDownload, downloading }: { drawing: Approva
       </h3>
 
       {/* Interactive Door Animation */}
-      <div className="rounded-xl overflow-hidden border border-ocean-100 mb-1">
-        <SlideStackDoorAnimation
-          panelCountOverride={drawing.panel_count}
-          stackSideOverride={
-            drawing.slide_direction === "left" ? "left" :
-            drawing.slide_direction === "right" ? "right" :
-            "split"
-          }
-          compact
-        />
-      </div>
+      {animDoorType && (
+        <div className="rounded-xl overflow-hidden border border-ocean-100 mb-1">
+          <DoorTypeAnimation
+            doorType={animDoorType}
+            compact
+            panelCount={drawing.panel_count}
+            panelLayout={drawing.configuration}
+          />
+        </div>
+      )}
 
       {/* Specs Grid */}
       <h4 className="text-[10px] font-semibold text-ocean-400 uppercase tracking-widest mt-5 mb-3">
