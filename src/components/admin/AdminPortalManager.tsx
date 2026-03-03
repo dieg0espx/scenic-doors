@@ -55,9 +55,16 @@ interface AdminPortalManagerProps {
 
 function deriveSlideDirection(item: QuoteItem): string {
   const layout = (item.panelLayout || "").toLowerCase();
-  if (layout.includes("+") || layout.includes("center") || layout.includes("split")) return "bi-part";
+  if (layout.includes("+") || layout.includes("center") || layout.includes("split")) return "left,right";
   if (layout.includes("right") || layout.endsWith("r")) return "right";
   return "left";
+}
+
+function toggleCsvCreate(current: string, value: string): string {
+  const values = current.split(",").map((v) => v.trim()).filter(Boolean);
+  const idx = values.indexOf(value);
+  if (idx >= 0) values.splice(idx, 1); else values.push(value);
+  return values.join(",") || value;
 }
 
 export default function AdminPortalManager({
@@ -131,7 +138,7 @@ export default function AdminPortalManager({
         panel_count: drawing.panel_count,
         slide_direction: drawing.slide_direction,
         in_swing: drawing.in_swing,
-        frame_color: quoteColor,
+        frame_color: drawing.frame_color,
         hardware_color: drawing.hardware_color,
         customer_name: drawing.customer_name,
         signature_data: drawing.signature_data,
@@ -235,7 +242,7 @@ export default function AdminPortalManager({
             <div className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="bg-gray-900 text-white px-4 sm:px-5 py-3 text-center">
                 <h3 className="text-sm font-bold tracking-wider">
-                  SCENIC DOORS &ndash; SLIDE &amp; STACK APPROVAL
+                  SCENIC DOORS &ndash; {adForm.system_type ? adForm.system_type.toUpperCase() : "APPROVAL DRAWING"}
                 </h3>
               </div>
               <div className="p-4 sm:p-5 space-y-4 sm:space-y-5">
@@ -258,7 +265,7 @@ export default function AdminPortalManager({
                               <div
                                 className="absolute inset-0"
                                 style={{
-                                  background: adForm.slide_direction === "right"
+                                  background: adForm.slide_direction.includes("right") && !adForm.slide_direction.includes("left")
                                     ? "linear-gradient(to bottom left, transparent calc(50% - 0.5px), #94a5b6 calc(50% - 0.5px), #94a5b6 calc(50% + 0.5px), transparent calc(50% + 0.5px))"
                                     : "linear-gradient(to bottom right, transparent calc(50% - 0.5px), #94a5b6 calc(50% - 0.5px), #94a5b6 calc(50% + 0.5px), transparent calc(50% + 0.5px))",
                                 }}
@@ -280,28 +287,27 @@ export default function AdminPortalManager({
 
                   <CreateSpecInput label="Number of Panels" type="number" value={adForm.panel_count} onChange={(v) => setAdForm({ ...adForm, panel_count: Number(v) || 0 })} />
 
-                  <CreateRadioRow label="Opening Direction">
-                    <CreateRadio label="Slides Left" checked={adForm.slide_direction === "left"} onChange={() => setAdForm({ ...adForm, slide_direction: "left" })} />
-                    <CreateRadio label="Slides Right" checked={adForm.slide_direction === "right"} onChange={() => setAdForm({ ...adForm, slide_direction: "right" })} />
-                    <CreateRadio label="Bi-Part" checked={adForm.slide_direction === "bi-part"} onChange={() => setAdForm({ ...adForm, slide_direction: "bi-part" })} />
-                  </CreateRadioRow>
+                  <CreateCheckRow label="Opening Direction">
+                    <CreateCheck label="Slides Left" checked={adForm.slide_direction.includes("left")} onChange={() => setAdForm({ ...adForm, slide_direction: toggleCsvCreate(adForm.slide_direction, "left") })} />
+                    <CreateCheck label="Slides Right" checked={adForm.slide_direction.includes("right")} onChange={() => setAdForm({ ...adForm, slide_direction: toggleCsvCreate(adForm.slide_direction, "right") })} />
+                  </CreateCheckRow>
 
-                  <CreateRadioRow label="Swing Direction">
-                    <CreateRadio label="In-Swing" checked={adForm.in_swing === "interior"} onChange={() => setAdForm({ ...adForm, in_swing: "interior" })} />
-                    <CreateRadio label="Out-Swing" checked={adForm.in_swing === "exterior"} onChange={() => setAdForm({ ...adForm, in_swing: "exterior" })} />
-                  </CreateRadioRow>
+                  <CreateCheckRow label="Swing Direction">
+                    <CreateCheck label="In-Swing" checked={adForm.in_swing.includes("interior")} onChange={() => setAdForm({ ...adForm, in_swing: toggleCsvCreate(adForm.in_swing, "interior") })} />
+                    <CreateCheck label="Out-Swing" checked={adForm.in_swing.includes("exterior")} onChange={() => setAdForm({ ...adForm, in_swing: toggleCsvCreate(adForm.in_swing, "exterior") })} />
+                  </CreateCheckRow>
 
-                  <CreateRadioRow label="Frame Color">
-                    <CreateRadio label="Black" checked={adForm.frame_color === "Black"} onChange={() => setAdForm({ ...adForm, frame_color: "Black" })} />
-                    <CreateRadio label="White" checked={adForm.frame_color === "White"} onChange={() => setAdForm({ ...adForm, frame_color: "White" })} />
-                    <CreateRadio label="Bronze" checked={adForm.frame_color === "Bronze"} onChange={() => setAdForm({ ...adForm, frame_color: "Bronze" })} />
-                  </CreateRadioRow>
+                  <CreateCheckRow label="Frame Color">
+                    <CreateCheck label="Black" checked={adForm.frame_color.includes("Black")} onChange={() => setAdForm({ ...adForm, frame_color: toggleCsvCreate(adForm.frame_color, "Black") })} />
+                    <CreateCheck label="White" checked={adForm.frame_color.includes("White")} onChange={() => setAdForm({ ...adForm, frame_color: toggleCsvCreate(adForm.frame_color, "White") })} />
+                    <CreateCheck label="Bronze" checked={adForm.frame_color.includes("Bronze")} onChange={() => setAdForm({ ...adForm, frame_color: toggleCsvCreate(adForm.frame_color, "Bronze") })} />
+                  </CreateCheckRow>
 
-                  <CreateRadioRow label="Hardware Color">
-                    <CreateRadio label="Black" checked={adForm.hardware_color === "Black"} onChange={() => setAdForm({ ...adForm, hardware_color: "Black" })} />
-                    <CreateRadio label="White" checked={adForm.hardware_color === "White"} onChange={() => setAdForm({ ...adForm, hardware_color: "White" })} />
-                    <CreateRadio label="Silver" checked={adForm.hardware_color === "Silver"} onChange={() => setAdForm({ ...adForm, hardware_color: "Silver" })} />
-                  </CreateRadioRow>
+                  <CreateCheckRow label="Hardware Color">
+                    <CreateCheck label="Black" checked={adForm.hardware_color.includes("Black")} onChange={() => setAdForm({ ...adForm, hardware_color: toggleCsvCreate(adForm.hardware_color, "Black") })} />
+                    <CreateCheck label="White" checked={adForm.hardware_color.includes("White")} onChange={() => setAdForm({ ...adForm, hardware_color: toggleCsvCreate(adForm.hardware_color, "White") })} />
+                    <CreateCheck label="Silver" checked={adForm.hardware_color.includes("Silver")} onChange={() => setAdForm({ ...adForm, hardware_color: toggleCsvCreate(adForm.hardware_color, "Silver") })} />
+                  </CreateCheckRow>
 
                   <CreateSpecInput label="System Type" value={adForm.system_type} onChange={(v) => setAdForm({ ...adForm, system_type: v })} />
                   <CreateSpecInput label="Configuration" value={adForm.configuration} onChange={(v) => setAdForm({ ...adForm, configuration: v })} />
@@ -631,7 +637,7 @@ function CreateSpecInput({
   );
 }
 
-function CreateRadioRow({ label, children }: { label: string; children: React.ReactNode }) {
+function CreateCheckRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
       <span className="block text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1.5">{label}</span>
@@ -640,7 +646,7 @@ function CreateRadioRow({ label, children }: { label: string; children: React.Re
   );
 }
 
-function CreateRadio({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+function CreateCheck({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
   return (
     <button
       type="button"
@@ -651,8 +657,10 @@ function CreateRadio({ label, checked, onChange }: { label: string; checked: boo
           : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
       }`}
     >
-      <span className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${checked ? "border-blue-500" : "border-gray-300"}`}>
-        {checked && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+      <span className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center ${checked ? "border-blue-500 bg-blue-100" : "border-gray-300"}`}>
+        {checked && (
+          <svg className="w-2.5 h-2.5 text-blue-600" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" /></svg>
+        )}
       </span>
       {label}
     </button>
