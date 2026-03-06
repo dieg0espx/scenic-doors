@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * Multi-Slide Door Animation
@@ -34,21 +34,25 @@ function parseLayout(layout: string): PanelType[] {
 // Default layouts per panel count
 const DEFAULT_LAYOUTS: Record<number, LayoutConfig[]> = {
   2: [
-    { panels: ['operating', 'fixed'], label: 'Operating + Fixed' },
-    { panels: ['fixed', 'operating'], label: 'Fixed + Operating' },
+    { panels: ['operating', 'fixed'], label: 'Open to Right' },
+    { panels: ['fixed', 'operating'], label: 'Open to Left' },
   ],
   3: [
-    { panels: ['operating', 'operating', 'fixed'], label: 'Operating + Operating + Fixed' },
-    { panels: ['fixed', 'operating', 'fixed'], label: 'Fixed + Operating + Fixed' },
+    { panels: ['operating', 'operating', 'fixed'], label: 'Open to Right' },
+    { panels: ['fixed', 'operating', 'operating'], label: 'Open to Left' },
   ],
   4: [
-    { panels: ['operating', 'fixed', 'fixed', 'operating'], label: 'Oper + Fixed + Fixed + Oper' },
+    { panels: ['operating', 'operating', 'operating', 'fixed'], label: 'Open to Right' },
+    { panels: ['fixed', 'operating', 'operating', 'operating'], label: 'Open to Left' },
+    { panels: ['fixed', 'operating', 'operating', 'fixed'], label: 'Open to Center' },
   ],
   5: [
     { panels: ['operating', 'fixed', 'fixed', 'fixed', 'operating'], label: 'Oper + 3 Fixed + Oper' },
   ],
   6: [
-    { panels: ['operating', 'fixed', 'fixed', 'fixed', 'fixed', 'operating'], label: 'Oper + 4 Fixed + Oper' },
+    { panels: ['operating', 'operating', 'operating', 'operating', 'operating', 'fixed'], label: 'Open to Right' },
+    { panels: ['fixed', 'operating', 'operating', 'operating', 'operating', 'operating'], label: 'Open to Left' },
+    { panels: ['fixed', 'operating', 'operating', 'operating', 'operating', 'fixed'], label: 'Open to Center' },
   ],
 };
 
@@ -122,17 +126,69 @@ const SlidingDoorAnimation = ({
 
   /**
    * Calculate how an operating panel moves.
-   * Operating panels slide toward the nearest fixed panel and tuck behind it.
+   * For 4 and 6 panel configs with Fixed + Oper + ... + Fixed pattern: operating panels slide toward nearest fixed
+   * For other 4/6 configs: ALL panels stack completely on the right side.
+   * For other configs: operating panels slide toward the nearest fixed panel.
    */
   const getPanelTransform = (index: number) => {
+    const progress = openAmount / 100;
+    const total = panelTypes.length;
     const isFixed = panelTypes[index] === 'fixed';
+
+    // Special handling for "Fixed + Operating(s) + Fixed" pattern in 4 and 6 panels
+    if ((total === 4 || total === 6) &&
+        panelTypes[0] === 'fixed' &&
+        panelTypes[total - 1] === 'fixed') {
+
+      // Fixed panels stay put
+      if (isFixed) {
+        return { translateX: 0, zIndex: 20 };
+      }
+
+      // Operating panels slide toward nearest fixed panel
+      const middlePoint = total / 2;
+
+      if (index < middlePoint) {
+        // Left side operating panels slide LEFT toward first fixed panel
+        const distanceToLeft = index; // Distance to index 0
+        const translateX = -distanceToLeft * 100 * progress;
+        return { translateX, zIndex: 10 };
+      } else {
+        // Right side operating panels slide RIGHT toward last fixed panel
+        const distanceToRight = total - 1 - index; // Distance to last index
+        const translateX = distanceToRight * 100 * progress;
+        return { translateX, zIndex: 10 };
+      }
+    }
+
+    // For other 4 and 6 panel configurations, stack ALL panels
+    if (total === 4 || total === 6) {
+      // Determine stack direction based on fixed panel position
+      // If first panel is Fixed → stack to LEFT (Open to Left)
+      // If last panel is Fixed → stack to RIGHT (Open to Right)
+
+      if (panelTypes[0] === 'fixed' && panelTypes[total - 1] === 'operating') {
+        // Stack to the LEFT
+        const panelsToLeft = index; // How many positions to move left
+        const translateX = -panelsToLeft * 100 * progress;
+        // Leftmost panels on top, rightmost on bottom
+        const zIndex = 30 - (total - 1 - index);
+        return { translateX, zIndex };
+      } else {
+        // Stack to the RIGHT (default)
+        const panelsToRight = total - 1 - index; // How many positions to move right
+        const translateX = panelsToRight * 100 * progress;
+        // Rightmost panels on top, leftmost on bottom
+        const zIndex = 30 - index;
+        return { translateX, zIndex };
+      }
+    }
+
     if (isFixed) {
       return { translateX: 0, zIndex: 20 }; // Fixed panels stay put, always on top
     }
 
-    const progress = openAmount / 100;
-    const total = panelTypes.length;
-
+    // Default behavior for other configurations
     // Find nearest fixed panel to determine slide direction
     let nearestFixedLeft = -1;
     let nearestFixedRight = total;
