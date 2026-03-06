@@ -6,7 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
 import ProductTabs from "@/components/ProductTabs";
-import SlideStackDoorAnimation from "@/components/SlideStackDoorAnimation";
+import BifoldDoorAnimation from "@/components/BifoldDoorAnimation";
 import { ArrowRight, Shield, Thermometer, Droplets, Wind } from "lucide-react";
 
 const features = [
@@ -174,7 +174,7 @@ export default function SlideStackDoorsPage() {
           galleryAltPrefix="Slide & Stack Patio Door"
           configurations={stackingOptions}
           configurationsTitle="Stacking Options"
-          previewComponent={<SlideStackDoorAnimation />}
+          previewComponent={<BifoldDoorAnimation />}
         />
 
         {/* CTA Section */}

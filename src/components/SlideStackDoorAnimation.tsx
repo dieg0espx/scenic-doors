@@ -59,56 +59,64 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
     const panelWidth = 100 / total;
 
     if (direction === 'right') {
-      // Panels slide right and stack completely at the right edge
-      // translateX is relative to element width, so we need to convert container % to element %
-      const containerDistanceToMove = (total - 1 - index) * panelWidth; // in container %
-      const elementDistanceToMove = (containerDistanceToMove / panelWidth) * 100; // convert to element %
-      const stackOffset = index * 3; // Small offset in element % so panels are slightly visible when stacked
+      // Panels slide right and stack completely at the right edge with folding
+      const containerDistanceToMove = (total - 1 - index) * panelWidth;
+      const elementDistanceToMove = (containerDistanceToMove / panelWidth) * 100;
+      const stackOffset = index * 3;
+      const rotationAngle = (index % 2 === 0 ? 75 : -75) * progress; // Alternate folding
       return {
         translateX: elementDistanceToMove * progress + stackOffset * progress,
+        rotateY: rotationAngle,
         zIndex: index,
       };
     } else if (direction === 'left') {
-      // Panels slide left and stack completely at the left edge
+      // Panels slide left and stack completely at the left edge with folding
       const containerDistanceToMove = index * panelWidth;
       const elementDistanceToMove = (containerDistanceToMove / panelWidth) * 100;
       const stackOffset = (total - 1 - index) * 3;
+      const rotationAngle = (index % 2 === 0 ? -75 : 75) * progress; // Alternate folding
       return {
         translateX: -elementDistanceToMove * progress - stackOffset * progress,
+        rotateY: rotationAngle,
         zIndex: total - index,
       };
     } else {
-      // Split - left half goes left, right half goes right
+      // Split - left half goes left, right half goes right, both with folding
       const mid = Math.floor(total / 2);
       if (index < mid) {
-        // Left half panels go left
+        // Left half panels go left with folding
         const containerDistanceToMove = index * panelWidth;
         const elementDistanceToMove = (containerDistanceToMove / panelWidth) * 100;
         const stackOffset = (mid - 1 - index) * 3;
+        const rotationAngle = (index % 2 === 0 ? -75 : 75) * progress;
         return {
           translateX: -elementDistanceToMove * progress - stackOffset * progress,
+          rotateY: rotationAngle,
           zIndex: mid - index,
         };
       } else {
-        // Right half panels go right
+        // Right half panels go right with folding
         const rightIndex = index - mid;
         const rightTotal = total - mid;
-        const rightPanelWidth = 100 / total; // Same as panelWidth
+        const rightPanelWidth = 100 / total;
         const containerDistanceToMove = (rightTotal - 1 - rightIndex) * rightPanelWidth;
         const elementDistanceToMove = (containerDistanceToMove / rightPanelWidth) * 100;
         const stackOffset = rightIndex * 3;
+        const rotationAngle = (rightIndex % 2 === 0 ? 75 : -75) * progress;
         return {
           translateX: elementDistanceToMove * progress + stackOffset * progress,
+          rotateY: rotationAngle,
           zIndex: rightIndex,
         };
       }
     }
   };
 
-  const GlassPanel = ({ index, total, translateX, zIndex, isLast, isFirst }: {
+  const GlassPanel = ({ index, total, translateX, rotateY, zIndex, isLast, isFirst }: {
     index: number;
     total: number;
     translateX: number;
+    rotateY: number;
     zIndex: number;
     isLast: boolean;
     isFirst: boolean;
@@ -124,7 +132,8 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
           top: 0,
           width: `${panelWidth}%`,
           height: '100%',
-          transform: `translateX(${translateX}%)`,
+          transform: `translateX(${translateX}%) rotateY(${rotateY}deg)`,
+          transformStyle: 'preserve-3d',
           zIndex,
           transition: 'transform 0.12s ease-out',
           padding: '0 1px',
@@ -141,6 +150,7 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
             inset 0 0 60px rgba(255,255,255,0.1),
             4px 0 20px rgba(0,0,0,0.08)
           `,
+          backfaceVisibility: 'hidden',
         }}>
           {/* Top frame */}
           <div style={{
@@ -214,21 +224,47 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
             background: 'linear-gradient(-45deg, rgba(255,255,255,0.15) 0%, transparent 70%)',
           }} />
 
-          {/* Handle - on lead panels */}
-          {((stackSide === 'right' && isLast) || (stackSide === 'left' && isFirst) ||
-            (stackSide === 'split' && (index === Math.floor(total / 2) - 1 || index === Math.floor(total / 2)))) && (
-            <div style={{
-              position: 'absolute',
-              top: '46%',
-              left: stackSide === 'right' || (stackSide === 'split' && index === Math.floor(total / 2)) ? '10px' : 'auto',
-              right: stackSide === 'left' || (stackSide === 'split' && index === Math.floor(total / 2) - 1) ? '10px' : 'auto',
-              width: '6px',
-              height: '48px',
-              background: 'linear-gradient(90deg, #52525B 0%, #3F3F46 100%)',
-              borderRadius: '3px',
-              boxShadow: '1px 2px 4px rgba(0,0,0,0.2)',
-            }} />
-          )}
+          {/* Handle - on moving panels (not fixed panels) */}
+          {(() => {
+            let showHandle = false;
+            let handlePosition: 'left' | 'right' = 'right';
+
+            if (stackSide === 'right') {
+              // Stack right: leftmost panel moves and has handle, rightmost is fixed
+              showHandle = isFirst;
+              handlePosition = 'right';
+            } else if (stackSide === 'left') {
+              // Stack left: rightmost panel moves and has handle, leftmost is fixed
+              showHandle = isLast;
+              handlePosition = 'left';
+            } else if (stackSide === 'split') {
+              // Split: middle panels move and have handles, outer panels are fixed
+              const halfPoint = Math.floor(total / 2);
+              if (index === halfPoint - 1) {
+                showHandle = true;
+                handlePosition = 'right';
+              } else if (index === halfPoint) {
+                showHandle = true;
+                handlePosition = 'left';
+              }
+            }
+
+            if (!showHandle) return null;
+
+            return (
+              <div style={{
+                position: 'absolute',
+                top: '46%',
+                left: handlePosition === 'left' ? '10px' : 'auto',
+                right: handlePosition === 'right' ? '10px' : 'auto',
+                width: '6px',
+                height: '48px',
+                background: 'linear-gradient(90deg, #52525B 0%, #3F3F46 100%)',
+                borderRadius: '3px',
+                boxShadow: '1px 2px 4px rgba(0,0,0,0.2)',
+              }} />
+            );
+          })()}
 
           {/* Lock indicator */}
           {isFirst && (
@@ -405,14 +441,14 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
             color: '#1F2937',
             margin: '0 0 8px 0',
           }}>
-            Slide & Stack Door Preview
+            Bi-Fold Door Preview
           </h2>
           <p style={{
             fontSize: '14px',
             color: '#6B7280',
             margin: 0,
           }}>
-            Explore different configurations and see how panels stack
+            Explore different configurations and see how panels fold
           </p>
         </div>
       )}
@@ -501,17 +537,19 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
           overflow: 'hidden',
           borderLeft: '4px solid #52525B',
           borderRight: '4px solid #52525B',
+          perspective: '1500px',
         }}>
           <OutdoorScene opacity={openAmount > 15 ? Math.min((openAmount - 15) / 60, 1) : 0} />
 
           {[...Array(panelCount)].map((_, i) => {
-            const { translateX, zIndex } = getPanelTransform(i, panelCount, openAmount, stackSide);
+            const { translateX, rotateY, zIndex } = getPanelTransform(i, panelCount, openAmount, stackSide);
             return (
               <GlassPanel
                 key={i}
                 index={i}
                 total={panelCount}
                 translateX={translateX}
+                rotateY={rotateY}
                 zIndex={zIndex}
                 isFirst={i === 0}
                 isLast={i === panelCount - 1}

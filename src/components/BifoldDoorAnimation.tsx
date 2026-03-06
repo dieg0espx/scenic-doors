@@ -113,7 +113,7 @@ export default function BifoldDoorAnimation() {
       {/* Title */}
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
         <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1F2937', margin: '0 0 10px 0' }}>
-          Bi-Fold Door Preview
+          Slide & Stack Door Preview
         </h2>
         <p style={{ fontSize: '16px', color: '#6B7280', margin: 0 }}>
           Interactive door animation - choose panels and fold direction
