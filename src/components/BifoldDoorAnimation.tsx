@@ -309,21 +309,51 @@ export default function BifoldDoorAnimation() {
                     }} />
                   ))}
 
-                  {/* Handle */}
-                  {(i === 0 || i === panelCount - 1) && (
-                    <div style={{
-                      position: 'absolute',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      right: i === 0 ? '10px' : 'auto',
-                      left: i === panelCount - 1 ? '10px' : 'auto',
-                      width: '8px',
-                      height: '60px',
-                      background: '#44403C',
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
-                    }} />
-                  )}
+                  {/* Handle - only on operating panels, not fixed panels */}
+                  {(() => {
+                    // Determine which panel should have a handle based on fold direction
+                    let showHandle = false;
+                    let handlePosition: 'left' | 'right' = 'right';
+
+                    if (foldDirection === 'left') {
+                      // Fold left: rightmost panel has handle (operating), leftmost is fixed
+                      showHandle = i === panelCount - 1;
+                      handlePosition = 'left';
+                    } else if (foldDirection === 'right') {
+                      // Fold right: leftmost panel has handle (operating), rightmost is fixed
+                      showHandle = i === 0;
+                      handlePosition = 'right';
+                    } else if (foldDirection === 'center') {
+                      // Center: middle panels have handles (operating), outer panels are fixed
+                      const halfPoint = Math.floor(panelCount / 2);
+                      if (i === halfPoint - 1) {
+                        // Left middle panel
+                        showHandle = true;
+                        handlePosition = 'right';
+                      } else if (i === halfPoint) {
+                        // Right middle panel
+                        showHandle = true;
+                        handlePosition = 'left';
+                      }
+                    }
+
+                    if (!showHandle) return null;
+
+                    return (
+                      <div style={{
+                        position: 'absolute',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        right: handlePosition === 'right' ? '10px' : 'auto',
+                        left: handlePosition === 'left' ? '10px' : 'auto',
+                        width: '8px',
+                        height: '60px',
+                        background: '#44403C',
+                        borderRadius: '4px',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+                      }} />
+                    );
+                  })()}
 
                   {/* Lock indicator */}
                   {i === 0 && (
