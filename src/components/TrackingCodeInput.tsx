@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Truck, Loader2, Check, Pencil, Package } from "lucide-react";
+import { Truck, Loader2, Check, Pencil, Package, ExternalLink, Link as LinkIcon } from "lucide-react";
 import { updateTrackingInfo } from "@/lib/actions/order-tracking";
 
 interface Props {
@@ -9,6 +9,7 @@ interface Props {
   quoteId: string;
   initialTrackingNumber: string | null;
   initialCarrier: string | null;
+  initialTrackingLink?: string | null;
 }
 
 const CARRIERS = [
@@ -25,10 +26,12 @@ export default function TrackingCodeInput({
   quoteId,
   initialTrackingNumber,
   initialCarrier,
+  initialTrackingLink,
 }: Props) {
   const [editing, setEditing] = useState(!initialTrackingNumber);
   const [trackingNumber, setTrackingNumber] = useState(initialTrackingNumber || "");
   const [carrier, setCarrier] = useState(initialCarrier || "");
+  const [trackingLink, setTrackingLink] = useState(initialTrackingLink || "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -36,7 +39,7 @@ export default function TrackingCodeInput({
     if (!trackingNumber.trim()) return;
     setSaving(true);
     try {
-      await updateTrackingInfo(trackingId, quoteId, trackingNumber.trim(), carrier);
+      await updateTrackingInfo(trackingId, quoteId, trackingNumber.trim(), carrier, trackingLink.trim());
       setSaved(true);
       setEditing(false);
       setTimeout(() => setSaved(false), 2000);
@@ -58,6 +61,17 @@ export default function TrackingCodeInput({
           <div className="flex-1 min-w-0">
             <p className="text-white font-mono font-medium text-sm truncate">{trackingNumber}</p>
             {carrier && <p className="text-white/40 text-xs">{carrier}</p>}
+            {trackingLink && (
+              <a
+                href={trackingLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 text-xs mt-1 transition-colors"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Track Shipment
+              </a>
+            )}
           </div>
           <button
             onClick={() => setEditing(true)}
@@ -114,6 +128,25 @@ export default function TrackingCodeInput({
         </div>
       </div>
 
+      {/* Tracking link input */}
+      <div>
+        <label className="text-white/30 text-[11px] uppercase tracking-wider font-medium mb-1.5 block">
+          Tracking Link
+        </label>
+        <div className="relative">
+          <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/15">
+            <LinkIcon className="w-3.5 h-3.5" />
+          </div>
+          <input
+            type="url"
+            value={trackingLink}
+            onChange={(e) => setTrackingLink(e.target.value)}
+            placeholder="https://..."
+            className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-white/15 focus:outline-none focus:ring-1 focus:ring-sky-500/50 focus:border-sky-500/30 transition-all"
+          />
+        </div>
+      </div>
+
       {/* Actions */}
       <div className="flex items-center gap-3 pt-1">
         <button
@@ -143,6 +176,7 @@ export default function TrackingCodeInput({
             onClick={() => {
               setTrackingNumber(initialTrackingNumber);
               setCarrier(initialCarrier || "");
+              setTrackingLink(initialTrackingLink || "");
               setEditing(false);
             }}
             className="text-white/30 hover:text-white/50 text-sm transition-colors cursor-pointer"

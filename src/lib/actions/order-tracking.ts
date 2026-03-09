@@ -230,7 +230,8 @@ export async function updateTrackingInfo(
   trackingId: string,
   quoteId: string,
   trackingNumber: string,
-  shippingCarrier: string
+  shippingCarrier: string,
+  trackingLink?: string
 ): Promise<void> {
   const supabase = await createClient();
   const { error } = await supabase
@@ -238,6 +239,7 @@ export async function updateTrackingInfo(
     .update({
       tracking_number: trackingNumber || null,
       shipping_carrier: shippingCarrier || null,
+      tracking_link: trackingLink || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", trackingId);
@@ -264,6 +266,7 @@ export async function updateTrackingInfo(
           orderNumber: quote.order_number || "",
           trackingNumber,
           shippingCarrier: shippingCarrier || "",
+          trackingLink: trackingLink || undefined,
           portalUrl: `${origin}/portal/${quoteId}`,
         });
 
