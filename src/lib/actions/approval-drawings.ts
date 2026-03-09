@@ -22,6 +22,18 @@ export async function getApprovalDrawing(quoteId: string): Promise<ApprovalDrawi
   return data;
 }
 
+export async function getApprovalDrawings(quoteId: string): Promise<ApprovalDrawing[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("approval_drawings")
+    .select("*")
+    .eq("quote_id", quoteId)
+    .order("created_at", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
 export async function createApprovalDrawing(formData: {
   quote_id: string;
   overall_width: number;
@@ -34,8 +46,11 @@ export async function createApprovalDrawing(formData: {
   additional_notes?: string;
   frame_color?: string;
   hardware_color?: string;
+  item_index?: number;
 }): Promise<ApprovalDrawing> {
   const supabase = await createClient();
+  const itemIdx = formData.item_index ?? 0;
+
   const { data, error } = await supabase
     .from("approval_drawings")
     .insert({
@@ -56,36 +71,38 @@ export async function createApprovalDrawing(formData: {
 
   if (error) throw new Error(error.message);
 
-  // Sync drawing values back to quote
-  const quoteUpdates: Record<string, unknown> = {
-    portal_stage: "approval_pending",
-    size: `${formData.overall_width}" x ${formData.overall_height}"`,
-  };
-  if (formData.frame_color) quoteUpdates.color = formData.frame_color;
+  // Sync drawing values back to quote (use first item's drawing for quote-level fields)
+  if (itemIdx === 0) {
+    const quoteUpdates: Record<string, unknown> = {
+      portal_stage: "approval_pending",
+      size: `${formData.overall_width}" x ${formData.overall_height}"`,
+    };
+    if (formData.frame_color) quoteUpdates.color = formData.frame_color;
 
-  await supabase
-    .from("quotes")
-    .update(quoteUpdates)
-    .eq("id", formData.quote_id);
+    await supabase
+      .from("quotes")
+      .update(quoteUpdates)
+      .eq("id", formData.quote_id);
+  }
 
-  // Sync item-level fields to the first quote item
+  // Sync item-level fields to the corresponding quote item
   const { data: quote } = await supabase
     .from("quotes")
     .select("items")
     .eq("id", formData.quote_id)
     .single();
 
-  if (quote?.items && Array.isArray(quote.items) && quote.items.length > 0) {
+  if (quote?.items && Array.isArray(quote.items) && itemIdx < quote.items.length) {
     const items = [...quote.items];
-    const first = { ...items[0] };
-    first.width = formData.overall_width;
-    first.height = formData.overall_height;
-    first.panelCount = formData.panel_count;
-    if (formData.frame_color) first.exteriorFinish = formData.frame_color;
-    if (formData.hardware_color) first.hardwareFinish = formData.hardware_color;
-    const desc = `${first.width}" x ${first.height}" | ${first.exteriorFinish || ""}${first.interiorFinish ? ` / ${first.interiorFinish} interior` : ""} | ${first.glassType || ""} | ${first.hardwareFinish || ""}`;
-    first.description = desc;
-    items[0] = first;
+    const item = { ...items[itemIdx] };
+    item.width = formData.overall_width;
+    item.height = formData.overall_height;
+    item.panelCount = formData.panel_count;
+    if (formData.frame_color) item.exteriorFinish = formData.frame_color;
+    if (formData.hardware_color) item.hardwareFinish = formData.hardware_color;
+    const desc = `${item.width}" x ${item.height}" | ${item.exteriorFinish || ""}${item.interiorFinish ? ` / ${item.interiorFinish} interior` : ""} | ${item.glassType || ""} | ${item.hardwareFinish || ""}`;
+    item.description = desc;
+    items[itemIdx] = item;
     await supabase
       .from("quotes")
       .update({ items })

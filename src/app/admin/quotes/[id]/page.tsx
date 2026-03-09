@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { getQuoteDetail } from "@/lib/actions/quotes";
 import { getEmailHistory } from "@/lib/actions/email-history";
-import { getApprovalDrawing } from "@/lib/actions/approval-drawings";
+import { getApprovalDrawing, getApprovalDrawings } from "@/lib/actions/approval-drawings";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
 import { getQuoteDocuments } from "@/lib/actions/quote-documents";
 import { getFollowUps } from "@/lib/actions/follow-ups";
@@ -81,10 +81,11 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [quote, emails, drawing, photos, followUps, documents, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
+  const [quote, emails, drawing, allDrawings, photos, followUps, documents, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
     getQuoteDetail(id),
     getEmailHistory(id),
     getApprovalDrawing(id).catch(() => null),
+    getApprovalDrawings(id).catch(() => [] as import("@/lib/types").ApprovalDrawing[]),
     getQuotePhotos(id).catch(() => []),
     getFollowUps(id).catch(() => []),
     getQuoteDocuments(id).catch(() => []),
@@ -627,6 +628,7 @@ export default async function QuoteDetailPage({
         quoteColor={quote.color}
         quoteItems={Array.isArray(quote.items) ? quote.items : []}
         drawing={drawing}
+        drawings={allDrawings}
         photos={photos}
         followUps={followUps}
         documents={documents}
