@@ -171,16 +171,20 @@ export async function startManufacturing(orderId: string): Promise<void> {
   const now = new Date().toISOString();
   const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string } | null;
 
-  // Update order_tracking
-  const { error: trackingErr } = await supabase
+  // Update order_tracking — use .select() to verify a row was actually updated
+  const { data: updatedTracking, error: trackingErr } = await supabase
     .from("order_tracking")
     .update({
       stage: "manufacturing",
       manufacturing_started_at: now,
     })
-    .eq("quote_id", order.quote_id);
+    .eq("quote_id", order.quote_id)
+    .select();
 
   if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
+  if (!updatedTracking || updatedTracking.length === 0) {
+    throw new Error(`No order_tracking row found for quote_id ${order.quote_id}. Create an order tracking record first.`);
+  }
 
   // Update portal stage
   const { error: portalErr } = await supabase
@@ -235,15 +239,19 @@ export async function completeManufacturing(orderId: string): Promise<void> {
   const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string; cost: number; grand_total: number } | null;
 
   // Update order_tracking: manufacturing → deposit_2_pending
-  const { error: trackingErr } = await supabase
+  const { data: updatedTracking, error: trackingErr } = await supabase
     .from("order_tracking")
     .update({
       stage: "deposit_2_pending",
       manufacturing_completed_at: now,
     })
-    .eq("quote_id", order.quote_id);
+    .eq("quote_id", order.quote_id)
+    .select();
 
   if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
+  if (!updatedTracking || updatedTracking.length === 0) {
+    throw new Error(`No order_tracking row found for quote_id ${order.quote_id}`);
+  }
 
   // Update portal stage
   const { error: portalErr } = await supabase
@@ -324,16 +332,20 @@ export async function markAsDelivered(orderId: string): Promise<void> {
   const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string } | null;
 
   // Update order_tracking stage to delivered
-  const { error: trackingErr } = await supabase
+  const { data: updatedTracking, error: trackingErr } = await supabase
     .from("order_tracking")
     .update({
       stage: "delivered",
       delivered_at: now,
       updated_at: now,
     })
-    .eq("quote_id", order.quote_id);
+    .eq("quote_id", order.quote_id)
+    .select();
 
   if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
+  if (!updatedTracking || updatedTracking.length === 0) {
+    throw new Error(`No order_tracking row found for quote_id ${order.quote_id}`);
+  }
 
   // Update portal stage
   await supabase
