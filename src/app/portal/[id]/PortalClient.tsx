@@ -164,14 +164,14 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 px-4 sm:px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
+                  className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-3.5 sm:py-3 min-h-[44px] text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer ${
                     isActive
                       ? "border-primary-500 text-primary-600"
                       : "border-transparent text-ocean-400 hover:text-ocean-600"
                   }`}
                 >
-                  <tab.icon className="w-4 h-4" />
-                  {tab.label}
+                  <tab.icon className="w-4 h-4 shrink-0" />
+                  <span className="hidden sm:inline">{tab.label}</span>
                 </button>
               );
             })}
@@ -180,7 +180,7 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
       </div>
 
       {/* Content */}
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
         {activeTab === "quote" && (
           <PortalQuoteView quote={quote} photos={photos} drawings={drawings} />
         )}
@@ -255,7 +255,7 @@ function PortalStageBar({ stage }: { stage: string }) {
               <div key={s.key} className="flex items-center">
                 <div className="flex flex-col items-center">
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                       isCompleted
                         ? "bg-green-500 text-white"
                         : isCurrent
@@ -266,7 +266,7 @@ function PortalStageBar({ stage }: { stage: string }) {
                     {isCompleted ? "✓" : i + 1}
                   </div>
                   <span
-                    className={`text-[10px] mt-1 whitespace-nowrap ${
+                    className={`hidden sm:block text-[10px] mt-1 whitespace-nowrap ${
                       isCurrent ? "text-primary-600 font-semibold" : isCompleted ? "text-green-600" : "text-ocean-400"
                     }`}
                   >
@@ -275,7 +275,7 @@ function PortalStageBar({ stage }: { stage: string }) {
                 </div>
                 {i < STAGES.length - 1 && (
                   <div
-                    className={`w-4 sm:w-8 h-0.5 mx-0.5 ${
+                    className={`w-6 sm:w-8 h-0.5 mx-0.5 ${
                       i < currentIndex ? "bg-green-500" : "bg-ocean-200"
                     }`}
                   />

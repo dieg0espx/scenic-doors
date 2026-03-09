@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Package,
   MapPin,
+  ExternalLink,
 } from "lucide-react";
 import type { OrderTracking } from "@/lib/types";
 
@@ -140,6 +141,17 @@ export default function PortalTracking({ tracking }: PortalTrackingProps) {
               </div>
             )}
           </div>
+          {tracking.tracking_link && (
+            <a
+              href={tracking.tracking_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Track Shipment
+            </a>
+          )}
         </div>
       )}
 

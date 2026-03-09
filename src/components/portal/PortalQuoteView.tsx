@@ -233,16 +233,16 @@ export default function PortalQuoteView({ quote, photos, drawing: legacyDrawing,
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-ocean-50">
-                <th className="text-left px-5 py-2.5 text-xs uppercase tracking-wider text-ocean-400 font-semibold">
+                <th className="text-left px-3 sm:px-5 py-2.5 text-xs uppercase tracking-wider text-ocean-400 font-semibold">
                   Item
                 </th>
-                <th className="text-right px-5 py-2.5 text-xs uppercase tracking-wider text-ocean-400 font-semibold">
+                <th className="text-right px-3 sm:px-5 py-2.5 text-xs uppercase tracking-wider text-ocean-400 font-semibold">
                   Qty
                 </th>
-                <th className="text-right px-5 py-2.5 text-xs uppercase tracking-wider text-ocean-400 font-semibold">
+                <th className="text-right px-3 sm:px-5 py-2.5 text-xs uppercase tracking-wider text-ocean-400 font-semibold hidden sm:table-cell">
                   Price
                 </th>
-                <th className="text-right px-5 py-2.5 text-xs uppercase tracking-wider text-ocean-400 font-semibold">
+                <th className="text-right px-3 sm:px-5 py-2.5 text-xs uppercase tracking-wider text-ocean-400 font-semibold">
                   Total
                 </th>
               </tr>
@@ -250,17 +250,17 @@ export default function PortalQuoteView({ quote, photos, drawing: legacyDrawing,
             <tbody className="divide-y divide-ocean-100">
               {quote.items.map((item, idx) => (
                 <tr key={item.id || idx}>
-                  <td className="px-5 py-3 text-ocean-800">
+                  <td className="px-3 sm:px-5 py-3 text-ocean-800">
                     {item.name}
                     {item.description && (
                       <p className="text-ocean-400 text-xs mt-0.5">{item.description}</p>
                     )}
                   </td>
-                  <td className="px-5 py-3 text-right text-ocean-500">{item.quantity}</td>
-                  <td className="px-5 py-3 text-right text-ocean-500">
+                  <td className="px-3 sm:px-5 py-3 text-right text-ocean-500">{item.quantity}</td>
+                  <td className="px-3 sm:px-5 py-3 text-right text-ocean-500 hidden sm:table-cell">
                     ${Number(item.unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </td>
-                  <td className="px-5 py-3 text-right text-ocean-900 font-medium">
+                  <td className="px-3 sm:px-5 py-3 text-right text-ocean-900 font-medium">
                     ${Number(item.total).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                   </td>
                 </tr>
@@ -486,8 +486,8 @@ function DeliveryAddressSection({ quoteId, initialAddress }: { quoteId: string; 
           />
         </div>
 
-        {/* City + State + ZIP in one row */}
-        <div className="grid grid-cols-5 gap-3">
+        {/* City + State + ZIP */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           <div className="col-span-2">
             <label className="block text-xs text-ocean-500 font-medium mb-1">City</label>
             <input
@@ -509,7 +509,7 @@ function DeliveryAddressSection({ quoteId, initialAddress }: { quoteId: string; 
               className={inputClass}
             />
           </div>
-          <div className="col-span-2">
+          <div className="col-span-1 sm:col-span-2">
             <label className="block text-xs text-ocean-500 font-medium mb-1">ZIP Code</label>
             <input
               type="text"
