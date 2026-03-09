@@ -1,15 +1,7 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { generateReceiptPdfBuffer } from "./generateReceiptPdfServer";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: Number(process.env.SMTP_PORT) === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface QuoteEmailData {
   clientName: string;
@@ -112,8 +104,8 @@ export async function sendQuoteEmail(data: QuoteEmailData) {
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Your Quote ${data.quoteNumber} from Scenic Doors`,
     html,
@@ -207,9 +199,9 @@ export async function sendNewQuoteNotificationEmail(
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-    to: recipientEmails.join(", "),
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
+    to: recipientEmails,
     subject: `New Quote ${data.quoteNumber} — ${data.clientName} | Scenic Doors`,
     html,
   });
@@ -288,8 +280,8 @@ export async function sendInvoiceEmail(data: InvoiceEmailData) {
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Invoice ${data.invoiceNumber} — ${typeLabel} | Scenic Doors`,
     html,
@@ -364,8 +356,8 @@ export async function sendBalanceEmail(data: BalanceEmailData) {
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Balance Payment Due - Quote ${data.quoteNumber} | Scenic Doors`,
     html,
@@ -498,8 +490,8 @@ export async function sendPaymentReceiptEmail(data: PaymentReceiptData) {
     paidAt: data.paidAt,
   });
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Payment Receipt ${data.invoiceNumber} | Scenic Doors`,
     html,
@@ -507,7 +499,6 @@ export async function sendPaymentReceiptEmail(data: PaymentReceiptData) {
       {
         filename: `Receipt-${data.invoiceNumber}.pdf`,
         content: pdfBuffer,
-        contentType: "application/pdf",
       },
     ],
   });
@@ -602,8 +593,8 @@ export async function sendWelcomeEmail(data: WelcomeEmailData) {
   // Also include plain text version so password is always copyable
   const text = `Welcome to Scenic Doors!\n\nHi ${data.name},\n\nYour account has been created.\n\nEmail: ${data.email}\nPassword: ${data.password}\nRole: ${roleLabel}\n\nLog in at: ${data.loginUrl}\n\nPlease change your password after your first login.`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.email,
     subject: `Your Scenic Doors Account Has Been Created`,
     html,
@@ -681,9 +672,9 @@ export async function sendInternalNotificationEmail(
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-    to: recipientEmails.join(", "),
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
+    to: recipientEmails,
     subject: `${data.heading} | Scenic Doors`,
     html,
   });
@@ -740,8 +731,8 @@ export async function sendQuoteApprovedEmail(data: QuoteApprovedEmailData) {
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Quote ${data.quoteNumber} Approved — Sign Your Contract | Scenic Doors`,
     html,
@@ -811,8 +802,8 @@ export async function sendApprovalDrawingEmail(data: ApprovalDrawingEmailData) {
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Approval Drawing Ready — Quote ${data.quoteNumber} | Scenic Doors`,
     html,
@@ -888,8 +879,8 @@ export async function sendManufacturingStartedEmail(data: ManufacturingStartedEm
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Your Doors Are Now in Manufacturing — ${data.orderNumber} | Scenic Doors`,
     html,
@@ -974,8 +965,8 @@ export async function sendShippingNotificationEmail(data: ShippingNotificationEm
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Your Order Has Shipped — ${data.orderNumber} | Scenic Doors`,
     html,
@@ -1062,8 +1053,8 @@ export async function sendDeliveryThankYouEmail(data: DeliveryThankYouEmailData)
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `Your Order Has Been Delivered — ${data.orderNumber} | Scenic Doors`,
     html,
@@ -1145,8 +1136,8 @@ export async function sendEstimateConfirmationEmail(data: EstimateConfirmationDa
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `We Received Your Inquiry \u2014 ${data.quoteNumber} | Scenic Doors`,
     html,
@@ -1247,8 +1238,8 @@ export async function sendFollowUpEmail(data: FollowUpEmailData) {
 </body>
 </html>`;
 
-  await transporter.sendMail({
-    from: `"Scenic Doors" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `${msg.subject} — Quote ${data.quoteNumber} | Scenic Doors`,
     html,
