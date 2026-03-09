@@ -14,21 +14,33 @@ import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 import type { ApprovalDrawing } from "@/lib/types";
 
+interface QuoteItem {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
 interface PortalApprovalDrawingProps {
-  drawing: ApprovalDrawing | null;
+  drawing?: ApprovalDrawing | null;
+  drawings?: ApprovalDrawing[];
   quoteName: string;
   quoteId: string;
   quoteColor?: string;
   quoteDoorType?: string;
   portalStage?: string;
+  quoteItems?: QuoteItem[];
 }
 
-export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quoteColor, quoteDoorType, portalStage }: PortalApprovalDrawingProps) {
+export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings = [], quoteName, quoteId, quoteColor, quoteDoorType, portalStage, quoteItems = [] }: PortalApprovalDrawingProps) {
+  // Build the array of drawings — use drawings array, fall back to legacy single drawing
+  const allDrawings = drawings.length > 0 ? drawings : (legacyDrawing ? [legacyDrawing] : []);
+  const hasMultipleItems = quoteItems.length > 1;
   const [signing, setSigning] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [requested, setRequested] = useState(portalStage === "drawing_requested");
   const [showSignPad, setShowSignPad] = useState(false);
+  const [signingDrawingId, setSigningDrawingId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState(quoteName);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,22 +48,21 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
   const hasSignatureRef = useRef(false);
   const isCanvasInitRef = useRef(false);
 
-  async function handleDownloadPdf() {
-    if (!drawing) return;
+  async function handleDownloadPdf(d: ApprovalDrawing) {
     setDownloading(true);
     try {
       const doc = await generateApprovalDrawingPdf({
-        overall_width: drawing.overall_width,
-        overall_height: drawing.overall_height,
-        panel_count: drawing.panel_count,
-        slide_direction: drawing.slide_direction,
-        in_swing: drawing.in_swing,
-        frame_color: drawing.frame_color || quoteColor,
-        hardware_color: drawing.hardware_color,
-        customer_name: drawing.customer_name,
-        signature_data: drawing.signature_data,
-        signed_at: drawing.signed_at,
-        system_type: drawing.system_type,
+        overall_width: d.overall_width,
+        overall_height: d.overall_height,
+        panel_count: d.panel_count,
+        slide_direction: d.slide_direction,
+        in_swing: d.in_swing,
+        frame_color: d.frame_color || quoteColor,
+        hardware_color: d.hardware_color,
+        customer_name: d.customer_name,
+        signature_data: d.signature_data,
+        signed_at: d.signed_at,
+        system_type: d.system_type,
       });
       doc.save(`Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
     } catch {
@@ -73,7 +84,8 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
     }
   }
 
-  if (!drawing) {
+  // No drawings at all
+  if (allDrawings.length === 0) {
     // Drawing already requested — show waiting state
     if (requested) {
       return (
@@ -120,33 +132,10 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
     );
   }
 
-  if (drawing.status === "signed") {
-    return (
-      <div className="space-y-6">
-        <div className="bg-green-50 rounded-xl border border-green-200 p-6 text-center">
-          <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-ocean-900 mb-1">Approval Drawing Signed</h3>
-          <p className="text-ocean-500 text-sm">
-            Signed by {drawing.customer_name} on{" "}
-            {new Date(drawing.signed_at!).toLocaleDateString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-          <button
-            onClick={handleDownloadPdf}
-            disabled={downloading}
-            className="mt-4 inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 text-white font-medium px-5 py-2.5 rounded-lg transition-colors cursor-pointer text-sm"
-          >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Download PDF
-          </button>
-        </div>
-        <DrawingDetails drawing={drawing} doorType={quoteDoorType} />
-      </div>
-    );
-  }
+  // Check if all drawings are signed
+  const allSigned = allDrawings.every((d) => d.status === "signed");
+  // Find the first unsigned drawing for signing
+  const unsignedDrawing = allDrawings.find((d) => d.status !== "signed");
 
   const getCoords = useCallback((e: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -262,10 +251,13 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
   }
 
   async function handleSign() {
-    if (!signatureData || !customerName.trim()) return;
+    const drawingToSign = signingDrawingId
+      ? allDrawings.find((d) => d.id === signingDrawingId)
+      : unsignedDrawing;
+    if (!signatureData || !customerName.trim() || !drawingToSign) return;
     setSigning(true);
     try {
-      await signApprovalDrawing(drawing!.id, customerName, signatureData);
+      await signApprovalDrawing(drawingToSign.id, customerName, signatureData);
       window.location.reload();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to sign");
@@ -274,19 +266,79 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
     }
   }
 
+  // All signed — show consolidated signed view
+  if (allSigned) {
+    const firstSigned = allDrawings[0];
+    return (
+      <div className="space-y-6">
+        <div className="bg-green-50 rounded-xl border border-green-200 p-6 text-center">
+          <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-ocean-900 mb-1">
+            {allDrawings.length > 1 ? "All Approval Drawings Signed" : "Approval Drawing Signed"}
+          </h3>
+          <p className="text-ocean-500 text-sm">
+            Signed by {firstSigned.customer_name} on{" "}
+            {new Date(firstSigned.signed_at!).toLocaleDateString("en-US", {
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+          <button
+            onClick={() => handleDownloadPdf(firstSigned)}
+            disabled={downloading}
+            className="mt-4 inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 text-white font-medium px-5 py-2.5 rounded-lg transition-colors cursor-pointer text-sm"
+          >
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            Download PDF
+          </button>
+        </div>
+        {allDrawings.map((d, idx) => (
+          <div key={d.id}>
+            {hasMultipleItems && (
+              <h4 className="text-sm font-semibold text-ocean-700 mb-2">
+                {quoteItems[idx]?.name || `Door ${idx + 1}`}
+              </h4>
+            )}
+            <DrawingDetails drawing={d} doorType={quoteDoorType} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 flex items-center gap-3">
         <FileText className="w-5 h-5 text-amber-600 shrink-0" />
         <p className="text-sm text-amber-800">
-          Please review the approval drawing below and sign to confirm your order specifications.
+          Please review the approval drawing{allDrawings.length > 1 ? "s" : ""} below and sign to confirm your order specifications.
         </p>
       </div>
 
-      <DrawingDetails drawing={drawing} doorType={quoteDoorType} onDownload={handleDownloadPdf} downloading={downloading} />
+      {allDrawings.map((d, idx) => (
+        <div key={d.id}>
+          {hasMultipleItems && (
+            <h4 className="text-sm font-semibold text-ocean-700 mb-2">
+              {quoteItems[idx]?.name || `Door ${idx + 1}`}
+              {d.status === "signed" && (
+                <span className="ml-2 inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Signed
+                </span>
+              )}
+            </h4>
+          )}
+          <DrawingDetails
+            drawing={d}
+            doorType={quoteDoorType}
+            onDownload={() => handleDownloadPdf(d)}
+            downloading={downloading}
+          />
+        </div>
+      ))}
 
-      {/* Sign Section */}
-      {!showSignPad ? (
+      {/* Sign Section — for the first unsigned drawing */}
+      {unsignedDrawing && !showSignPad && (
         <div className="bg-white rounded-xl border border-ocean-200 p-6 text-center">
           <h3 className="text-lg font-semibold text-ocean-900 mb-2">Ready to Approve?</h3>
           <p className="text-ocean-500 text-sm mb-4">
@@ -297,6 +349,7 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
               isCanvasInitRef.current = false;
               hasSignatureRef.current = false;
               setSignatureData(null);
+              setSigningDrawingId(unsignedDrawing.id);
               setShowSignPad(true);
             }}
             className="bg-primary-600 hover:bg-primary-500 text-white font-semibold px-8 py-3 rounded-lg transition-colors cursor-pointer"
@@ -304,7 +357,9 @@ export default function PortalApprovalDrawing({ drawing, quoteName, quoteId, quo
             Sign Approval Drawing
           </button>
         </div>
-      ) : (
+      )}
+
+      {showSignPad && (
         <div className="bg-white rounded-xl border border-ocean-200 p-6">
           <h3 className="text-lg font-semibold text-ocean-900 mb-4">Sign Below</h3>
 

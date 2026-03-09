@@ -12,7 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { getQuoteById, markQuoteViewed } from "@/lib/actions/quotes";
-import { getApprovalDrawing } from "@/lib/actions/approval-drawings";
+import { getApprovalDrawings } from "@/lib/actions/approval-drawings";
 import { getOrderTracking } from "@/lib/actions/order-tracking";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
 import { getPaymentsByQuoteId } from "@/lib/actions/payments";
@@ -65,7 +65,7 @@ const TABS = [
 export default function PortalClient({ quoteId }: { quoteId: string }) {
   const [loading, setLoading] = useState(true);
   const [quote, setQuote] = useState<QuoteData | null>(null);
-  const [drawing, setDrawing] = useState<ApprovalDrawing | null>(null);
+  const [drawings, setDrawings] = useState<ApprovalDrawing[]>([]);
   const [tracking, setTracking] = useState<OrderTracking | null>(null);
   const [photos, setPhotos] = useState<QuotePhoto[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,15 +75,15 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
   useEffect(() => {
     async function load() {
       try {
-        const [q, d, t, p, pay] = await Promise.all([
+        const [q, ds, t, p, pay] = await Promise.all([
           getQuoteById(quoteId),
-          getApprovalDrawing(quoteId).catch(() => null),
+          getApprovalDrawings(quoteId).catch(() => [] as ApprovalDrawing[]),
           getOrderTracking(quoteId).catch(() => null),
           getQuotePhotos(quoteId).catch(() => []),
           getPaymentsByQuoteId(quoteId).catch(() => []),
         ]);
         setQuote(q);
-        setDrawing(d);
+        setDrawings(ds);
         setTracking(t);
         setPhotos(p);
         setPayments(pay);
@@ -182,13 +182,13 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
       {/* Content */}
       <main className="max-w-5xl mx-auto px-4 py-8">
         {activeTab === "quote" && (
-          <PortalQuoteView quote={quote} photos={photos} drawing={drawing} />
+          <PortalQuoteView quote={quote} photos={photos} drawings={drawings} />
         )}
         {activeTab === "photos" && (
           <PortalPhotos quoteId={quoteId} photos={photos} setPhotos={setPhotos} />
         )}
         {activeTab === "approval" && (
-          <PortalApprovalDrawing drawing={drawing} quoteName={quote.client_name} quoteId={quoteId} quoteColor={quote.color} quoteDoorType={quote.door_type} portalStage={quote.portal_stage} />
+          <PortalApprovalDrawing drawings={drawings} quoteName={quote.client_name} quoteId={quoteId} quoteColor={quote.color} quoteDoorType={quote.door_type} portalStage={quote.portal_stage} quoteItems={quote.items} />
         )}
         {activeTab === "payments" && (
           <PortalPayments
