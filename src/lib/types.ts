@@ -212,6 +212,7 @@ export interface OrderTracking {
   quote_id: string;
   stage: string;
   tracking_number: string | null;
+  tracking_link: string | null;
   shipping_carrier: string | null;
   shipping_updates: ShippingUpdate[];
   deposit_1_paid: boolean;

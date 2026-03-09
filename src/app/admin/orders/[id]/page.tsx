@@ -20,6 +20,7 @@ import { getCurrentAdminUser } from "@/lib/auth";
 import SendBalanceButton from "@/components/SendBalanceButton";
 import SendDepositButton from "@/components/SendDepositButton";
 import StartManufacturingButton from "@/components/StartManufacturingButton";
+import CompleteManufacturingButton from "@/components/CompleteManufacturingButton";
 import TrackingCodeInput from "@/components/TrackingCodeInput";
 import MarkDeliveredButton from "@/components/MarkDeliveredButton";
 import OrderDownloads from "@/components/OrderDownloads";
@@ -28,6 +29,7 @@ import AdminPortalManager from "@/components/admin/AdminPortalManager";
 import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
 import PortalLinkBar from "@/components/admin/PortalLinkBar";
 import QuoteShareCard from "@/components/admin/QuoteShareCard";
+import OrderActionsDropdown from "@/components/admin/OrderActionsDropdown";
 
 export const dynamic = "force-dynamic";
 
@@ -97,47 +99,49 @@ function getProgressIndex(opts: {
 
 function ProgressTimeline({ currentIndex }: { currentIndex: number }) {
   return (
-    <div className="flex items-center w-full">
-      {PROGRESS_STEPS.map((step, i) => {
-        const isCompleted = i < currentIndex;
-        const isCurrent = i === currentIndex;
-        const Icon = step.icon;
-        return (
-          <div key={step.key} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center">
-              <div
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                  isCompleted
-                    ? "bg-emerald-500 text-white"
-                    : isCurrent
-                      ? "bg-sky-500 text-white ring-[3px] ring-sky-500/20"
-                      : "bg-white/[0.04] text-white/20"
-                }`}
-              >
-                {isCompleted ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : (
-                  <Icon className="w-3.5 h-3.5" />
-                )}
+    <div className="overflow-x-auto -mx-4 px-4">
+      <div className="flex items-center w-full min-w-[480px]">
+        {PROGRESS_STEPS.map((step, i) => {
+          const isCompleted = i < currentIndex;
+          const isCurrent = i === currentIndex;
+          const Icon = step.icon;
+          return (
+            <div key={step.key} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all ${
+                    isCompleted
+                      ? "bg-emerald-500 text-white"
+                      : isCurrent
+                        ? "bg-sky-500 text-white ring-[3px] ring-sky-500/20"
+                        : "bg-white/[0.04] text-white/20"
+                  }`}
+                >
+                  {isCompleted ? (
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                  ) : (
+                    <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  )}
+                </div>
+                <span
+                  className={`text-[9px] sm:text-[10px] mt-1.5 whitespace-nowrap font-medium ${
+                    isCurrent ? "text-sky-400" : isCompleted ? "text-emerald-400/70" : "text-white/20"
+                  }`}
+                >
+                  {step.label}
+                </span>
               </div>
-              <span
-                className={`text-[10px] mt-1.5 whitespace-nowrap font-medium ${
-                  isCurrent ? "text-sky-400" : isCompleted ? "text-emerald-400/70" : "text-white/20"
-                }`}
-              >
-                {step.label}
-              </span>
+              {i < PROGRESS_STEPS.length - 1 && (
+                <div
+                  className={`h-[2px] flex-1 mx-1 mt-[-18px] rounded-full ${
+                    i < currentIndex ? "bg-emerald-500/60" : "bg-white/[0.04]"
+                  }`}
+                />
+              )}
             </div>
-            {i < PROGRESS_STEPS.length - 1 && (
-              <div
-                className={`h-[2px] flex-1 mx-1 mt-[-18px] rounded-full ${
-                  i < currentIndex ? "bg-emerald-500/60" : "bg-white/[0.04]"
-                }`}
-              />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -191,8 +195,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const advancePaid = payments.some((p: { payment_type: string; status: string }) => p.payment_type === "advance_50" && p.status === "completed");
   const balancePaid = payments.some((p: { payment_type: string; status: string }) => p.payment_type === "balance_50" && p.status === "completed");
   const canSendDeposit = !hasAdvancePayment && cost > 0;
-  const canSendBalance = advancePaid && !hasBalancePayment && remaining > 0;
+  const canSendBalance = !hasBalancePayment && remaining > 0;
   const manufacturingStarted = !!tracking?.manufacturing_started_at;
+  const manufacturingCompleted = !!tracking?.manufacturing_completed_at;
   const canStartManufacturing = advancePaid && !manufacturingStarted;
   const isDelivered = tracking?.stage === "delivered";
   const canMarkDelivered = tracking?.stage === "shipping" && !isDelivered;
@@ -294,12 +299,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const deliveryAddress = quote?.delivery_address as string | undefined;
 
   // ── Next Action Banner ──
-  const needsTracking = balancePaid && manufacturingStarted && tracking && !tracking.tracking_number;
+  const needsTracking = balancePaid && manufacturingCompleted && tracking && !tracking.tracking_number;
   const nextAction = isDelivered ? "complete"
     : canMarkDelivered ? "shipped"
     : needsTracking ? "tracking"
-    : canSendBalance ? "balance"
-    : manufacturingStarted ? "manufacturing_progress"
+    : balancePaid && manufacturingCompleted && !tracking?.tracking_number ? "tracking"
+    : !balancePaid && manufacturingCompleted ? "awaiting_balance"
+    : manufacturingStarted && !manufacturingCompleted ? "complete_manufacturing"
     : canStartManufacturing ? "manufacturing"
     : canSendDeposit ? "deposit"
     : "none";
@@ -310,7 +316,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     emerald: { bg: "bg-emerald-500/10 border border-emerald-500/20", icon: "bg-emerald-500/20", text: "text-emerald-300" },
   };
   const bannerTheme = nextAction === "complete" ? bannerStyles.emerald
-    : nextAction === "deposit" || nextAction === "balance" ? bannerStyles.amber
+    : nextAction === "complete_manufacturing" ? bannerStyles.emerald
+    : nextAction === "deposit" || nextAction === "awaiting_balance" ? bannerStyles.amber
     : bannerStyles.sky;
 
   return (
@@ -331,6 +338,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           >
             <FileText className="w-3.5 h-3.5" /> View Quote
           </Link>
+          <OrderActionsDropdown
+            quoteId={order.quote_id}
+            contractId={order.contract_id}
+            clientName={order.client_name}
+            depositAmount={Math.round(cost * 50) / 100}
+            balanceAmount={remaining}
+            canSendDeposit={!hasAdvancePayment && cost > 0}
+            canSendBalance={!hasBalancePayment && remaining > 0}
+          />
         </div>
       </div>
 
@@ -387,36 +403,48 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {nextAction !== "none" && (
             <div className={`mt-4 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${bannerTheme.bg}`}>
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${bannerTheme.icon} ${nextAction === "manufacturing_progress" ? "animate-pulse" : ""}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${bannerTheme.icon}`}>
                   {nextAction === "complete" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                   {nextAction === "shipped" && <Truck className="w-4 h-4 text-sky-400" />}
                   {nextAction === "tracking" && <Truck className="w-4 h-4 text-sky-400" />}
-                  {(nextAction === "manufacturing" || nextAction === "manufacturing_progress") && <Factory className="w-4 h-4 text-sky-400" />}
-                  {nextAction === "balance" && <CreditCard className="w-4 h-4 text-amber-400" />}
+                  {nextAction === "complete_manufacturing" && <Factory className="w-4 h-4 text-emerald-400" />}
+                  {nextAction === "manufacturing" && <Factory className="w-4 h-4 text-sky-400" />}
+                  {nextAction === "awaiting_balance" && <CreditCard className="w-4 h-4 text-amber-400" />}
                   {nextAction === "deposit" && <DollarSign className="w-4 h-4 text-amber-400" />}
                 </div>
-                <p className={`text-sm font-medium ${bannerTheme.text}`}>
-                  {nextAction === "deposit" && "Send deposit invoice to get started"}
-                  {nextAction === "manufacturing" && "Deposit received \u2014 start manufacturing"}
-                  {nextAction === "manufacturing_progress" && `Manufacturing since ${new Date(tracking!.manufacturing_started_at!).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
-                  {nextAction === "balance" && "Send balance invoice"}
-                  {nextAction === "tracking" && "Add tracking number"}
-                  {nextAction === "shipped" && "Shipped \u2014 mark as delivered"}
-                  {nextAction === "complete" && "Order complete"}
-                </p>
+                <div>
+                  <p className={`text-sm font-medium ${bannerTheme.text}`}>
+                    {nextAction === "deposit" && "Send deposit invoice to get started"}
+                    {nextAction === "manufacturing" && "Deposit received \u2014 start manufacturing"}
+                    {nextAction === "complete_manufacturing" && "Manufacturing in progress \u2014 mark as complete"}
+                    {nextAction === "awaiting_balance" && "Waiting for balance payment"}
+                    {nextAction === "tracking" && "Add tracking number"}
+                    {nextAction === "shipped" && "Shipped \u2014 mark as delivered"}
+                    {nextAction === "complete" && "Order complete"}
+                  </p>
+                  <p className="text-white/30 text-xs mt-0.5">
+                    {nextAction === "deposit" && `Send the 50% deposit invoice ($${(Math.round(cost * 50) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}) to the client.`}
+                    {nextAction === "manufacturing" && "Begin production now that the deposit has been received."}
+                    {nextAction === "complete_manufacturing" && "Complete manufacturing to send the balance invoice and notify the client."}
+                    {nextAction === "awaiting_balance" && `Balance invoice ($${remaining.toLocaleString("en-US", { minimumFractionDigits: 2 })}) has been sent. Waiting for client payment.`}
+                    {nextAction === "tracking" && "Enter the shipping tracking number for client notifications."}
+                    {nextAction === "shipped" && "Confirm delivery once the order arrives."}
+                    {nextAction === "complete" && "All steps are finished. This order is complete."}
+                  </p>
+                </div>
               </div>
-              <div className="sm:shrink-0">
+              <div className="w-full sm:w-auto sm:shrink-0">
                 {nextAction === "deposit" && (
                   <SendDepositButton quoteId={order.quote_id} clientName={order.client_name} amount={Math.round(cost * 50) / 100} />
                 )}
                 {nextAction === "manufacturing" && (
                   <StartManufacturingButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
                 )}
-                {nextAction === "balance" && (
-                  <SendBalanceButton quoteId={order.quote_id} contractId={order.contract_id} clientName={order.client_name} amount={remaining} />
+                {nextAction === "complete_manufacturing" && (
+                  <CompleteManufacturingButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
                 )}
                 {nextAction === "tracking" && tracking && (
-                  <TrackingCodeInput trackingId={tracking.id} quoteId={order.quote_id} initialTrackingNumber={tracking.tracking_number} initialCarrier={tracking.shipping_carrier} />
+                  <TrackingCodeInput trackingId={tracking.id} quoteId={order.quote_id} initialTrackingNumber={tracking.tracking_number} initialCarrier={tracking.shipping_carrier} initialTrackingLink={tracking.tracking_link} />
                 )}
                 {nextAction === "shipped" && (
                   <MarkDeliveredButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
@@ -485,8 +513,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {specs.map(({ label, value, icon: Icon }) => (
                   <div key={label} className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-2.5 sm:p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Icon className="w-3.5 h-3.5 text-white/20" />
+                    <div className="flex items-center gap-1.5 sm:gap-2 mb-1">
+                      <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white/20" />
                       <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">{label}</p>
                     </div>
                     <p className="text-white font-medium text-sm">{value || "-"}</p>
@@ -512,16 +540,16 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-white/[0.02]">
-                      <th className="text-left px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Item</th>
+                      <th className="text-left px-2 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Item</th>
                       <th className="text-right px-2 sm:px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Qty</th>
                       <th className="text-right px-2 sm:px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold hidden sm:table-cell">Price</th>
-                      <th className="text-right px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Total</th>
+                      <th className="text-right px-2 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.04]">
                     {quoteItems.map((item, idx) => (
                       <tr key={(item.id as string) || idx} className="hover:bg-white/[0.01] transition-colors">
-                        <td className="px-3 sm:px-5 py-3 text-white/70">
+                        <td className="px-2 sm:px-5 py-3 text-white/70">
                           <span className="line-clamp-2 sm:line-clamp-none">{String(item.name)}</span>
                           {item.description ? (
                             <p className="text-white/25 text-xs mt-0.5 hidden sm:block">{String(item.description)}</p>
@@ -531,7 +559,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         <td className="px-2 sm:px-4 py-3 text-right text-white/50 hidden sm:table-cell">
                           ${Number(item.unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="px-3 sm:px-5 py-3 text-right text-white font-medium">
+                        <td className="px-2 sm:px-5 py-3 text-right text-white font-medium">
                           ${Number(item.total).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
@@ -692,7 +720,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               ) : (
                 <div className="space-y-2.5">
                   {payments.map((p: { id: string; payment_type: string; amount: number; status: string; created_at: string }) => (
-                    <div key={p.id} className={`rounded-xl bg-white/[0.03] border p-3.5 flex items-center justify-between ${p.status === "completed" ? "border-emerald-500/20" : "border-white/[0.04]"}`}>
+                    <div key={p.id} className={`rounded-xl bg-white/[0.03] border p-3.5 flex flex-col sm:flex-row sm:items-center ${p.status === "completed" ? "border-emerald-500/20" : "border-white/[0.04]"}`}>
                       <div className="flex items-center gap-3">
                         <div className={`w-2 h-2 rounded-full shrink-0 ${p.status === "completed" ? "bg-emerald-400" : "bg-amber-400"}`} />
                         <div>
@@ -702,7 +730,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 mt-1.5 sm:mt-0 sm:ml-auto">
                         <p className="text-white font-semibold text-sm">
                           ${Number(p.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </p>
@@ -747,6 +775,32 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Shipping & Tracking */}
+          {tracking && manufacturingCompleted && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <Truck className="w-4 h-4 text-sky-400" />
+                </div>
+                <h2 className="text-base font-semibold text-white">Shipping & Tracking</h2>
+                {tracking.tracking_number && (
+                  <span className="ml-auto text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-md text-emerald-400 bg-emerald-500/10">
+                    {tracking.stage === "delivered" ? "Delivered" : tracking.stage === "shipping" ? "Shipped" : "Ready"}
+                  </span>
+                )}
+              </div>
+              <div className="p-4 sm:p-6">
+                <TrackingCodeInput
+                  trackingId={tracking.id}
+                  quoteId={order.quote_id}
+                  initialTrackingNumber={tracking.tracking_number}
+                  initialCarrier={tracking.shipping_carrier}
+                  initialTrackingLink={tracking.tracking_link}
+                />
               </div>
             </div>
           )}

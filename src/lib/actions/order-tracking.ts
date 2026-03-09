@@ -205,11 +205,12 @@ export async function markDepositPaid(
     }
   }
 
+  // Deposit 1 paid → move to manufacturing. Deposit 2 paid → stay at deposit_2_pending (admin adds tracking first).
   const update = depositNumber === 1
     ? { deposit_1_paid: true, deposit_1_paid_at: now, stage: "manufacturing" }
-    : { deposit_2_paid: true, deposit_2_paid_at: now, stage: "shipping" };
+    : { deposit_2_paid: true, deposit_2_paid_at: now };
 
-  const portalStage = depositNumber === 1 ? "manufacturing" : "shipping";
+  const portalStage = depositNumber === 1 ? "manufacturing" : "deposit_2_pending";
 
   const { error } = await supabase
     .from("order_tracking")
@@ -230,19 +231,41 @@ export async function updateTrackingInfo(
   trackingId: string,
   quoteId: string,
   trackingNumber: string,
-  shippingCarrier: string
+  shippingCarrier: string,
+  trackingLink?: string
 ): Promise<void> {
   const supabase = await createClient();
+  const now = new Date().toISOString();
+
+  // Check current stage — if adding tracking while at deposit_2_pending, transition to shipping
+  const { data: current } = await supabase
+    .from("order_tracking")
+    .select("stage")
+    .eq("id", trackingId)
+    .single();
+
+  const shouldTransition = trackingNumber && current?.stage === "deposit_2_pending";
+
   const { error } = await supabase
     .from("order_tracking")
     .update({
       tracking_number: trackingNumber || null,
       shipping_carrier: shippingCarrier || null,
-      updated_at: new Date().toISOString(),
+      tracking_link: trackingLink || null,
+      ...(shouldTransition ? { stage: "shipping", shipped_at: now } : {}),
+      updated_at: now,
     })
     .eq("id", trackingId);
 
   if (error) throw new Error(error.message);
+
+  if (shouldTransition) {
+    await supabase
+      .from("quotes")
+      .update({ portal_stage: "shipping" })
+      .eq("id", quoteId);
+  }
+
   revalidatePath(`/admin/orders`);
   revalidatePath(`/portal/${quoteId}`);
 
@@ -264,6 +287,7 @@ export async function updateTrackingInfo(
           orderNumber: quote.order_number || "",
           trackingNumber,
           shippingCarrier: shippingCarrier || "",
+          trackingLink: trackingLink || undefined,
           portalUrl: `${origin}/portal/${quoteId}`,
         });
 
