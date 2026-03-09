@@ -14,7 +14,6 @@ interface Props {
 export default function CompleteManufacturingButton({ orderId, clientName, clientEmail }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -32,24 +31,13 @@ export default function CompleteManufacturingButton({ orderId, clientName, clien
     setLoading(true);
     try {
       await completeManufacturing(orderId);
-      setDone(true);
       setShowConfirm(false);
       router.refresh();
     } catch (err) {
       setShowConfirm(false);
       alert(err instanceof Error ? err.message : "Failed to complete manufacturing");
-    } finally {
       setLoading(false);
     }
-  }
-
-  if (done) {
-    return (
-      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm font-medium">
-        <CheckCircle2 className="w-4 h-4" />
-        Manufacturing complete — balance invoice sent
-      </div>
-    );
   }
 
   return (
@@ -59,8 +47,8 @@ export default function CompleteManufacturingButton({ orderId, clientName, clien
         disabled={loading}
         className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm font-medium hover:bg-emerald-500/15 transition-colors cursor-pointer disabled:opacity-50"
       >
-        <CheckCircle2 className="w-4 h-4" />
-        Complete Manufacturing
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+        {loading ? "Processing..." : "Complete Manufacturing"}
       </button>
 
       {/* Confirmation Modal */}

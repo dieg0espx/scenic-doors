@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Factory, Loader2, CheckCircle2, X, Mail } from "lucide-react";
+import { Factory, Loader2, X, Mail } from "lucide-react";
 import { startManufacturing } from "@/lib/actions/orders";
 
 interface Props {
@@ -14,7 +14,6 @@ interface Props {
 export default function StartManufacturingButton({ orderId, clientName, clientEmail }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [done, setDone] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -32,24 +31,13 @@ export default function StartManufacturingButton({ orderId, clientName, clientEm
     setLoading(true);
     try {
       await startManufacturing(orderId);
-      setDone(true);
       setShowConfirm(false);
       router.refresh();
     } catch (err) {
       setShowConfirm(false);
       alert(err instanceof Error ? err.message : "Failed to start manufacturing");
-    } finally {
       setLoading(false);
     }
-  }
-
-  if (done) {
-    return (
-      <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-300 text-sm font-medium">
-        <CheckCircle2 className="w-4 h-4" />
-        Manufacturing started — client notified
-      </div>
-    );
   }
 
   return (
@@ -59,8 +47,8 @@ export default function StartManufacturingButton({ orderId, clientName, clientEm
         disabled={loading}
         className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-300 text-sm font-medium hover:bg-sky-500/15 transition-colors cursor-pointer disabled:opacity-50"
       >
-        <Factory className="w-4 h-4" />
-        Start Manufacturing
+        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Factory className="w-4 h-4" />}
+        {loading ? "Starting..." : "Start Manufacturing"}
       </button>
 
       {/* Confirmation Modal */}
