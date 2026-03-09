@@ -591,6 +591,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             drawings={allDrawings}
             photos={photos}
             followUps={[]}
+            hideFollowUps
             documents={documents}
           />
 
