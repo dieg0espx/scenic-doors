@@ -633,12 +633,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           )}
 
-          {/* Notes & Tasks */}
-          <QuoteNotesAndTasks
-            quoteId={order.quote_id}
-            initialNotes={notes}
-            initialTasks={tasks}
-          />
         </div>
 
         {/* ── RIGHT COLUMN (sidebar) ── */}
@@ -846,20 +840,27 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             />
           )}
 
-          {/* Portal Management */}
-          <AdminPortalManager
+          {/* Notes & Tasks */}
+          <QuoteNotesAndTasks
             quoteId={order.quote_id}
-            quoteName={order.client_name}
-            quoteColor={(quote?.color as string) || undefined}
-            quoteItems={quoteItems}
-            drawing={drawing}
-            photos={photos}
-            followUps={followUps}
-            documents={documents}
+            initialNotes={notes}
+            initialTasks={tasks}
           />
 
         </div>
       </div>
+
+      {/* ── Portal Management (full-width) ── */}
+      <AdminPortalManager
+        quoteId={order.quote_id}
+        quoteName={order.client_name}
+        quoteColor={(quote?.color as string) || undefined}
+        quoteItems={quoteItems}
+        drawing={drawing}
+        photos={photos}
+        followUps={followUps}
+        documents={documents}
+      />
     </div>
   );
 }
