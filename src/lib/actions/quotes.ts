@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendQuoteEmail, sendNewQuoteNotificationEmail, sendInternalNotificationEmail, sendQuoteApprovedEmail, sendEstimateConfirmationEmail } from "@/lib/email";
 import { sendSlackNotification } from "@/lib/slack";
@@ -42,7 +42,7 @@ export async function createQuote(formData: {
   shared_with?: string[];
   intent_level?: string;
 }) {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   let clientId = formData.client_id || null;
 
