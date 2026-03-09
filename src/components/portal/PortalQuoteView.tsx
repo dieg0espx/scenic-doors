@@ -63,12 +63,14 @@ interface PortalQuoteViewProps {
 
 export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteViewProps) {
   const total = Number(quote.grand_total || quote.cost || 0);
+  const items = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items : [];
+  const [selectedItemIndex, setSelectedItemIndex] = useState(0);
 
-  // Extract config from first item (full quotes store panelCount, panelLayout, etc.)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const firstItem: any = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items[0] : null;
-  const itemPanelCount: number | undefined = drawing?.panel_count ?? firstItem?.panelCount;
-  const itemPanelLayout: string | undefined = drawing?.configuration ?? firstItem?.panelLayout;
+  const selectedItem: any = items[selectedItemIndex] ?? items[0] ?? null;
+  const itemPanelCount: number | undefined = drawing?.panel_count ?? selectedItem?.panelCount;
+  const itemPanelLayout: string | undefined = drawing?.configuration ?? selectedItem?.panelLayout;
+  const selectedDoorType: string = selectedItem?.doorTypeSlug || selectedItem?.name || quote.door_type;
 
   const directionLabels: Record<string, string> = {
     left: "Slides Left",
@@ -83,14 +85,14 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
   };
 
   const specs = [
-    { label: "Door Type", value: quote.door_type, icon: DoorOpen },
-    { label: "Material", value: quote.material, icon: Layers },
+    { label: "Door Type", value: selectedItem?.name || quote.door_type, icon: DoorOpen },
+    { label: "Material", value: selectedItem?.material || quote.material, icon: Layers },
     {
       label: "Overall Size",
       value: drawing
         ? `${drawing.overall_width}" x ${drawing.overall_height}"`
-        : firstItem?.width && firstItem?.height
-          ? `${firstItem.width}" x ${firstItem.height}"`
+        : selectedItem?.width && selectedItem?.height
+          ? `${selectedItem.width}" x ${selectedItem.height}"`
           : quote.size,
       icon: Ruler,
     },
@@ -98,17 +100,17 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
       label: "Panels",
       value: drawing
         ? String(drawing.panel_count)
-        : firstItem?.panelCount
-          ? String(firstItem.panelCount)
+        : selectedItem?.panelCount
+          ? String(selectedItem.panelCount)
           : null,
       icon: PanelLeft,
     },
     {
       label: "Per-Panel Width",
       value: (() => {
-        const pc = drawing?.panel_count ?? firstItem?.panelCount;
-        const w = drawing?.overall_width ?? firstItem?.width;
-        const slug = firstItem?.doorTypeSlug;
+        const pc = drawing?.panel_count ?? selectedItem?.panelCount;
+        const w = drawing?.overall_width ?? selectedItem?.width;
+        const slug = selectedItem?.doorTypeSlug;
         const offset = slug ? (PRODUCT_CONFIGS[slug]?.usableOpeningOffset ?? 0) : 0;
         return pc && pc > 1 && w ? `${Math.round(((w - offset) / pc) * 10) / 10}"` : null;
       })(),
@@ -116,7 +118,7 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
     },
     {
       label: "Panel Layout",
-      value: drawing?.configuration || firstItem?.panelLayout || null,
+      value: drawing?.configuration || selectedItem?.panelLayout || null,
       icon: PanelLeft,
     },
     {
@@ -137,26 +139,26 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
       label: "Frame Color",
       value: drawing?.frame_color
         ? drawing.frame_color.split(",").map((v) => v.trim()).join(", ")
-        : firstItem?.exteriorFinish || quote.color,
+        : selectedItem?.exteriorFinish || quote.color,
       icon: Palette,
     },
-    ...(firstItem?.interiorFinish && firstItem.interiorFinish !== firstItem.exteriorFinish
-      ? [{ label: "Interior Color", value: firstItem.interiorFinish as string, icon: Palette }]
+    ...(selectedItem?.interiorFinish && selectedItem.interiorFinish !== selectedItem.exteriorFinish
+      ? [{ label: "Interior Color", value: selectedItem.interiorFinish as string, icon: Palette }]
       : []),
     {
       label: "Glass Type",
-      value: firstItem?.glassType || quote.glass_type,
+      value: selectedItem?.glassType || quote.glass_type,
       icon: GlassWater,
     },
     {
       label: "Hardware",
       value: drawing?.hardware_color
         ? drawing.hardware_color.split(",").map((v) => v.trim()).join(", ")
-        : firstItem?.hardwareFinish || null,
+        : selectedItem?.hardwareFinish || null,
       icon: Wrench,
     },
-    ...(drawing?.system_type || firstItem?.systemType
-      ? [{ label: "System Type", value: (drawing?.system_type || firstItem?.systemType) as string, icon: Layers }]
+    ...(drawing?.system_type || selectedItem?.systemType
+      ? [{ label: "System Type", value: (drawing?.system_type || selectedItem?.systemType) as string, icon: Layers }]
       : []),
   ].filter((s) => s.value);
 
@@ -166,15 +168,32 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
   return (
     <div className="space-y-6">
       {/* Door Preview */}
-      {quote.door_type && (
+      {selectedDoorType && (
         <div className="bg-white rounded-xl border border-ocean-200 overflow-hidden">
-          <div className="px-5 py-4 border-b border-ocean-100">
+          <div className="px-5 py-4 border-b border-ocean-100 flex items-center justify-between gap-3 flex-wrap">
             <h3 className="text-sm font-semibold text-ocean-900 uppercase tracking-wider">
               Door Preview
             </h3>
+            {items.length > 1 && (
+              <div className="flex gap-1.5">
+                {items.map((item, idx) => (
+                  <button
+                    key={item.id || idx}
+                    onClick={() => setSelectedItemIndex(idx)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                      idx === selectedItemIndex
+                        ? "bg-primary-500 text-white"
+                        : "bg-ocean-100 text-ocean-500 hover:bg-ocean-200"
+                    }`}
+                  >
+                    {item.name || `Door ${idx + 1}`}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <DoorTypeAnimation
-            doorType={quote.door_type}
+            doorType={selectedDoorType}
             compact={false}
             panelCount={itemPanelCount}
             panelLayout={itemPanelLayout}

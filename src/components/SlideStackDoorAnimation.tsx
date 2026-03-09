@@ -337,7 +337,7 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
     return (
       <div style={{
         flex: 1,
-        minWidth: '280px',
+        minWidth: 0,
         padding: '24px',
         background: '#F9FAFB',
         borderRadius: '16px',

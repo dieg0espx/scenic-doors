@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 
-const PivotDoorAnimation = () => {
+const PivotDoorAnimation = ({ compact }: { compact?: boolean } = {}) => {
   const [openAmount, setOpenAmount] = useState(0);
   const [pivotType, setPivotType] = useState<'offset' | 'center'>('offset');
   const [material, setMaterial] = useState<'wood' | 'metal'>('wood');
@@ -96,10 +96,11 @@ const PivotDoorAnimation = () => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: '40px 24px',
+      padding: compact ? '16px 12px' : '40px 24px',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
       {/* Header */}
+      {!compact && (
       <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px' }}>
         <h2 style={{
           fontSize: '34px',
@@ -118,8 +119,10 @@ const PivotDoorAnimation = () => {
           See how pivot doors rotate on different axes
         </p>
       </div>
+      )}
 
       {/* Controls */}
+      {!compact && (
       <div style={{
         display: 'flex',
         gap: '12px',
@@ -191,18 +194,19 @@ const PivotDoorAnimation = () => {
           ))}
         </div>
       </div>
+      )}
 
       {/* Door Display */}
       <div style={{
         width: '100%',
-        maxWidth: '500px',
+        maxWidth: compact ? '350px' : '500px',
         perspective: '1200px',
         perspectiveOrigin: '50% 50%',
       }}>
         {/* Frame Container */}
         <div style={{
           position: 'relative',
-          height: '420px',
+          height: compact ? '250px' : '420px',
         }}>
           {/* Outer Frame */}
           <div style={{
@@ -430,10 +434,10 @@ const PivotDoorAnimation = () => {
 
       {/* Animated Button */}
       <div style={{
-        marginTop: '32px',
+        marginTop: compact ? '16px' : '32px',
         width: '100%',
         maxWidth: '320px',
-        padding: '24px',
+        padding: compact ? '16px' : '24px',
         background: '#FAFAFA',
         borderRadius: '16px',
         border: '1px solid #E4E4E7',
@@ -519,7 +523,7 @@ const PivotDoorAnimation = () => {
       </div>
 
       {/* Pivot Info */}
-      <div style={{
+      {!compact && <div style={{
         marginTop: '24px',
         padding: '20px',
         background: '#F9FAFB',
@@ -587,7 +591,7 @@ const PivotDoorAnimation = () => {
             Pivot Point
           </div>
         </div>
-      </div>
+      </div>}
     </div>
   );
 };
