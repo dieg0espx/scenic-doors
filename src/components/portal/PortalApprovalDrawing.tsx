@@ -316,111 +316,115 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
         </p>
       </div>
 
-      {allDrawings.map((d, idx) => (
-        <div key={d.id}>
-          {hasMultipleItems && (
-            <h4 className="text-sm font-semibold text-ocean-700 mb-2">
-              {quoteItems[idx]?.name || `Door ${idx + 1}`}
-              {d.status === "signed" && (
-                <span className="ml-2 inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Signed
-                </span>
-              )}
-            </h4>
-          )}
-          <DrawingDetails
-            drawing={d}
-            doorType={quoteDoorType}
-            onDownload={() => handleDownloadPdf(d)}
-            downloading={downloading}
-          />
-        </div>
-      ))}
+      {allDrawings.map((d, idx) => {
+        const isSigned = d.status === "signed";
+        const isSigningThis = showSignPad && signingDrawingId === d.id;
 
-      {/* Sign Section — for the first unsigned drawing */}
-      {unsignedDrawing && !showSignPad && (
-        <div className="bg-white rounded-xl border border-ocean-200 p-6 text-center">
-          <h3 className="text-lg font-semibold text-ocean-900 mb-2">Ready to Approve?</h3>
-          <p className="text-ocean-500 text-sm mb-4">
-            By signing, you confirm that the specifications above are correct and authorize manufacturing.
-          </p>
-          <button
-            onClick={() => {
-              isCanvasInitRef.current = false;
-              hasSignatureRef.current = false;
-              setSignatureData(null);
-              setSigningDrawingId(unsignedDrawing.id);
-              setShowSignPad(true);
-            }}
-            className="bg-primary-600 hover:bg-primary-500 text-white font-semibold px-8 py-3 rounded-lg transition-colors cursor-pointer"
-          >
-            Sign Approval Drawing
-          </button>
-        </div>
-      )}
-
-      {showSignPad && (
-        <div className="bg-white rounded-xl border border-ocean-200 p-6">
-          <h3 className="text-lg font-semibold text-ocean-900 mb-4">Sign Below</h3>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-ocean-700 mb-1.5">Your Full Name</label>
-            <input
-              type="text"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full px-4 py-3 border border-ocean-200 rounded-lg text-ocean-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+        return (
+          <div key={d.id} className="space-y-4">
+            {hasMultipleItems && (
+              <h4 className="text-sm font-semibold text-ocean-700">
+                {quoteItems[idx]?.name || `Door ${idx + 1}`}
+                {isSigned && (
+                  <span className="ml-2 inline-flex items-center gap-1 text-xs text-green-600 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Signed
+                  </span>
+                )}
+              </h4>
+            )}
+            <DrawingDetails
+              drawing={d}
+              doorType={quoteDoorType}
+              onDownload={() => handleDownloadPdf(d)}
+              downloading={downloading}
             />
-          </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-ocean-700 mb-1.5">Signature</label>
-            <div className="border-2 border-dashed border-ocean-300 rounded-lg overflow-hidden bg-white">
-              <canvas
-                ref={canvasRef}
-                width={600}
-                height={200}
-                className="w-full h-[150px] sm:h-[200px] cursor-crosshair touch-none"
-              />
-            </div>
-            <div className="flex items-center justify-between mt-1.5">
-              <p className="text-xs text-ocean-400">
-                {signatureData ? "Signature captured" : "Sign above using mouse or touch"}
-              </p>
-              <button
-                onClick={clearCanvas}
-                disabled={!signatureData}
-                className="text-xs text-ocean-400 hover:text-ocean-600 disabled:opacity-40 cursor-pointer"
-              >
-                Clear signature
-              </button>
-            </div>
-          </div>
+            {/* Per-drawing sign section */}
+            {!isSigned && !isSigningThis && (
+              <div className="bg-white rounded-xl border border-ocean-200 p-5 text-center">
+                <p className="text-ocean-500 text-sm mb-3">
+                  By signing, you confirm that the specifications above are correct.
+                </p>
+                <button
+                  onClick={() => {
+                    isCanvasInitRef.current = false;
+                    hasSignatureRef.current = false;
+                    setSignatureData(null);
+                    setSigningDrawingId(d.id);
+                    setShowSignPad(true);
+                  }}
+                  className="bg-primary-600 hover:bg-primary-500 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors cursor-pointer text-sm"
+                >
+                  Sign Approval Drawing
+                </button>
+              </div>
+            )}
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => setShowSignPad(false)}
-              className="px-6 py-3 border border-ocean-200 rounded-lg text-ocean-600 font-medium hover:bg-ocean-50 transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSign}
-              disabled={signing || !customerName.trim() || !signatureData}
-              className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors cursor-pointer"
-            >
-              {signing ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Signing...
-                </>
-              ) : (
-                "Confirm & Sign"
-              )}
-            </button>
+            {isSigningThis && (
+              <div className="bg-white rounded-xl border border-ocean-200 p-6">
+                <h3 className="text-lg font-semibold text-ocean-900 mb-4">Sign Below</h3>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-ocean-700 mb-1.5">Your Full Name</label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full px-4 py-3 border border-ocean-200 rounded-lg text-ocean-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 focus:border-primary-500"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-ocean-700 mb-1.5">Signature</label>
+                  <div className="border-2 border-dashed border-ocean-300 rounded-lg overflow-hidden bg-white">
+                    <canvas
+                      ref={canvasRef}
+                      width={600}
+                      height={200}
+                      className="w-full h-[150px] sm:h-[200px] cursor-crosshair touch-none"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between mt-1.5">
+                    <p className="text-xs text-ocean-400">
+                      {signatureData ? "Signature captured" : "Sign above using mouse or touch"}
+                    </p>
+                    <button
+                      onClick={clearCanvas}
+                      disabled={!signatureData}
+                      className="text-xs text-ocean-400 hover:text-ocean-600 disabled:opacity-40 cursor-pointer"
+                    >
+                      Clear signature
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { setShowSignPad(false); setSigningDrawingId(null); }}
+                    className="px-6 py-3 border border-ocean-200 rounded-lg text-ocean-600 font-medium hover:bg-ocean-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSign}
+                    disabled={signing || !customerName.trim() || !signatureData}
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors cursor-pointer"
+                  >
+                    {signing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Signing...
+                      </>
+                    ) : (
+                      "Confirm & Sign"
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })}
     </div>
   );
 }
