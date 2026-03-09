@@ -522,25 +522,27 @@ function DoorItemCard({
 
               {/* Two-tone toggle */}
               <div className="space-y-3">
-                <label className="flex items-center gap-3 cursor-pointer group">
+                <div
+                  className="flex items-center gap-3 cursor-pointer group"
+                  onClick={() => {
+                    if (isTwoTone) {
+                      onUpdate({ interiorFinish: "" });
+                    } else {
+                      onUpdate({ interiorFinish: item.exteriorFinish || INTERIOR_COLORS[0] });
+                    }
+                  }}
+                >
                   <div
                     className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
                       isTwoTone
                         ? "bg-violet-500 border-violet-500"
                         : "border-white/[0.12] bg-transparent group-hover:border-white/[0.25]"
                     }`}
-                    onClick={() => {
-                      if (isTwoTone) {
-                        onUpdate({ interiorFinish: "" });
-                      } else {
-                        onUpdate({ interiorFinish: item.exteriorFinish || INTERIOR_COLORS[0] });
-                      }
-                    }}
                   >
                     {isTwoTone && <Check className="w-3.5 h-3.5 text-white" />}
                   </div>
                   <span className="text-white/50 text-sm">Two-tone (different interior finish)</span>
-                </label>
+                </div>
                 {isTwoTone && (
                   <div>
                     <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
