@@ -543,6 +543,45 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           )}
 
+          {/* Pricing */}
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                <DollarSign className="w-4 h-4 text-emerald-400" />
+              </div>
+              <h2 className="text-base font-semibold text-white">Pricing</h2>
+              <span className="text-white font-semibold text-sm ml-auto">${cost.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+            </div>
+            <div className="p-4 sm:p-6">
+              <div className="space-y-2.5">
+                {Number(quote?.subtotal) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Subtotal</span>
+                    <span className="text-white/60">${Number(quote?.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                {Number(quote?.installation_cost) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Installation</span>
+                    <span className="text-white/60">${Number(quote?.installation_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                {Number(quote?.delivery_cost) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Delivery</span>
+                    <span className="text-white/60">${Number(quote?.delivery_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                {Number(quote?.tax) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Tax</span>
+                    <span className="text-white/60">${Number(quote?.tax).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Contract */}
           {contract && (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
@@ -593,6 +632,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <p className="text-sm text-white/50 leading-relaxed">{quote?.notes as string}</p>
             </div>
           )}
+
+          {/* Notes & Tasks */}
+          <QuoteNotesAndTasks
+            quoteId={order.quote_id}
+            initialNotes={notes}
+            initialTasks={tasks}
+          />
         </div>
 
         {/* ── RIGHT COLUMN (sidebar) ── */}
@@ -665,50 +711,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Pricing Card */}
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-            <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <DollarSign className="w-4 h-4 text-emerald-400" />
-              </div>
-              <h2 className="text-base font-semibold text-white">Pricing</h2>
-            </div>
-            <div className="p-4 sm:p-6">
-              <div className="text-center mb-5 pb-5 border-b border-white/[0.06]">
-                <p className="text-white/30 text-[11px] uppercase tracking-wider font-medium mb-1">Grand Total</p>
-                <p className="text-3xl font-bold text-white">
-                  ${cost.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="space-y-2.5">
-                {Number(quote?.subtotal) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Subtotal</span>
-                    <span className="text-white/60">${Number(quote?.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                )}
-                {Number(quote?.installation_cost) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Installation</span>
-                    <span className="text-white/60">${Number(quote?.installation_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                )}
-                {Number(quote?.delivery_cost) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Delivery</span>
-                    <span className="text-white/60">${Number(quote?.delivery_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                )}
-                {Number(quote?.tax) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Tax</span>
-                    <span className="text-white/60">${Number(quote?.tax).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
@@ -844,29 +846,20 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             />
           )}
 
+          {/* Portal Management */}
+          <AdminPortalManager
+            quoteId={order.quote_id}
+            quoteName={order.client_name}
+            quoteColor={(quote?.color as string) || undefined}
+            quoteItems={quoteItems}
+            drawing={drawing}
+            photos={photos}
+            followUps={followUps}
+            documents={documents}
+          />
+
         </div>
       </div>
-
-      {/* ── Notes & Tasks (full-width) ── */}
-      <div className="mb-6">
-        <QuoteNotesAndTasks
-          quoteId={order.quote_id}
-          initialNotes={notes}
-          initialTasks={tasks}
-        />
-      </div>
-
-      {/* ── Portal Management (full-width) ── */}
-      <AdminPortalManager
-        quoteId={order.quote_id}
-        quoteName={order.client_name}
-        quoteColor={(quote?.color as string) || undefined}
-        quoteItems={quoteItems}
-        drawing={drawing}
-        photos={photos}
-        followUps={followUps}
-        documents={documents}
-      />
     </div>
   );
 }
