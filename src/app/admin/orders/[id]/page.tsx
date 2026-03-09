@@ -20,6 +20,7 @@ import { getCurrentAdminUser } from "@/lib/auth";
 import SendBalanceButton from "@/components/SendBalanceButton";
 import SendDepositButton from "@/components/SendDepositButton";
 import StartManufacturingButton from "@/components/StartManufacturingButton";
+import CompleteManufacturingButton from "@/components/CompleteManufacturingButton";
 import TrackingCodeInput from "@/components/TrackingCodeInput";
 import MarkDeliveredButton from "@/components/MarkDeliveredButton";
 import OrderDownloads from "@/components/OrderDownloads";
@@ -196,6 +197,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const canSendDeposit = !hasAdvancePayment && cost > 0;
   const canSendBalance = !hasBalancePayment && remaining > 0;
   const manufacturingStarted = !!tracking?.manufacturing_started_at;
+  const manufacturingCompleted = !!tracking?.manufacturing_completed_at;
   const canStartManufacturing = advancePaid && !manufacturingStarted;
   const isDelivered = tracking?.stage === "delivered";
   const canMarkDelivered = tracking?.stage === "shipping" && !isDelivered;
@@ -297,12 +299,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const deliveryAddress = quote?.delivery_address as string | undefined;
 
   // ── Next Action Banner ──
-  const needsTracking = balancePaid && manufacturingStarted && tracking && !tracking.tracking_number;
+  const needsTracking = balancePaid && manufacturingCompleted && tracking && !tracking.tracking_number;
   const nextAction = isDelivered ? "complete"
     : canMarkDelivered ? "shipped"
     : needsTracking ? "tracking"
-    : canSendBalance ? "balance"
-    : manufacturingStarted ? "manufacturing_progress"
+    : balancePaid && manufacturingCompleted && !tracking?.tracking_number ? "tracking"
+    : !balancePaid && manufacturingCompleted ? "awaiting_balance"
+    : manufacturingStarted && !manufacturingCompleted ? "complete_manufacturing"
     : canStartManufacturing ? "manufacturing"
     : canSendDeposit ? "deposit"
     : "none";
@@ -313,7 +316,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     emerald: { bg: "bg-emerald-500/10 border border-emerald-500/20", icon: "bg-emerald-500/20", text: "text-emerald-300" },
   };
   const bannerTheme = nextAction === "complete" ? bannerStyles.emerald
-    : nextAction === "deposit" || nextAction === "balance" ? bannerStyles.amber
+    : nextAction === "complete_manufacturing" ? bannerStyles.emerald
+    : nextAction === "deposit" || nextAction === "awaiting_balance" ? bannerStyles.amber
     : bannerStyles.sky;
 
   return (
@@ -399,20 +403,21 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           {nextAction !== "none" && (
             <div className={`mt-4 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${bannerTheme.bg}`}>
               <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${bannerTheme.icon} ${nextAction === "manufacturing_progress" ? "animate-pulse" : ""}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${bannerTheme.icon}`}>
                   {nextAction === "complete" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
                   {nextAction === "shipped" && <Truck className="w-4 h-4 text-sky-400" />}
                   {nextAction === "tracking" && <Truck className="w-4 h-4 text-sky-400" />}
-                  {(nextAction === "manufacturing" || nextAction === "manufacturing_progress") && <Factory className="w-4 h-4 text-sky-400" />}
-                  {nextAction === "balance" && <CreditCard className="w-4 h-4 text-amber-400" />}
+                  {nextAction === "complete_manufacturing" && <Factory className="w-4 h-4 text-emerald-400" />}
+                  {nextAction === "manufacturing" && <Factory className="w-4 h-4 text-sky-400" />}
+                  {nextAction === "awaiting_balance" && <CreditCard className="w-4 h-4 text-amber-400" />}
                   {nextAction === "deposit" && <DollarSign className="w-4 h-4 text-amber-400" />}
                 </div>
                 <div>
                   <p className={`text-sm font-medium ${bannerTheme.text}`}>
                     {nextAction === "deposit" && "Send deposit invoice to get started"}
                     {nextAction === "manufacturing" && "Deposit received \u2014 start manufacturing"}
-                    {nextAction === "manufacturing_progress" && `Manufacturing since ${new Date(tracking!.manufacturing_started_at!).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
-                    {nextAction === "balance" && "Send balance invoice"}
+                    {nextAction === "complete_manufacturing" && "Manufacturing in progress \u2014 mark as complete"}
+                    {nextAction === "awaiting_balance" && "Waiting for balance payment"}
                     {nextAction === "tracking" && "Add tracking number"}
                     {nextAction === "shipped" && "Shipped \u2014 mark as delivered"}
                     {nextAction === "complete" && "Order complete"}
@@ -420,8 +425,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <p className="text-white/30 text-xs mt-0.5">
                     {nextAction === "deposit" && `Send the 50% deposit invoice ($${(Math.round(cost * 50) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}) to the client.`}
                     {nextAction === "manufacturing" && "Begin production now that the deposit has been received."}
-                    {nextAction === "manufacturing_progress" && "Production is underway. Send balance invoice when ready."}
-                    {nextAction === "balance" && `Send the remaining balance invoice ($${remaining.toLocaleString("en-US", { minimumFractionDigits: 2 })}) to the client.`}
+                    {nextAction === "complete_manufacturing" && "Complete manufacturing to send the balance invoice and notify the client."}
+                    {nextAction === "awaiting_balance" && `Balance invoice ($${remaining.toLocaleString("en-US", { minimumFractionDigits: 2 })}) has been sent. Waiting for client payment.`}
                     {nextAction === "tracking" && "Enter the shipping tracking number for client notifications."}
                     {nextAction === "shipped" && "Confirm delivery once the order arrives."}
                     {nextAction === "complete" && "All steps are finished. This order is complete."}
@@ -435,11 +440,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 {nextAction === "manufacturing" && (
                   <StartManufacturingButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
                 )}
-                {nextAction === "balance" && (
-                  <SendBalanceButton quoteId={order.quote_id} contractId={order.contract_id} clientName={order.client_name} amount={remaining} />
+                {nextAction === "complete_manufacturing" && (
+                  <CompleteManufacturingButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
                 )}
                 {nextAction === "tracking" && tracking && (
-                  <TrackingCodeInput trackingId={tracking.id} quoteId={order.quote_id} initialTrackingNumber={tracking.tracking_number} initialCarrier={tracking.shipping_carrier} />
+                  <TrackingCodeInput trackingId={tracking.id} quoteId={order.quote_id} initialTrackingNumber={tracking.tracking_number} initialCarrier={tracking.shipping_carrier} initialTrackingLink={tracking.tracking_link} />
                 )}
                 {nextAction === "shipped" && (
                   <MarkDeliveredButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />

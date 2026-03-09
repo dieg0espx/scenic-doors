@@ -2,8 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendManufacturingStartedEmail, sendDeliveryThankYouEmail } from "@/lib/email";
+import { sendManufacturingStartedEmail, sendManufacturingCompletedEmail, sendDeliveryThankYouEmail } from "@/lib/email";
 import { recordEmailSent } from "@/lib/actions/email-history";
+import { createAndSendBalanceInvoice } from "@/lib/actions/payments";
 
 export async function createOrder({
   quoteId,
@@ -206,6 +207,91 @@ export async function startManufacturing(orderId: string): Promise<void> {
       });
     } catch {
       // Don't fail if email fails
+    }
+  }
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath(`/portal/${order.quote_id}`);
+}
+
+export async function completeManufacturing(orderId: string): Promise<void> {
+  const supabase = await createClient();
+
+  // Fetch order with quote data
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*, quotes(quote_number, client_name, client_email, door_type, cost, grand_total)")
+    .eq("id", orderId)
+    .single();
+
+  if (error || !order) throw new Error("Order not found");
+
+  const now = new Date().toISOString();
+  const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string; cost: number; grand_total: number } | null;
+
+  // Update order_tracking: manufacturing → deposit_2_pending
+  await supabase
+    .from("order_tracking")
+    .update({
+      stage: "deposit_2_pending",
+      manufacturing_completed_at: now,
+    })
+    .eq("quote_id", order.quote_id);
+
+  // Update portal stage
+  await supabase
+    .from("quotes")
+    .update({ portal_stage: "deposit_2_pending" })
+    .eq("id", order.quote_id);
+
+  // Send manufacturing completed email to client
+  if (quote?.client_email) {
+    try {
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      await sendManufacturingCompletedEmail({
+        clientName: quote.client_name,
+        clientEmail: quote.client_email,
+        quoteNumber: quote.quote_number,
+        orderNumber: order.order_number,
+        doorType: quote.door_type,
+        portalUrl: `${origin}/portal/${order.quote_id}`,
+      });
+
+      await recordEmailSent({
+        quote_id: order.quote_id,
+        recipient_email: quote.client_email,
+        subject: `Manufacturing Complete — ${order.order_number} | Scenic Doors`,
+        type: "manufacturing_completed",
+      });
+    } catch {
+      // Don't fail if email fails
+    }
+  }
+
+  // Auto-send balance invoice
+  if (quote) {
+    try {
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const totalCost = Number(quote.grand_total ?? quote.cost ?? 0);
+      const balanceAmount = Math.round(totalCost * 50) / 100;
+
+      await createAndSendBalanceInvoice({
+        quoteId: order.quote_id,
+        contractId: order.contract_id,
+        clientName: quote.client_name,
+        amount: balanceAmount,
+        origin,
+      });
+
+      await recordEmailSent({
+        quote_id: order.quote_id,
+        recipient_email: quote.client_email,
+        subject: `Balance Invoice — ${order.order_number} | Scenic Doors`,
+        type: "balance_invoice",
+      });
+    } catch {
+      // Don't fail if balance invoice fails
     }
   }
 
