@@ -294,6 +294,26 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const deliveryType = quote?.delivery_type as string | undefined;
   const deliveryAddress = quote?.delivery_address as string | undefined;
 
+  // ── Next Action Banner ──
+  const needsTracking = balancePaid && manufacturingStarted && tracking && !tracking.tracking_number;
+  const nextAction = isDelivered ? "complete"
+    : canMarkDelivered ? "shipped"
+    : needsTracking ? "tracking"
+    : canSendBalance ? "balance"
+    : manufacturingStarted ? "manufacturing_progress"
+    : canStartManufacturing ? "manufacturing"
+    : canSendDeposit ? "deposit"
+    : "none";
+
+  const bannerStyles = {
+    amber: { bg: "bg-amber-500/10 border border-amber-500/20", icon: "bg-amber-500/20", text: "text-amber-300" },
+    sky:   { bg: "bg-sky-500/10 border border-sky-500/20",     icon: "bg-sky-500/20",   text: "text-sky-300" },
+    emerald: { bg: "bg-emerald-500/10 border border-emerald-500/20", icon: "bg-emerald-500/20", text: "text-emerald-300" },
+  };
+  const bannerTheme = nextAction === "complete" ? bannerStyles.emerald
+    : nextAction === "deposit" || nextAction === "balance" ? bannerStyles.amber
+    : bannerStyles.sky;
+
   return (
     <div>
       {/* Back + Action bar */}
@@ -304,12 +324,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         >
           <ArrowLeft className="w-4 h-4" /> Back to Orders
         </Link>
-        <Link
-          href={`/admin/quotes/${order.quote_id}`}
-          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium hover:bg-violet-500/15 transition-colors"
-        >
-          <FileText className="w-3.5 h-3.5" /> View Quote
-        </Link>
+        <div className="flex items-center gap-2">
+          <PortalLinkBar quoteId={order.quote_id} />
+          <Link
+            href={`/admin/quotes/${order.quote_id}`}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs font-medium hover:bg-violet-500/15 transition-colors"
+          >
+            <FileText className="w-3.5 h-3.5" /> View Quote
+          </Link>
+        </div>
       </div>
 
       {/* ── Header ── */}
@@ -357,12 +380,51 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           )}
 
           {/* Progress Timeline */}
-          <div className="px-2 mb-4">
+          <div className="px-2">
             <ProgressTimeline currentIndex={progressIndex} />
           </div>
 
-          {/* Portal Link */}
-          <PortalLinkBar quoteId={order.quote_id} />
+          {/* Next Action Banner */}
+          {nextAction !== "none" && (
+            <div className={`mt-4 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${bannerTheme.bg}`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${bannerTheme.icon} ${nextAction === "manufacturing_progress" ? "animate-pulse" : ""}`}>
+                  {nextAction === "complete" && <CheckCircle2 className="w-4 h-4 text-emerald-400" />}
+                  {nextAction === "shipped" && <Truck className="w-4 h-4 text-sky-400" />}
+                  {nextAction === "tracking" && <Truck className="w-4 h-4 text-sky-400" />}
+                  {(nextAction === "manufacturing" || nextAction === "manufacturing_progress") && <Factory className="w-4 h-4 text-sky-400" />}
+                  {nextAction === "balance" && <CreditCard className="w-4 h-4 text-amber-400" />}
+                  {nextAction === "deposit" && <DollarSign className="w-4 h-4 text-amber-400" />}
+                </div>
+                <p className={`text-sm font-medium ${bannerTheme.text}`}>
+                  {nextAction === "deposit" && "Send deposit invoice to get started"}
+                  {nextAction === "manufacturing" && "Deposit received \u2014 start manufacturing"}
+                  {nextAction === "manufacturing_progress" && `Manufacturing since ${new Date(tracking!.manufacturing_started_at!).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`}
+                  {nextAction === "balance" && "Send balance invoice"}
+                  {nextAction === "tracking" && "Add tracking number"}
+                  {nextAction === "shipped" && "Shipped \u2014 mark as delivered"}
+                  {nextAction === "complete" && "Order complete"}
+                </p>
+              </div>
+              <div className="sm:shrink-0">
+                {nextAction === "deposit" && (
+                  <SendDepositButton quoteId={order.quote_id} clientName={order.client_name} amount={Math.round(cost * 50) / 100} />
+                )}
+                {nextAction === "manufacturing" && (
+                  <StartManufacturingButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
+                )}
+                {nextAction === "balance" && (
+                  <SendBalanceButton quoteId={order.quote_id} contractId={order.contract_id} clientName={order.client_name} amount={remaining} />
+                )}
+                {nextAction === "tracking" && tracking && (
+                  <TrackingCodeInput trackingId={tracking.id} quoteId={order.quote_id} initialTrackingNumber={tracking.tracking_number} initialCarrier={tracking.shipping_carrier} />
+                )}
+                {nextAction === "shipped" && (
+                  <MarkDeliveredButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -481,14 +543,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           )}
 
-          {/* Notes */}
-          {(quote?.notes as string) && (
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-6">
-              <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-2">Notes</p>
-              <p className="text-sm text-white/50 leading-relaxed">{quote?.notes as string}</p>
-            </div>
-          )}
-
           {/* Contract */}
           {contract && (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
@@ -532,6 +586,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           )}
 
+          {/* Notes */}
+          {(quote?.notes as string) && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 sm:p-6">
+              <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-2">Notes</p>
+              <p className="text-sm text-white/50 leading-relaxed">{quote?.notes as string}</p>
+            </div>
+          )}
+        </div>
+
+        {/* ── RIGHT COLUMN (sidebar) ── */}
+        <div className="lg:col-span-5 space-y-4 sm:space-y-6">
+
           {/* Payments */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
             <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
@@ -541,7 +607,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
                 <h2 className="text-base font-semibold text-white">Payments</h2>
               </div>
-              {/* Summary in header */}
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-emerald-400 font-semibold">${totalPaid.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                 <span className="text-white/15">/</span>
@@ -549,7 +614,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               </div>
             </div>
             <div className="p-5 sm:p-6">
-              {/* Payment Progress Bar */}
               {cost > 0 && (
                 <div className="mb-5">
                   <div className="h-2 rounded-full bg-white/[0.04] overflow-hidden">
@@ -570,7 +634,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   </div>
                 </div>
               )}
-
               {payments.length === 0 ? (
                 <p className="text-white/30 text-sm">No payments recorded yet.</p>
               ) : (
@@ -602,35 +665,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   ))}
                 </div>
               )}
-
-              {/* Send Deposit Invoice */}
-              {canSendDeposit && (
-                <div className="mt-5 pt-5 border-t border-white/[0.06]">
-                  <SendDepositButton
-                    quoteId={order.quote_id}
-                    clientName={order.client_name}
-                    amount={Math.round(cost * 50) / 100}
-                  />
-                </div>
-              )}
-
-              {/* Send Balance Invoice */}
-              {canSendBalance && (
-                <div className="mt-5 pt-5 border-t border-white/[0.06]">
-                  <SendBalanceButton
-                    quoteId={order.quote_id}
-                    contractId={order.contract_id}
-                    clientName={order.client_name}
-                    amount={remaining}
-                  />
-                </div>
-              )}
             </div>
           </div>
-        </div>
-
-        {/* ── RIGHT COLUMN (sidebar) ── */}
-        <div className="lg:col-span-5 space-y-4 sm:space-y-6">
 
           {/* Pricing Card */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
@@ -641,15 +677,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               <h2 className="text-base font-semibold text-white">Pricing</h2>
             </div>
             <div className="p-4 sm:p-6">
-              {/* Grand Total - prominent */}
               <div className="text-center mb-5 pb-5 border-b border-white/[0.06]">
                 <p className="text-white/30 text-[11px] uppercase tracking-wider font-medium mb-1">Grand Total</p>
                 <p className="text-3xl font-bold text-white">
                   ${cost.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </p>
               </div>
-
-              {/* Breakdown */}
               <div className="space-y-2.5">
                 {Number(quote?.subtotal) > 0 && (
                   <div className="flex justify-between text-sm">
@@ -703,103 +736,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                       <MapPin className="w-3 h-3 shrink-0 mt-0.5 text-white/20" />
                       {formatDeliveryAddress(deliveryAddress)}
                     </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Shared With (admin only) */}
-          {isAdmin && (
-            <QuoteShareCard
-              quoteId={order.quote_id}
-              salesReps={salesReps}
-              initialSharedWith={(quote?.shared_with as string[]) || []}
-            />
-          )}
-
-          {/* Order Operations — Manufacturing + Shipping + Delivery */}
-          {(canStartManufacturing || manufacturingStarted) && (
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-              <div className="flex items-center gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
-                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                  <Factory className="w-4 h-4 text-sky-400" />
-                </div>
-                <h2 className="text-base font-semibold text-white">Operations</h2>
-              </div>
-              <div className="p-5 sm:p-6 space-y-5">
-                {/* Manufacturing Status */}
-                <div>
-                  <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-3">Manufacturing</p>
-                  {manufacturingStarted ? (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-sky-500/5 border border-sky-500/10">
-                      <div className="w-9 h-9 rounded-lg bg-sky-500/10 flex items-center justify-center shrink-0">
-                        <Factory className="w-4 h-4 text-sky-400" />
-                      </div>
-                      <div>
-                        <p className="text-white font-medium text-sm">In Progress</p>
-                        <p className="text-white/30 text-xs">
-                          Started {new Date(tracking!.manufacturing_started_at!).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-white/35 text-xs mb-3">
-                        Deposit received. Start manufacturing and notify the client.
-                      </p>
-                      <StartManufacturingButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
-                    </div>
-                  )}
-                </div>
-
-                {/* Shipping / Tracking */}
-                {tracking && manufacturingStarted && (
-                  <div>
-                    <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-3 flex items-center gap-2">
-                      <Truck className="w-3.5 h-3.5" /> Shipping
-                    </p>
-                    <TrackingCodeInput
-                      trackingId={tracking.id}
-                      quoteId={order.quote_id}
-                      initialTrackingNumber={tracking.tracking_number}
-                      initialCarrier={tracking.shipping_carrier}
-                    />
-                  </div>
-                )}
-
-                {/* Mark as Delivered */}
-                {canMarkDelivered && (
-                  <div>
-                    <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-3 flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Delivery
-                    </p>
-                    <p className="text-white/35 text-xs mb-3">
-                      Order has been shipped. Mark as delivered to complete the order and notify the client.
-                    </p>
-                    <MarkDeliveredButton orderId={id} clientName={order.client_name} clientEmail={order.client_email} />
-                  </div>
-                )}
-
-                {/* Delivered confirmation */}
-                {isDelivered && (
-                  <div>
-                    <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium mb-3 flex items-center gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Delivery
-                    </p>
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      </div>
-                      <div>
-                        <p className="text-white font-medium text-sm">Delivered</p>
-                        {tracking?.delivered_at && (
-                          <p className="text-white/30 text-xs">
-                            {new Date(tracking.delivered_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                          </p>
-                        )}
-                      </div>
-                    </div>
                   </div>
                 )}
               </div>
@@ -898,6 +834,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             } : null}
             quoteId={order.quote_id}
           />
+
+          {/* Shared With (admin only) */}
+          {isAdmin && (
+            <QuoteShareCard
+              quoteId={order.quote_id}
+              salesReps={salesReps}
+              initialSharedWith={(quote?.shared_with as string[]) || []}
+            />
+          )}
 
         </div>
       </div>
