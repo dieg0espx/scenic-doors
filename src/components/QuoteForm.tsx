@@ -1258,14 +1258,16 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
 
           {/* Installation */}
           <div>
-            <label className="flex items-center gap-3 cursor-pointer group">
+            <label
+              className="flex items-center gap-3 cursor-pointer group"
+              onClick={() => setServices((s) => ({ ...s, includeInstallation: !s.includeInstallation }))}
+            >
               <div
                 className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
                   services.includeInstallation
                     ? "bg-sky-500 border-sky-500"
                     : "border-white/[0.12] bg-transparent group-hover:border-white/[0.25]"
                 }`}
-                onClick={() => setServices((s) => ({ ...s, includeInstallation: !s.includeInstallation }))}
               >
                 {services.includeInstallation && <Check className="w-3.5 h-3.5 text-white" />}
               </div>
