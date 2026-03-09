@@ -830,18 +830,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               status: p.status,
               created_at: p.created_at,
             }))}
-            drawing={drawing ? {
-              overall_width: drawing.overall_width,
-              overall_height: drawing.overall_height,
-              panel_count: drawing.panel_count,
-              slide_direction: drawing.slide_direction,
-              in_swing: drawing.in_swing,
-              frame_color: drawing.frame_color,
-              hardware_color: drawing.hardware_color,
-              customer_name: drawing.customer_name,
-              signature_data: drawing.signature_data,
-              signed_at: drawing.signed_at,
-            } : null}
+            drawings={allDrawings.map((d) => ({
+              overall_width: d.overall_width,
+              overall_height: d.overall_height,
+              panel_count: d.panel_count,
+              slide_direction: d.slide_direction,
+              in_swing: d.in_swing,
+              frame_color: d.frame_color,
+              hardware_color: d.hardware_color,
+              customer_name: d.customer_name,
+              signature_data: d.signature_data,
+              signed_at: d.signed_at,
+              system_type: d.system_type,
+            }))}
             quoteId={order.quote_id}
           />
 
