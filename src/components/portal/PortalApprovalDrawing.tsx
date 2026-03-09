@@ -10,7 +10,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { signApprovalDrawing, requestApprovalDrawing } from "@/lib/actions/approval-drawings";
-import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
+import { generateApprovalDrawingPdf, generateMultiApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 import type { ApprovalDrawing } from "@/lib/types";
 
@@ -48,23 +48,39 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
   const hasSignatureRef = useRef(false);
   const isCanvasInitRef = useRef(false);
 
+  function drawingToPdfInput(d: ApprovalDrawing) {
+    return {
+      overall_width: d.overall_width,
+      overall_height: d.overall_height,
+      panel_count: d.panel_count,
+      slide_direction: d.slide_direction,
+      in_swing: d.in_swing,
+      frame_color: d.frame_color || quoteColor,
+      hardware_color: d.hardware_color,
+      customer_name: d.customer_name,
+      signature_data: d.signature_data,
+      signed_at: d.signed_at,
+      system_type: d.system_type,
+    };
+  }
+
   async function handleDownloadPdf(d: ApprovalDrawing) {
     setDownloading(true);
     try {
-      const doc = await generateApprovalDrawingPdf({
-        overall_width: d.overall_width,
-        overall_height: d.overall_height,
-        panel_count: d.panel_count,
-        slide_direction: d.slide_direction,
-        in_swing: d.in_swing,
-        frame_color: d.frame_color || quoteColor,
-        hardware_color: d.hardware_color,
-        customer_name: d.customer_name,
-        signature_data: d.signature_data,
-        signed_at: d.signed_at,
-        system_type: d.system_type,
-      });
+      const doc = await generateApprovalDrawingPdf(drawingToPdfInput(d));
       doc.save(`Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
+    } catch {
+      alert("Failed to generate PDF");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  async function handleDownloadAllPdf() {
+    setDownloading(true);
+    try {
+      const doc = await generateMultiApprovalDrawingPdf(allDrawings.map(drawingToPdfInput));
+      doc.save(`Approval-Drawings-${quoteId.slice(0, 8)}.pdf`);
     } catch {
       alert("Failed to generate PDF");
     } finally {
@@ -285,12 +301,12 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
             })}
           </p>
           <button
-            onClick={() => handleDownloadPdf(firstSigned)}
+            onClick={handleDownloadAllPdf}
             disabled={downloading}
             className="mt-4 inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-500 disabled:opacity-60 text-white font-medium px-5 py-2.5 rounded-lg transition-colors cursor-pointer text-sm"
           >
             {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Download PDF
+            Download All PDFs
           </button>
         </div>
         {allDrawings.map((d, idx) => (
