@@ -37,10 +37,30 @@ export interface ApprovalPdfInput {
 }
 
 /* ================================================================
+   Multi-drawing export — generates one page per drawing
+   ================================================================ */
+export async function generateMultiApprovalDrawingPdf(drawings: ApprovalPdfInput[]) {
+  const doc = new jsPDF({ unit: "mm", format: "letter" });
+  for (let i = 0; i < drawings.length; i++) {
+    if (i > 0) doc.addPage();
+    await renderApprovalPage(doc, drawings[i]);
+  }
+  return doc;
+}
+
+/* ================================================================
    Main export — generates one page per call
    ================================================================ */
 export async function generateApprovalDrawingPdf(data: ApprovalPdfInput) {
   const doc = new jsPDF({ unit: "mm", format: "letter" });
+  await renderApprovalPage(doc, data);
+  return doc;
+}
+
+/* ================================================================
+   Render a single approval drawing page onto the given doc
+   ================================================================ */
+async function renderApprovalPage(doc: jsPDF, data: ApprovalPdfInput) {
   const pw = doc.internal.pageSize.getWidth(); // 215.9
   const ml = 22;
   const mr = 22;
@@ -211,8 +231,6 @@ export async function generateApprovalDrawingPdf(data: ApprovalPdfInput) {
       // If signature image fails, leave the bar empty
     }
   }
-
-  return doc;
 }
 
 /* ================================================================
