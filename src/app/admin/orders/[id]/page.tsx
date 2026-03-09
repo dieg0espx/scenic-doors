@@ -13,7 +13,6 @@ import { getApprovalDrawing, getApprovalDrawings } from "@/lib/actions/approval-
 import { getOrderTracking } from "@/lib/actions/order-tracking";
 import { getEmailHistory } from "@/lib/actions/email-history";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
-import { getFollowUps } from "@/lib/actions/follow-ups";
 import { getQuoteNotes } from "@/lib/actions/quote-notes";
 import { getQuoteTasks } from "@/lib/actions/quote-tasks";
 import { getAdminUsers } from "@/lib/actions/admin-users";
@@ -148,7 +147,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = await getOrderById(id);
   if (!order) notFound();
 
-  const [payments, drawing, allDrawings, tracking, documents, emails, photos, followUps, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
+  const [payments, drawing, allDrawings, tracking, documents, emails, photos, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
     getPaymentsByQuoteId(order.quote_id),
     getApprovalDrawing(order.quote_id).catch(() => null),
     getApprovalDrawings(order.quote_id).catch(() => [] as import("@/lib/types").ApprovalDrawing[]),
@@ -156,7 +155,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     getQuoteDocuments(order.quote_id).catch(() => []),
     getEmailHistory(order.quote_id),
     getQuotePhotos(order.quote_id).catch(() => []),
-    getFollowUps(order.quote_id).catch(() => []),
     getQuoteNotes(order.quote_id).catch(() => []),
     getQuoteTasks(order.quote_id).catch(() => []),
     getAdminUsers(),
@@ -583,7 +581,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
-          {/* Portal Management — Approval Drawing, Photos, Attachments, Follow-ups */}
+          {/* Portal Management — Approval Drawing, Photos, Attachments */}
           <AdminPortalManager
             quoteId={order.quote_id}
             quoteName={order.client_name}
@@ -592,7 +590,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             drawing={drawing}
             drawings={allDrawings}
             photos={photos}
-            followUps={followUps}
+            followUps={[]}
             documents={documents}
           />
 
