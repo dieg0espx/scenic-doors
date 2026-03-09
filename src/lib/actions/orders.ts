@@ -171,7 +171,7 @@ export async function startManufacturing(orderId: string): Promise<void> {
   const now = new Date().toISOString();
   const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string } | null;
 
-  // Update order_tracking — use .select() to verify a row was actually updated
+  // Try to update existing order_tracking row
   const { data: updatedTracking, error: trackingErr } = await supabase
     .from("order_tracking")
     .update({
@@ -182,8 +182,17 @@ export async function startManufacturing(orderId: string): Promise<void> {
     .select();
 
   if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
+
+  // If no tracking row exists, create one
   if (!updatedTracking || updatedTracking.length === 0) {
-    throw new Error(`No order_tracking row found for quote_id ${order.quote_id}. Create an order tracking record first.`);
+    const { error: insertErr } = await supabase
+      .from("order_tracking")
+      .insert({
+        quote_id: order.quote_id,
+        stage: "manufacturing",
+        manufacturing_started_at: now,
+      });
+    if (insertErr) throw new Error(`Failed to create tracking: ${insertErr.message}`);
   }
 
   // Update portal stage
@@ -250,7 +259,14 @@ export async function completeManufacturing(orderId: string): Promise<void> {
 
   if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
   if (!updatedTracking || updatedTracking.length === 0) {
-    throw new Error(`No order_tracking row found for quote_id ${order.quote_id}`);
+    const { error: insertErr } = await supabase
+      .from("order_tracking")
+      .insert({
+        quote_id: order.quote_id,
+        stage: "deposit_2_pending",
+        manufacturing_completed_at: now,
+      });
+    if (insertErr) throw new Error(`Failed to create tracking: ${insertErr.message}`);
   }
 
   // Update portal stage
@@ -344,7 +360,14 @@ export async function markAsDelivered(orderId: string): Promise<void> {
 
   if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
   if (!updatedTracking || updatedTracking.length === 0) {
-    throw new Error(`No order_tracking row found for quote_id ${order.quote_id}`);
+    const { error: insertErr } = await supabase
+      .from("order_tracking")
+      .insert({
+        quote_id: order.quote_id,
+        stage: "delivered",
+        delivered_at: now,
+      });
+    if (insertErr) throw new Error(`Failed to create tracking: ${insertErr.message}`);
   }
 
   // Update portal stage
