@@ -458,7 +458,7 @@ export default function AdminPortalManager({
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
-              <Select label="Type" value={photoType} options={["interior", "exterior", "reference", "sketch"]} onChange={setPhotoType} />
+              <Select label="Type" value={photoType} options={["interior", "exterior"]} onChange={setPhotoType} />
               <Input label="Caption" value={photoCaption} onChange={setPhotoCaption} placeholder="Optional" />
             </div>
             <Btn onClick={handleAddPhoto} loading={loading === "photo"} icon={<Plus className="w-3.5 h-3.5" />}>
