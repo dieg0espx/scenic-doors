@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { ScrollText, Download, Loader2 } from "lucide-react";
 import { generateContractPdf } from "@/lib/generateContractPdf";
-import { savePdf } from "@/lib/savePdf";
+import { savePdf, openPdfWindow } from "@/lib/savePdf";
 
 interface Contract {
   id: string;
@@ -30,10 +30,12 @@ export default function ContractsList({ contracts }: { contracts: Contract[] }) 
 
   async function handleDownloadPdf(contract: Contract) {
     setDownloadingId(contract.id);
+    const w = openPdfWindow();
     try {
       const doc = await generateContractPdf(contract);
-      savePdf(doc, `Contract-${contract.quotes?.quote_number || contract.id}.pdf`);
+      savePdf(doc, `Contract-${contract.quotes?.quote_number || contract.id}.pdf`, w);
     } catch (err) {
+      if (w) w.close();
       console.error("Failed to generate PDF:", err);
     } finally {
       setDownloadingId(null);

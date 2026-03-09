@@ -1,24 +1,39 @@
 /**
  * Mobile-safe PDF download.
- * Uses anchor+download for most browsers (works on desktop & Chrome Android).
- * Falls back to window.open only for iOS Safari where a.click() from async
- * code breaks the user-gesture chain.
+ *
+ * The problem: on mobile browsers, both a.click() and window.open() fail
+ * when called AFTER an await (user-gesture chain is broken by async work).
+ *
+ * Solution: call openPdfWindow() BEFORE the await (synchronously in the click
+ * handler) to preserve the gesture, then pass the window ref to savePdf()
+ * which redirects it to the blob URL.
+ *
+ * Usage:
+ *   const w = openPdfWindow();
+ *   const doc = await generatePdf(...);
+ *   savePdf(doc, "file.pdf", w);
  */
+
+/** Call this synchronously inside the click handler, BEFORE any await. */
+export function openPdfWindow(): Window | null {
+  return window.open("", "_blank");
+}
+
 export function savePdf(
   doc: { save: (name: string) => void; output: (type: "blob") => Blob },
-  filename: string
+  filename: string,
+  preOpenedWindow?: Window | null
 ) {
   try {
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
-    const ua = navigator.userAgent;
-    const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-    if (isIOS) {
-      // iOS Safari blocks a.click() from async code — use window.open instead
-      window.open(url, "_blank");
+    if (preOpenedWindow) {
+      // Redirect the pre-opened window (works on all mobile browsers)
+      preOpenedWindow.location.href = url;
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } else {
+      // No pre-opened window — try anchor download (works on desktop)
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -31,6 +46,8 @@ export function savePdf(
       }, 250);
     }
   } catch {
+    // If pre-opened window exists but we errored, close it
+    if (preOpenedWindow) preOpenedWindow.close();
     doc.save(filename);
   }
 }
