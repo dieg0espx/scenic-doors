@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { getOrderById, syncOrderStatus } from "@/lib/actions/orders";
 import { getPaymentsByQuoteId } from "@/lib/actions/payments";
-import { getApprovalDrawing } from "@/lib/actions/approval-drawings";
+import { getApprovalDrawing, getApprovalDrawings } from "@/lib/actions/approval-drawings";
 import { getOrderTracking } from "@/lib/actions/order-tracking";
 import { getEmailHistory } from "@/lib/actions/email-history";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
@@ -148,9 +148,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = await getOrderById(id);
   if (!order) notFound();
 
-  const [payments, drawing, tracking, documents, emails, photos, followUps, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
+  const [payments, drawing, allDrawings, tracking, documents, emails, photos, followUps, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
     getPaymentsByQuoteId(order.quote_id),
     getApprovalDrawing(order.quote_id).catch(() => null),
+    getApprovalDrawings(order.quote_id).catch(() => [] as import("@/lib/types").ApprovalDrawing[]),
     getOrderTracking(order.quote_id).catch(() => null),
     getQuoteDocuments(order.quote_id).catch(() => []),
     getEmailHistory(order.quote_id),
@@ -589,6 +590,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             quoteColor={(quote?.color as string) || undefined}
             quoteItems={quoteItems}
             drawing={drawing}
+            drawings={allDrawings}
             photos={photos}
             followUps={followUps}
             documents={documents}
