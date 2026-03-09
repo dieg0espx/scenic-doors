@@ -779,6 +779,32 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           )}
 
+          {/* Shipping & Tracking */}
+          {tracking && manufacturingCompleted && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <Truck className="w-4 h-4 text-sky-400" />
+                </div>
+                <h2 className="text-base font-semibold text-white">Shipping & Tracking</h2>
+                {tracking.tracking_number && (
+                  <span className="ml-auto text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-md text-emerald-400 bg-emerald-500/10">
+                    {tracking.stage === "delivered" ? "Delivered" : tracking.stage === "shipping" ? "Shipped" : "Ready"}
+                  </span>
+                )}
+              </div>
+              <div className="p-4 sm:p-6">
+                <TrackingCodeInput
+                  trackingId={tracking.id}
+                  quoteId={order.quote_id}
+                  initialTrackingNumber={tracking.tracking_number}
+                  initialCarrier={tracking.shipping_carrier}
+                  initialTrackingLink={tracking.tracking_link}
+                />
+              </div>
+            </div>
+          )}
+
           {/* Email History */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
             <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
