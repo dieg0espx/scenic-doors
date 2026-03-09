@@ -39,7 +39,14 @@
       "Bash(find:*)",
       "Bash(diskutil info:*)",
       "Bash(cd:*)",
-      "Bash(git:*)"
+      "Bash(git:*)",
+      "Bash(tasklist:*)",
+      "Bash(node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(netstat:*)",
+      "Bash(npm:*)",
+      "WebFetch(domain:scenic-doors-z8rg.vercel.app)",
+      "Bash(ls:*)"
     ]
   }
 }
