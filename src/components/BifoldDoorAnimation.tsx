@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 /**
  * Parse a bi-fold panel layout string into a fold direction.
@@ -29,6 +29,19 @@ export default function BifoldDoorAnimation({
   );
   const [openPercent, setOpenPercent] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(800);
+
+  // Measure container width for responsive calculations
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerWidth(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   // Sync overrides
   useEffect(() => {
@@ -76,12 +89,12 @@ export default function BifoldDoorAnimation({
     requestAnimationFrame(animate);
   };
 
-  // Calculate panel position and rotation
+  // Calculate panel position and rotation — scales to actual container width
   const calculatePanelStyle = (panelIndex: number) => {
-    const CONTAINER_WIDTH = 800; // Fixed container width
-    const PANEL_WIDTH = CONTAINER_WIDTH / panelCount;
-    const FOLDED_PANEL_WIDTH = 50; // Width of each panel when folded (thicker so visible)
-    const GAP_BETWEEN_PANELS = -40; // NEGATIVE gap - panels overlap heavily
+    const scale = containerWidth / 800;
+    const PANEL_WIDTH = containerWidth / panelCount;
+    const FOLDED_PANEL_WIDTH = 50 * scale;
+    const GAP_BETWEEN_PANELS = -40 * scale;
     const progress = openPercent / 100;
 
     // Starting position when CLOSED (spread across container)
@@ -95,40 +108,34 @@ export default function BifoldDoorAnimation({
     // Width transitions from full to folded
     const currentWidth = PANEL_WIDTH + (FOLDED_PANEL_WIDTH - PANEL_WIDTH) * progress;
 
-    const LEFT_OFFSET = -50; // Move stacks 50px more to the left
+    const LEFT_OFFSET = -50 * scale;
 
     if (foldDirection === 'left') {
-      // Stack all panels at LEFT edge with gaps
       openX = LEFT_OFFSET + panelIndex * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
       rotationAngle = (panelIndex % 2 === 0 ? -75 : 75);
       zIndex = panelIndex;
 
     } else if (foldDirection === 'right') {
-      // Stack all panels at RIGHT edge with gaps
-      openX = CONTAINER_WIDTH - (panelCount - panelIndex) * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
+      openX = containerWidth - (panelCount - panelIndex) * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
       rotationAngle = (panelIndex % 2 === 0 ? 75 : -75);
       zIndex = panelCount - panelIndex;
 
     } else {
-      // CENTER: split panels
       const halfPoint = Math.floor(panelCount / 2);
 
       if (panelIndex < halfPoint) {
-        // Left group stacks at LEFT
         openX = LEFT_OFFSET + panelIndex * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
         rotationAngle = (panelIndex % 2 === 0 ? -75 : 75);
         zIndex = panelIndex;
       } else {
-        // Right group stacks at RIGHT
         const rightIdx = panelIndex - halfPoint;
         const rightCount = panelCount - halfPoint;
-        openX = CONTAINER_WIDTH - (rightCount - rightIdx) * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
+        openX = containerWidth - (rightCount - rightIdx) * (FOLDED_PANEL_WIDTH + GAP_BETWEEN_PANELS);
         rotationAngle = (rightIdx % 2 === 0 ? 75 : -75);
         zIndex = panelCount - panelIndex;
       }
     }
 
-    // Interpolate position and rotation
     const currentX = closedX + (openX - closedX) * progress;
     const currentRotation = rotationAngle * progress;
 
@@ -249,11 +256,12 @@ export default function BifoldDoorAnimation({
         </div>
 
         {/* Door container */}
-        <div style={{
+        <div
+          ref={containerRef}
+          style={{
           position: 'relative',
-          height: compact ? '250px' : '400px',
-          width: '800px',
-          margin: '0 auto',
+          height: compact ? '200px' : '400px',
+          width: '100%',
           background: '#F9FAFB',
           overflow: 'visible',
         }}>
