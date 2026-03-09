@@ -65,6 +65,13 @@ function deriveSlideDirection(item: QuoteItem): string {
   return "left";
 }
 
+function toggleCsvCreate(current: string, value: string): string {
+  const values = current.split(",").map((v) => v.trim()).filter(Boolean);
+  const idx = values.indexOf(value);
+  if (idx >= 0) values.splice(idx, 1); else values.push(value);
+  return values.join(",");
+}
+
 function normalizeColor(color: string): string {
   const c = color.toLowerCase();
   if (c.includes("bronze")) return "Bronze";
@@ -72,6 +79,34 @@ function normalizeColor(color: string): string {
   if (c.includes("white")) return "White";
   if (c.includes("silver")) return "Silver";
   return color;
+}
+
+interface AdFormState {
+  overall_width: number;
+  overall_height: number;
+  panel_count: number;
+  slide_direction: string;
+  in_swing: string;
+  system_type: string;
+  configuration: string;
+  additional_notes: string;
+  frame_color: string;
+  hardware_color: string;
+}
+
+function buildAdForm(item: QuoteItem | null, quoteColor?: string): AdFormState {
+  return {
+    overall_width: item?.width || 0,
+    overall_height: item?.height || 0,
+    panel_count: item?.panelCount || 0,
+    slide_direction: item ? deriveSlideDirection(item) : "left",
+    in_swing: "interior",
+    system_type: item?.doorType || "",
+    configuration: item?.panelLayout || "",
+    additional_notes: "",
+    frame_color: normalizeColor(item?.exteriorFinish || quoteColor || "Black"),
+    hardware_color: normalizeColor(item?.hardwareFinish || "Black"),
+  };
 }
 
 export default function AdminPortalManager({
@@ -101,22 +136,26 @@ export default function AdminPortalManager({
   // Items to render — at least 1
   const items = quoteItems.length > 0 ? quoteItems : [null];
 
+  // Per-item form state for creating approval drawings
+  const [adForms, setAdForms] = useState<Record<number, AdFormState>>(() => {
+    const initial: Record<number, AdFormState> = {};
+    items.forEach((item, idx) => {
+      initial[idx] = buildAdForm(item, quoteColor);
+    });
+    return initial;
+  });
+
+  function updateAdForm(idx: number, patch: Partial<AdFormState>) {
+    setAdForms((prev) => ({ ...prev, [idx]: { ...prev[idx], ...patch } }));
+  }
+
   async function handleCreateDrawing(itemIndex: number) {
-    const item = quoteItems[itemIndex];
+    const form = adForms[itemIndex];
     setLoading(`drawing-${itemIndex}`);
     try {
       const d = await createApprovalDrawing({
         quote_id: quoteId,
-        overall_width: item?.width || 0,
-        overall_height: item?.height || 0,
-        panel_count: item?.panelCount || 0,
-        slide_direction: item ? deriveSlideDirection(item) : "left",
-        in_swing: "interior",
-        system_type: item?.doorType || "",
-        configuration: item?.panelLayout || "",
-        additional_notes: "",
-        frame_color: normalizeColor(item?.exteriorFinish || quoteColor || "Black"),
-        hardware_color: normalizeColor(item?.hardwareFinish || "Black"),
+        ...form,
         item_index: itemIndex,
       });
       setDrawings((prev) => {
@@ -228,8 +267,8 @@ export default function AdminPortalManager({
       {items.map((item, idx) => {
         const drawing = drawings[idx] || null;
         const itemLabel = items.length > 1 ? ` — Item ${idx + 1}` : "";
-        const itemName = item?.name || item?.doorType || "";
         const badgeText = drawing?.status || "none";
+        const form = adForms[idx] || buildAdForm(item, quoteColor);
 
         return (
           <Section
@@ -242,32 +281,89 @@ export default function AdminPortalManager({
           >
             {!drawing ? (
               <div className="space-y-3">
-                {/* Compact summary of item specs */}
-                <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-                  {itemName && (
-                    <p className="text-white/70 text-xs font-medium mb-2">{itemName}</p>
-                  )}
-                  <div className="grid grid-cols-3 gap-2 text-[11px]">
-                    {item?.width && item?.height && (
-                      <div>
-                        <span className="text-white/25 uppercase tracking-wider">Size</span>
-                        <p className="text-white/60 font-medium">{item.width}&quot; x {item.height}&quot;</p>
-                      </div>
+                {/* Document Preview Card — same layout as editor */}
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+                  <div className="bg-gray-900 text-white px-4 sm:px-5 py-2 text-center">
+                    <h3 className="text-xs font-bold tracking-wider">
+                      SCENIC DOORS &ndash; {form.system_type ? form.system_type.toUpperCase() : "APPROVAL DRAWING"}
+                    </h3>
+                  </div>
+                  <div className="p-3 sm:p-4 space-y-3">
+                    {/* Door Diagram — compact */}
+                    {form.panel_count > 0 && (
+                      <>
+                        <p className="text-center text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+                          Outside View
+                        </p>
+                        <div className="bg-[#3a3a40] rounded-lg p-[4px] shadow-inner max-w-[200px] mx-auto">
+                          <div className="bg-[#44444a] rounded p-[3px]">
+                            <div className="flex gap-[2px]">
+                              {Array.from({ length: form.panel_count }).map((_, i) => (
+                                <div
+                                  key={i}
+                                  className="flex-1 relative overflow-hidden rounded-sm"
+                                  style={{ backgroundColor: "#c6daea", aspectRatio: "1 / 2.2", minHeight: 50 }}
+                                >
+                                  <div className="absolute inset-x-0 top-0" style={{ height: "8%", backgroundColor: "#bcd0e4" }} />
+                                  <div
+                                    className="absolute inset-0"
+                                    style={{
+                                      background: form.slide_direction.includes("right") && !form.slide_direction.includes("left")
+                                        ? "linear-gradient(to bottom left, transparent calc(50% - 0.5px), #94a5b6 calc(50% - 0.5px), #94a5b6 calc(50% + 0.5px), transparent calc(50% + 0.5px))"
+                                        : "linear-gradient(to bottom right, transparent calc(50% - 0.5px), #94a5b6 calc(50% - 0.5px), #94a5b6 calc(50% + 0.5px), transparent calc(50% + 0.5px))",
+                                    }}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
-                    {item?.panelCount && (
-                      <div>
-                        <span className="text-white/25 uppercase tracking-wider">Panels</span>
-                        <p className="text-white/60 font-medium">{item.panelCount}</p>
+
+                    {/* Spec Fields */}
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <CreateSpecInput label="Overall Width" suffix='"' type="number" value={form.overall_width} onChange={(v) => updateAdForm(idx, { overall_width: Number(v) || 0 })} />
+                        <CreateSpecInput label="Overall Height" suffix='"' type="number" value={form.overall_height} onChange={(v) => updateAdForm(idx, { overall_height: Number(v) || 0 })} />
                       </div>
-                    )}
-                    {(item?.exteriorFinish || quoteColor) && (
-                      <div>
-                        <span className="text-white/25 uppercase tracking-wider">Color</span>
-                        <p className="text-white/60 font-medium">{item?.exteriorFinish || quoteColor}</p>
-                      </div>
-                    )}
+
+                      <CreateSpecInput label="Number of Panels" type="number" value={form.panel_count} onChange={(v) => updateAdForm(idx, { panel_count: Number(v) || 0 })} />
+
+                      <CreateCheckRow label="Opening Direction">
+                        <CreateCheck label="Slides Left" checked={form.slide_direction.includes("left")} onChange={() => updateAdForm(idx, { slide_direction: toggleCsvCreate(form.slide_direction, "left") })} />
+                        <CreateCheck label="Slides Right" checked={form.slide_direction.includes("right")} onChange={() => updateAdForm(idx, { slide_direction: toggleCsvCreate(form.slide_direction, "right") })} />
+                      </CreateCheckRow>
+
+                      <CreateCheckRow label="Swing Direction">
+                        <CreateCheck label="In-Swing" checked={form.in_swing.includes("interior")} onChange={() => updateAdForm(idx, { in_swing: toggleCsvCreate(form.in_swing, "interior") })} />
+                        <CreateCheck label="Out-Swing" checked={form.in_swing.includes("exterior")} onChange={() => updateAdForm(idx, { in_swing: toggleCsvCreate(form.in_swing, "exterior") })} />
+                      </CreateCheckRow>
+
+                      <CreateCheckRow label="Lead Panel Location">
+                        <CreateCheck label="Left" checked={form.slide_direction.includes("left")} onChange={() => updateAdForm(idx, { slide_direction: toggleCsvCreate(form.slide_direction, "left") })} />
+                        <CreateCheck label="Right" checked={form.slide_direction.includes("right")} onChange={() => updateAdForm(idx, { slide_direction: toggleCsvCreate(form.slide_direction, "right") })} />
+                      </CreateCheckRow>
+
+                      <CreateCheckRow label="Frame Color">
+                        <CreateCheck label="Black" checked={form.frame_color.includes("Black")} onChange={() => updateAdForm(idx, { frame_color: toggleCsvCreate(form.frame_color, "Black") })} />
+                        <CreateCheck label="White" checked={form.frame_color.includes("White")} onChange={() => updateAdForm(idx, { frame_color: toggleCsvCreate(form.frame_color, "White") })} />
+                        <CreateCheck label="Bronze" checked={form.frame_color.includes("Bronze")} onChange={() => updateAdForm(idx, { frame_color: toggleCsvCreate(form.frame_color, "Bronze") })} />
+                      </CreateCheckRow>
+
+                      <CreateCheckRow label="Hardware Color">
+                        <CreateCheck label="Black" checked={form.hardware_color.includes("Black")} onChange={() => updateAdForm(idx, { hardware_color: toggleCsvCreate(form.hardware_color, "Black") })} />
+                        <CreateCheck label="White" checked={form.hardware_color.includes("White")} onChange={() => updateAdForm(idx, { hardware_color: toggleCsvCreate(form.hardware_color, "White") })} />
+                        <CreateCheck label="Silver" checked={form.hardware_color.includes("Silver")} onChange={() => updateAdForm(idx, { hardware_color: toggleCsvCreate(form.hardware_color, "Silver") })} />
+                      </CreateCheckRow>
+
+                      <CreateSpecInput label="System Type" value={form.system_type} onChange={(v) => updateAdForm(idx, { system_type: v })} />
+                      <CreateSpecInput label="Configuration" value={form.configuration} onChange={(v) => updateAdForm(idx, { configuration: v })} />
+                      <CreateSpecInput label="Additional Notes" value={form.additional_notes} onChange={(v) => updateAdForm(idx, { additional_notes: v })} />
+                    </div>
                   </div>
                 </div>
+
                 <Btn onClick={() => handleCreateDrawing(idx)} loading={loading === `drawing-${idx}`} icon={<Plus className="w-3.5 h-3.5" />}>
                   Create Approval Drawing
                 </Btn>
@@ -571,6 +667,69 @@ function Btn({
     >
       {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : icon}
       {children}
+    </button>
+  );
+}
+
+// ── Create-form helpers (white card context) ──
+
+function CreateSpecInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  suffix,
+}: {
+  label: string;
+  value: string | number;
+  onChange: (v: string) => void;
+  type?: string;
+  suffix?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1">{label}</label>
+      <div className="relative">
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-gray-800 text-sm focus:outline-none focus:border-blue-400"
+        />
+        {suffix && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none">{suffix}</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CreateCheckRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <span className="block text-[10px] text-gray-400 uppercase tracking-wider font-medium mb-1.5">{label}</span>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+function CreateCheck({ label, checked, onChange }: { label: string; checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
+        checked
+          ? "bg-blue-100 border-blue-300 text-blue-800"
+          : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+      }`}
+    >
+      <span className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center ${checked ? "border-blue-500 bg-blue-100" : "border-gray-300"}`}>
+        {checked && (
+          <svg className="w-2.5 h-2.5 text-blue-600" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l3 3 5-5" /></svg>
+        )}
+      </span>
+      {label}
     </button>
   );
 }
