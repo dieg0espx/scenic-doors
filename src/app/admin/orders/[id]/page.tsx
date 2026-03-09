@@ -582,6 +582,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
+          {/* Portal Management — Approval Drawing, Photos, Attachments, Follow-ups */}
+          <AdminPortalManager
+            quoteId={order.quote_id}
+            quoteName={order.client_name}
+            quoteColor={(quote?.color as string) || undefined}
+            quoteItems={quoteItems}
+            drawing={drawing}
+            photos={photos}
+            followUps={followUps}
+            documents={documents}
+          />
+
           {/* Contract */}
           {contract && (
             <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
@@ -850,17 +862,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      {/* ── Portal Management (full-width) ── */}
-      <AdminPortalManager
-        quoteId={order.quote_id}
-        quoteName={order.client_name}
-        quoteColor={(quote?.color as string) || undefined}
-        quoteItems={quoteItems}
-        drawing={drawing}
-        photos={photos}
-        followUps={followUps}
-        documents={documents}
-      />
     </div>
   );
 }
