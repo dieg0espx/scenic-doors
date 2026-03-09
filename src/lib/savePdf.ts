@@ -1,7 +1,8 @@
 /**
  * Mobile-safe PDF download.
- * Uses anchor+download for desktop, window.open for mobile (iOS Safari
- * breaks a.click() from async code due to user-gesture chain).
+ * Uses anchor+download for most browsers (works on desktop & Chrome Android).
+ * Falls back to window.open only for iOS Safari where a.click() from async
+ * code breaks the user-gesture chain.
  */
 export function savePdf(
   doc: { save: (name: string) => void; output: (type: "blob") => Blob },
@@ -10,12 +11,12 @@ export function savePdf(
   try {
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-    if (isMobile) {
-      // window.open works reliably on iOS Safari from async code
+    if (isIOS) {
+      // iOS Safari blocks a.click() from async code — use window.open instead
       window.open(url, "_blank");
-      // Revoke after a delay to let the new tab load
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } else {
       const a = document.createElement("a");
