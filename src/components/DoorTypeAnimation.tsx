@@ -54,7 +54,13 @@ export default function DoorTypeAnimation({ doorType, compact = true, panelCount
         />
       );
     case "bifold":
-      return <BifoldDoorAnimation />;
+      return (
+        <BifoldDoorAnimation
+          compact={compact}
+          panelCountOverride={panelCount}
+          panelLayoutOverride={panelLayout}
+        />
+      );
     case "slidestack": {
       // Derive stack side from panel layout string if available
       let stackSide: "left" | "right" | "split" | undefined;

@@ -12,6 +12,7 @@ export const GLASS_MODIFIERS: Record<string, number> = {
   "Low-E3 Glass": 0,
   "Clear Glass": -50,
   "Laminated Glass": 75,
+  "Triple-Pane Glass": 0,
 };
 
 export const INSTALLATION_RATE = 30;
@@ -41,9 +42,9 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
     maxWidth: 240,
     maxHeight: 140,
     hasPanelCount: true,
-    panelMinWidth: 26,
-    panelMaxWidth: 92.51,
-    usableOpeningOffset: 0,
+    panelMinWidth: 35,
+    panelMaxWidth: 60,
+    usableOpeningOffset: 3,
     hasRoomName: false,
     hardwareOptions: ["Black", "White", "Silver"],
     detailedGlass: true,
@@ -54,9 +55,9 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
     maxWidth: 240,
     maxHeight: 140,
     hasPanelCount: true,
-    panelMinWidth: 26,
-    panelMaxWidth: 92.51,
-    usableOpeningOffset: 0,
+    panelMinWidth: 35,
+    panelMaxWidth: 60,
+    usableOpeningOffset: 3,
     hasRoomName: false,
     hardwareOptions: ["Black", "White", "Silver"],
     detailedGlass: true,
@@ -67,9 +68,9 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
     maxWidth: 240,
     maxHeight: 120,
     hasPanelCount: true,
-    panelMinWidth: 28,
+    panelMinWidth: 25,
     panelMaxWidth: 39,
-    usableOpeningOffset: 0,
+    usableOpeningOffset: 5,
     hasRoomName: false,
     hardwareOptions: ["Black", "White", "Silver"],
     detailedGlass: false,
@@ -78,11 +79,11 @@ export const PRODUCT_CONFIGS: Record<string, ProductConfig> = {
     displayName: "Slide & Stack System",
     hasSystemType: false,
     maxWidth: 292,
-    maxHeight: 137.79,
+    maxHeight: 120,
     hasPanelCount: true,
-    panelMinWidth: 28,
+    panelMinWidth: 25,
     panelMaxWidth: 39,
-    usableOpeningOffset: 0,
+    usableOpeningOffset: 5,
     hasRoomName: false,
     hardwareOptions: ["Black", "White", "Silver"],
     detailedGlass: false,
@@ -202,7 +203,11 @@ export function calculateSquareFeet(width: number, height: number): number {
 export function calculateItemTotal(item: ConfiguredItem): number {
   const sqft = calculateSquareFeet(item.width, item.height);
   const rate = RATES_PER_SQFT[item.doorTypeSlug] ?? 0;
-  const glassMod = (GLASS_MODIFIERS[item.glassType] ?? 0) * (item.panelCount || 1);
+  const glassPerUnit = GLASS_MODIFIERS[item.glassType] ?? 0;
+  const glassMultiplier = item.doorTypeSlug === "bi-fold"
+    ? Math.ceil((item.panelCount || 1) / 2)
+    : (item.panelCount || 1);
+  const glassMod = glassPerUnit * glassMultiplier;
   return round2(sqft * rate + glassMod);
 }
 
@@ -224,4 +229,81 @@ export function calculateQuoteTotals(
   const grandTotal = round2(taxableAmount + tax);
 
   return { subtotal, installationCost, deliveryCost, tax, grandTotal };
+}
+
+/* ── Per-item pricing breakdown ───────────────────────── */
+
+export interface ItemPricingBreakdown {
+  perPanelWidth: number | null;
+  squareFeet: number;
+  ratePerSqFt: number;
+  baseProductPrice: number;
+  glassPriceModifier: number;
+  panelCount: number;
+  totalGlassModifier: number;
+  productPrice: number;
+}
+
+/**
+ * Calculates a full pricing breakdown for a single item.
+ * Accepts either a ConfiguredItem from wizard state or a loosely-typed
+ * item object from the DB JSON. Gracefully returns zeros when fields
+ * are missing (old quotes).
+ */
+export function calculateItemBreakdown(item: {
+  width?: number;
+  height?: number;
+  panelCount?: number;
+  doorTypeSlug?: string;
+  glassType?: string;
+  ratePerSqFt?: number;
+  squareFeet?: number;
+  glassPriceModifier?: number;
+  baseProductPrice?: number;
+}): ItemPricingBreakdown {
+  const width = Number(item.width) || 0;
+  const height = Number(item.height) || 0;
+  const panelCount = Number(item.panelCount) || 1;
+  const offset = item.doorTypeSlug ? (PRODUCT_CONFIGS[item.doorTypeSlug]?.usableOpeningOffset ?? 0) : 0;
+  const usableWidth = width - offset;
+  const perPanelWidth = panelCount > 1 && usableWidth > 0 ? round2(usableWidth / panelCount) : null;
+
+  const squareFeet = item.squareFeet
+    ? Number(item.squareFeet)
+    : width && height
+      ? calculateSquareFeet(width, height)
+      : 0;
+
+  const ratePerSqFt = item.ratePerSqFt
+    ? Number(item.ratePerSqFt)
+    : item.doorTypeSlug
+      ? (RATES_PER_SQFT[item.doorTypeSlug] ?? 0)
+      : 0;
+
+  const baseProductPrice = item.baseProductPrice
+    ? Number(item.baseProductPrice)
+    : round2(squareFeet * ratePerSqFt);
+
+  const glassPriceModifier = item.glassPriceModifier !== undefined
+    ? Number(item.glassPriceModifier)
+    : item.glassType
+      ? (GLASS_MODIFIERS[item.glassType] ?? 0)
+      : 0;
+
+  const glassMultiplier = item.doorTypeSlug === "bi-fold"
+    ? Math.ceil(panelCount / 2)
+    : panelCount;
+  const totalGlassModifier = round2(glassPriceModifier * glassMultiplier);
+  const productPrice = round2(baseProductPrice + totalGlassModifier);
+
+  return {
+    perPanelWidth,
+    squareFeet: round2(squareFeet),
+    ratePerSqFt,
+    baseProductPrice,
+    glassPriceModifier,
+    panelCount,
+    totalGlassModifier,
+    productPrice,
+  };
 }

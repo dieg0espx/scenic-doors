@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getQuoteDetail } from "@/lib/actions/quotes";
+import { calculateItemBreakdown, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
 import PrintButton from "./PrintButton";
 
 export const dynamic = "force-dynamic";
@@ -98,6 +99,20 @@ export default async function QuotePrintPage({
             <div><span className="p-label">Color: </span><span className="p-value">{quote.color}</span></div>
             <div><span className="p-label">Glass: </span><span className="p-value">{quote.glass_type}</span></div>
             <div><span className="p-label">Size: </span><span className="p-value">{quote.size}</span></div>
+            {(() => {
+              const fi = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items[0] : null;
+              const pc = fi?.panelCount;
+              const w = fi?.width;
+              const slug = fi?.doorTypeSlug;
+              const offset = slug ? (PRODUCT_CONFIGS[slug]?.usableOpeningOffset ?? 0) : 0;
+              if (!pc || pc <= 1) return null;
+              return (
+                <>
+                  <div><span className="p-label">Panels: </span><span className="p-value">{pc}</span></div>
+                  {w && <div><span className="p-label">Per-Panel Width: </span><span className="p-value">{Math.round(((w - offset) / pc) * 10) / 10}&quot;</span></div>}
+                </>
+              );
+            })()}
           </div>
         </div>
 
@@ -131,6 +146,19 @@ export default async function QuotePrintPage({
           <div className="p-section-title">Pricing Summary</div>
           <table>
             <tbody>
+              {Array.isArray(quote.items) && quote.items.map((item: Record<string, unknown>, idx: number) => {
+                const bd = calculateItemBreakdown(item as Parameters<typeof calculateItemBreakdown>[0]);
+                if (!bd.ratePerSqFt) return null;
+                return (
+                  <tr key={(item.id as string) || idx} style={{ fontSize: "12px" }}>
+                    <td style={{ color: "#666" }}>
+                      {item.name as string}: {bd.squareFeet.toFixed(1)} sq ft × ${bd.ratePerSqFt}/sq ft
+                      {bd.totalGlassModifier !== 0 ? ` ${bd.totalGlassModifier < 0 ? "−" : "+"} $${Math.abs(bd.totalGlassModifier)} glass` : ""}
+                    </td>
+                    <td className="txt-right" style={{ color: "#666" }}>${bd.productPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                );
+              })}
               {Number(quote.subtotal) > 0 && (
                 <tr>
                   <td>Subtotal</td>

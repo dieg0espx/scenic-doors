@@ -42,6 +42,7 @@ import AdminPortalManager from "@/components/admin/AdminPortalManager";
 import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
 import PortalLinkBar from "@/components/admin/PortalLinkBar";
 import QuoteShareCard from "@/components/admin/QuoteShareCard";
+import { calculateItemBreakdown, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -150,6 +151,17 @@ export default async function QuoteDetailPage({
           ? String(firstItem.panelCount)
           : null,
       icon: PanelLeft,
+    },
+    {
+      label: "Per-Panel Width",
+      value: (() => {
+        const pc = drawing?.panel_count ?? firstItem?.panelCount;
+        const w = drawing?.overall_width ?? firstItem?.width;
+        const slug = firstItem?.doorTypeSlug;
+        const offset = slug ? (PRODUCT_CONFIGS[slug]?.usableOpeningOffset ?? 0) : 0;
+        return pc && pc > 1 && w ? `${Math.round(((w - offset) / pc) * 10) / 10}"` : null;
+      })(),
+      icon: Ruler,
     },
     {
       label: "Panel Layout",
@@ -448,6 +460,40 @@ export default async function QuoteDetailPage({
                   ${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </p>
               </div>
+
+              {/* Per-item pricing breakdown */}
+              {Array.isArray(quote.items) && quote.items.some((item: Record<string, unknown>) => {
+                const bd = calculateItemBreakdown(item as Parameters<typeof calculateItemBreakdown>[0]);
+                return bd.ratePerSqFt > 0;
+              }) && (
+                <div className="mb-5 pb-5 border-b border-white/[0.06] space-y-3">
+                  {quote.items.map((item: Record<string, unknown>, idx: number) => {
+                    const bd = calculateItemBreakdown(item as Parameters<typeof calculateItemBreakdown>[0]);
+                    if (!bd.ratePerSqFt) return null;
+                    return (
+                      <div key={(item.id as string) || idx}>
+                        <p className="text-white/50 text-xs font-semibold mb-1.5">{item.name as string}</p>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-white/30">Base Price ({bd.squareFeet.toFixed(1)} sq ft × ${bd.ratePerSqFt}/sq ft)</span>
+                            <span className="text-white/50">${bd.baseProductPrice.toLocaleString()}</span>
+                          </div>
+                          {bd.totalGlassModifier !== 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-white/30">Glass Modifier{bd.panelCount > 1 ? ` (× ${bd.panelCount} panels)` : ""}</span>
+                              <span className="text-white/50">{bd.totalGlassModifier < 0 ? "−" : "+"}${Math.abs(bd.totalGlassModifier).toLocaleString()}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-white/40 font-medium">Product Price</span>
+                            <span className="text-white/70 font-medium">${bd.productPrice.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Breakdown */}
               <div className="space-y-2.5">

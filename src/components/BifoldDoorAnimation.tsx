@@ -1,12 +1,49 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-export default function BifoldDoorAnimation() {
-  const [panelCount, setPanelCount] = useState(4);
-  const [foldDirection, setFoldDirection] = useState<'left' | 'right' | 'center'>('left');
+/**
+ * Parse a bi-fold panel layout string into a fold direction.
+ * "All Left (4L)" → "left"
+ * "All Right (3R)" → "right"
+ * "Split 2L-2R" → "center"
+ */
+function layoutToDirection(layout: string): 'left' | 'right' | 'center' {
+  if (layout.startsWith('Split')) return 'center';
+  if (layout.includes('Right') || layout.endsWith('R)')) return 'right';
+  return 'left';
+}
+
+export default function BifoldDoorAnimation({
+  panelCountOverride,
+  panelLayoutOverride,
+  compact,
+}: {
+  panelCountOverride?: number;
+  panelLayoutOverride?: string;
+  compact?: boolean;
+} = {}) {
+  const [panelCount, setPanelCount] = useState(panelCountOverride ?? 4);
+  const [foldDirection, setFoldDirection] = useState<'left' | 'right' | 'center'>(
+    panelLayoutOverride ? layoutToDirection(panelLayoutOverride) : 'left'
+  );
   const [openPercent, setOpenPercent] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // Sync overrides
+  useEffect(() => {
+    if (panelCountOverride !== undefined) {
+      setPanelCount(panelCountOverride);
+      setOpenPercent(0);
+    }
+  }, [panelCountOverride]);
+
+  useEffect(() => {
+    if (panelLayoutOverride) {
+      setFoldDirection(layoutToDirection(panelLayoutOverride));
+      setOpenPercent(0);
+    }
+  }, [panelLayoutOverride]);
 
   // Animation logic
   const toggleDoors = () => {
@@ -103,82 +140,88 @@ export default function BifoldDoorAnimation() {
     };
   };
 
+  const hasOverrides = panelCountOverride !== undefined || panelLayoutOverride !== undefined;
+
   return (
     <div style={{
       width: '100%',
-      padding: '40px 20px',
+      padding: compact ? '16px 12px' : '40px 20px',
       background: '#fff',
       fontFamily: 'system-ui, sans-serif',
     }}>
       {/* Title */}
-      <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1F2937', margin: '0 0 10px 0' }}>
-          Slide & Stack Door Preview
-        </h2>
-        <p style={{ fontSize: '16px', color: '#6B7280', margin: 0 }}>
-          Interactive door animation - choose panels and fold direction
-        </p>
-      </div>
-
-      {/* Controls */}
-      <div style={{
-        display: 'flex',
-        gap: '20px',
-        justifyContent: 'center',
-        marginBottom: '40px',
-        flexWrap: 'wrap',
-      }}>
-        {/* Panel count selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>Panels:</span>
-          {[2, 3, 4, 5, 6].map(num => (
-            <button
-              key={num}
-              onClick={() => { setPanelCount(num); setOpenPercent(0); }}
-              style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '8px',
-                border: panelCount === num ? '2px solid #3B82F6' : '2px solid #E5E7EB',
-                background: panelCount === num ? '#EFF6FF' : '#fff',
-                color: panelCount === num ? '#2563EB' : '#6B7280',
-                fontSize: '16px',
-                fontWeight: '600',
-                cursor: 'pointer',
-              }}
-            >
-              {num}
-            </button>
-          ))}
+      {!compact && (
+        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1F2937', margin: '0 0 10px 0' }}>
+            Bi-Fold Door Preview
+          </h2>
+          <p style={{ fontSize: '16px', color: '#6B7280', margin: 0 }}>
+            Interactive door animation - choose panels and fold direction
+          </p>
         </div>
+      )}
 
-        {/* Fold direction selector */}
-        <div style={{ display: 'flex', gap: '8px', background: '#F3F4F6', padding: '4px', borderRadius: '8px' }}>
-          {[
-            { id: 'left' as const, label: '← Left' },
-            { id: 'center' as const, label: '↔ Center' },
-            { id: 'right' as const, label: 'Right →' },
-          ].map(option => (
-            <button
-              key={option.id}
-              onClick={() => { setFoldDirection(option.id); setOpenPercent(0); }}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '6px',
-                border: 'none',
-                background: foldDirection === option.id ? '#fff' : 'transparent',
-                color: foldDirection === option.id ? '#1F2937' : '#6B7280',
-                fontSize: '14px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                boxShadow: foldDirection === option.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
+      {/* Controls — hidden in wizard (compact) or when overrides are set */}
+      {!compact && !hasOverrides && (
+        <div style={{
+          display: 'flex',
+          gap: '20px',
+          justifyContent: 'center',
+          marginBottom: compact ? '16px' : '40px',
+          flexWrap: 'wrap',
+        }}>
+          {/* Panel count selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>Panels:</span>
+            {[2, 3, 4, 5, 6].map(num => (
+              <button
+                key={num}
+                onClick={() => { setPanelCount(num); setOpenPercent(0); }}
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '8px',
+                  border: panelCount === num ? '2px solid #3B82F6' : '2px solid #E5E7EB',
+                  background: panelCount === num ? '#EFF6FF' : '#fff',
+                  color: panelCount === num ? '#2563EB' : '#6B7280',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
+              >
+                {num}
+              </button>
+            ))}
+          </div>
+
+          {/* Fold direction selector */}
+          <div style={{ display: 'flex', gap: '8px', background: '#F3F4F6', padding: '4px', borderRadius: '8px' }}>
+            {[
+              { id: 'left' as const, label: '← Left' },
+              { id: 'center' as const, label: '↔ Center' },
+              { id: 'right' as const, label: 'Right →' },
+            ].map(option => (
+              <button
+                key={option.id}
+                onClick={() => { setFoldDirection(option.id); setOpenPercent(0); }}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: foldDirection === option.id ? '#fff' : 'transparent',
+                  color: foldDirection === option.id ? '#1F2937' : '#6B7280',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  boxShadow: foldDirection === option.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                }}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Door visualization */}
       <div style={{
@@ -208,7 +251,7 @@ export default function BifoldDoorAnimation() {
         {/* Door container */}
         <div style={{
           position: 'relative',
-          height: '400px',
+          height: compact ? '250px' : '400px',
           width: '800px',
           margin: '0 auto',
           background: '#F9FAFB',
@@ -309,29 +352,23 @@ export default function BifoldDoorAnimation() {
                     }} />
                   ))}
 
-                  {/* Handle - only on operating panels, not fixed panels */}
+                  {/* Handle - only on operating panels */}
                   {(() => {
-                    // Determine which panel should have a handle based on fold direction
                     let showHandle = false;
                     let handlePosition: 'left' | 'right' = 'right';
 
                     if (foldDirection === 'left') {
-                      // Fold left: rightmost panel has handle (operating), leftmost is fixed
                       showHandle = i === panelCount - 1;
                       handlePosition = 'left';
                     } else if (foldDirection === 'right') {
-                      // Fold right: leftmost panel has handle (operating), rightmost is fixed
                       showHandle = i === 0;
                       handlePosition = 'right';
                     } else if (foldDirection === 'center') {
-                      // Center: middle panels have handles (operating), outer panels are fixed
                       const halfPoint = Math.floor(panelCount / 2);
                       if (i === halfPoint - 1) {
-                        // Left middle panel
                         showHandle = true;
                         handlePosition = 'right';
                       } else if (i === halfPoint) {
-                        // Right middle panel
                         showHandle = true;
                         handlePosition = 'left';
                       }
@@ -410,8 +447,8 @@ export default function BifoldDoorAnimation() {
       {/* Control panel */}
       <div style={{
         maxWidth: '400px',
-        margin: '40px auto 0',
-        padding: '30px',
+        margin: `${compact ? '16px' : '40px'} auto 0`,
+        padding: compact ? '16px' : '30px',
         background: '#F9FAFB',
         borderRadius: '16px',
         boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
@@ -423,13 +460,14 @@ export default function BifoldDoorAnimation() {
           alignItems: 'center',
           marginBottom: '20px',
         }}>
-          <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>
-            Door Status
+          <span style={{ fontSize: compact ? '14px' : '16px', fontWeight: '600', color: '#374151' }}>
+            Door Position
           </span>
           <span style={{
-            fontSize: '32px',
+            fontSize: compact ? '28px' : '32px',
             fontWeight: '700',
             color: openPercent < 5 ? '#10B981' : '#3B82F6',
+            fontVariantNumeric: 'tabular-nums',
           }}>
             {Math.round(openPercent)}%
           </span>
@@ -438,10 +476,10 @@ export default function BifoldDoorAnimation() {
         {/* Progress bar */}
         <div style={{
           position: 'relative',
-          height: '10px',
+          height: compact ? '8px' : '10px',
           background: '#E5E7EB',
           borderRadius: '5px',
-          marginBottom: '25px',
+          marginBottom: '20px',
           overflow: 'hidden',
         }}>
           <div style={{
@@ -462,8 +500,8 @@ export default function BifoldDoorAnimation() {
           disabled={isAnimating}
           style={{
             width: '100%',
-            padding: '18px',
-            fontSize: '18px',
+            padding: compact ? '14px' : '18px',
+            fontSize: compact ? '16px' : '18px',
             fontWeight: '700',
             color: '#fff',
             background: isAnimating

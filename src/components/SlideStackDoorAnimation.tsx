@@ -441,7 +441,7 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
             color: '#1F2937',
             margin: '0 0 8px 0',
           }}>
-            Bi-Fold Door Preview
+            Slide & Stack Door Preview
           </h2>
           <p style={{
             fontSize: '14px',
@@ -462,8 +462,8 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
         justifyContent: 'center',
         alignItems: 'center',
       }}>
-        {/* Panel Count - hide when controlled externally */}
-        {!panelCountOverride && (
+        {/* Panel Count - hide when in wizard (compact) or controlled externally */}
+        {!compact && !panelCountOverride && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
             {[2, 3, 4, 5, 6].map(count => (
@@ -489,8 +489,8 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
           </div>
         )}
 
-        {/* Stack Direction - hide when controlled externally */}
-        {!stackSideOverride && (
+        {/* Stack Direction - hide when in wizard (compact) or controlled externally */}
+        {!compact && !stackSideOverride && (
         <div style={{
           display: 'flex',
           background: '#F4F4F5',
@@ -563,7 +563,7 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
 
       {/* Animated Button */}
       <div style={{
-        marginTop: '32px',
+        marginTop: compact ? '16px' : '32px',
         display: 'flex',
         gap: '20px',
         flexWrap: 'wrap',

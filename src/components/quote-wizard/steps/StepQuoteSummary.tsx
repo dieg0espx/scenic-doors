@@ -20,7 +20,7 @@ import {
   Package,
 } from "lucide-react";
 import type { ConfiguredItem, WizardState, WizardAction } from "@/lib/quote-wizard/types";
-import { calculateQuoteTotals, DELIVERY_COST, INSTALLATION_RATE, calculateSquareFeet, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
+import { calculateQuoteTotals, DELIVERY_COST, INSTALLATION_RATE, calculateSquareFeet, PRODUCT_CONFIGS, calculateItemBreakdown, GLASS_MODIFIERS } from "@/lib/quote-wizard/pricing";
 import { getLayoutImageUrl } from "@/lib/quote-wizard/layout-images";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 import { createQuote, sendQuoteToClient, assignQuote, notifyNewQuote, sendEstimateConfirmation } from "@/lib/actions/quotes";
@@ -177,6 +177,12 @@ function ItemCard({
             <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Dimensions</p>
             <p className="text-xs sm:text-sm font-semibold text-ocean-800">{item.width}&quot; W &times; {item.height}&quot; H</p>
           </div>
+          {item.panelCount > 1 && (
+            <div>
+              <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Per Panel</p>
+              <p className="text-xs sm:text-sm font-semibold text-ocean-800">{Math.round(((item.width - (PRODUCT_CONFIGS[item.doorTypeSlug]?.usableOpeningOffset ?? 0)) / item.panelCount) * 10) / 10}&quot; W</p>
+            </div>
+          )}
           {configCode && (
             <div className="hidden sm:block">
               <p className="text-[10px] sm:text-xs text-ocean-400 mb-0.5">Configuration</p>
@@ -310,6 +316,16 @@ function ItemCard({
                     <span className="text-ocean-500">Door Size</span>
                     <span className="font-medium text-ocean-800">{item.width}&quot; W x {item.height}&quot; H</span>
                   </div>
+                  {item.panelCount > 1 && (
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className="text-ocean-500">Per-Panel Width</span>
+                      <span className="font-medium text-ocean-800">{Math.round(((item.width - (PRODUCT_CONFIGS[item.doorTypeSlug]?.usableOpeningOffset ?? 0)) / item.panelCount) * 10) / 10}&quot;</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-xs sm:text-sm">
+                    <span className="text-ocean-500">Area (sq ft)</span>
+                    <span className="font-medium text-ocean-800">{calculateSquareFeet(item.width, item.height).toFixed(1)}</span>
+                  </div>
                   <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-ocean-500">Rough Opening</span>
                     <span className="font-medium text-ocean-800">{item.width + 1}&quot; W x {item.height + 1}&quot; H</span>
@@ -331,6 +347,36 @@ function ItemCard({
                   </div>
                 </div>
               </div>
+
+              {/* Pricing Breakdown */}
+              {(() => {
+                const bd = calculateItemBreakdown(item);
+                return bd.ratePerSqFt > 0 ? (
+                  <div className="sm:col-span-2 bg-ocean-50/60 rounded-xl p-3 sm:p-4">
+                    <p className="text-xs font-semibold text-ocean-500 uppercase tracking-wider mb-2">Pricing Breakdown</p>
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-ocean-500">Base Price ({bd.squareFeet.toFixed(1)} sq ft &times; ${bd.ratePerSqFt}/sq ft)</span>
+                        <span className="font-medium text-ocean-800">${bd.baseProductPrice.toLocaleString()}</span>
+                      </div>
+                      {bd.totalGlassModifier !== 0 && (
+                        <div className="flex justify-between text-xs sm:text-sm">
+                          <span className="text-ocean-500">
+                            Glass Modifier ({item.glassType}{bd.panelCount > 1 ? ` × ${bd.panelCount} panels` : ""})
+                          </span>
+                          <span className={`font-medium ${bd.totalGlassModifier < 0 ? "text-green-700" : "text-ocean-800"}`}>
+                            {bd.totalGlassModifier < 0 ? "−" : "+"}${Math.abs(bd.totalGlassModifier).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-xs sm:text-sm pt-1.5 border-t border-ocean-200">
+                        <span className="font-semibold text-ocean-700">Product Price</span>
+                        <span className="font-bold text-primary-600">${bd.productPrice.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
 
             {/* Door Cost */}
@@ -391,6 +437,8 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
             hardwareFinish: item.hardwareFinish,
             ratePerSqFt: item.ratePerSqFt,
             squareFeet: item.squareFeet,
+            glassPriceModifier: item.glassPriceModifier,
+            baseProductPrice: Math.round(calculateSquareFeet(item.width, item.height) * item.ratePerSqFt * 100) / 100,
           }));
 
       const mediumNotes = isMedium
