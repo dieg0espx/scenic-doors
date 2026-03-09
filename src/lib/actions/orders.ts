@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { sendManufacturingStartedEmail, sendManufacturingCompletedEmail, sendDeliveryThankYouEmail } from "@/lib/email";
 import { recordEmailSent } from "@/lib/actions/email-history";
@@ -157,7 +157,7 @@ export async function syncOrderStatus(
 }
 
 export async function startManufacturing(orderId: string): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // Fetch order with quote data
   const { data: order, error } = await supabase
@@ -172,7 +172,7 @@ export async function startManufacturing(orderId: string): Promise<void> {
   const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string } | null;
 
   // Update order_tracking
-  await supabase
+  const { error: trackingErr } = await supabase
     .from("order_tracking")
     .update({
       stage: "manufacturing",
@@ -180,11 +180,15 @@ export async function startManufacturing(orderId: string): Promise<void> {
     })
     .eq("quote_id", order.quote_id);
 
+  if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
+
   // Update portal stage
-  await supabase
+  const { error: portalErr } = await supabase
     .from("quotes")
     .update({ portal_stage: "manufacturing" })
     .eq("id", order.quote_id);
+
+  if (portalErr) throw new Error(`Failed to update portal stage: ${portalErr.message}`);
 
   // Send email to client
   if (quote?.client_email) {
@@ -216,7 +220,7 @@ export async function startManufacturing(orderId: string): Promise<void> {
 }
 
 export async function completeManufacturing(orderId: string): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // Fetch order with quote data
   const { data: order, error } = await supabase
@@ -231,7 +235,7 @@ export async function completeManufacturing(orderId: string): Promise<void> {
   const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string; cost: number; grand_total: number } | null;
 
   // Update order_tracking: manufacturing → deposit_2_pending
-  await supabase
+  const { error: trackingErr } = await supabase
     .from("order_tracking")
     .update({
       stage: "deposit_2_pending",
@@ -239,11 +243,15 @@ export async function completeManufacturing(orderId: string): Promise<void> {
     })
     .eq("quote_id", order.quote_id);
 
+  if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
+
   // Update portal stage
-  await supabase
+  const { error: portalErr } = await supabase
     .from("quotes")
     .update({ portal_stage: "deposit_2_pending" })
     .eq("id", order.quote_id);
+
+  if (portalErr) throw new Error(`Failed to update portal stage: ${portalErr.message}`);
 
   // Send manufacturing completed email to client
   if (quote?.client_email) {
@@ -301,7 +309,7 @@ export async function completeManufacturing(orderId: string): Promise<void> {
 }
 
 export async function markAsDelivered(orderId: string): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   // Fetch order with quote data
   const { data: order, error } = await supabase
@@ -316,7 +324,7 @@ export async function markAsDelivered(orderId: string): Promise<void> {
   const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string } | null;
 
   // Update order_tracking stage to delivered
-  await supabase
+  const { error: trackingErr } = await supabase
     .from("order_tracking")
     .update({
       stage: "delivered",
@@ -324,6 +332,8 @@ export async function markAsDelivered(orderId: string): Promise<void> {
       updated_at: now,
     })
     .eq("quote_id", order.quote_id);
+
+  if (trackingErr) throw new Error(`Failed to update tracking: ${trackingErr.message}`);
 
   // Update portal stage
   await supabase
