@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Save, Download, Send, Loader2, CheckCircle2, Eye, X } from "lucide-react";
 import { updateApprovalDrawingAndSyncQuote } from "@/lib/actions/approval-drawings";
 import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
+import { savePdf } from "@/lib/savePdf";
 import type { ApprovalDrawing } from "@/lib/types";
 
 interface ApprovalDrawingEditorProps {
@@ -106,7 +107,7 @@ export default function ApprovalDrawingEditor({
         signed_at: drawing.signed_at,
         system_type: drawing.system_type,
       });
-      doc.save(`Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
+      savePdf(doc, `Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
     } catch {
       alert("Failed to generate PDF");
     } finally {

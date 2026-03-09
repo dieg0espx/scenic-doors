@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { signApprovalDrawing, requestApprovalDrawing } from "@/lib/actions/approval-drawings";
 import { generateApprovalDrawingPdf, generateMultiApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
+import { savePdf } from "@/lib/savePdf";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 import type { ApprovalDrawing } from "@/lib/types";
 
@@ -68,7 +69,7 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
     setDownloading(true);
     try {
       const doc = await generateApprovalDrawingPdf(drawingToPdfInput(d));
-      doc.save(`Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
+      savePdf(doc, `Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
     } catch {
       alert("Failed to generate PDF");
     } finally {
@@ -80,7 +81,7 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
     setDownloading(true);
     try {
       const doc = await generateMultiApprovalDrawingPdf(allDrawings.map(drawingToPdfInput));
-      doc.save(`Approval-Drawings-${quoteId.slice(0, 8)}.pdf`);
+      savePdf(doc, `Approval-Drawings-${quoteId.slice(0, 8)}.pdf`);
     } catch {
       alert("Failed to generate PDF");
     } finally {

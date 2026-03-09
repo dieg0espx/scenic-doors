@@ -6,6 +6,7 @@ import { generateOrderPdf } from "@/lib/generateOrderPdf";
 import { generateContractPdf } from "@/lib/generateContractPdf";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { generateApprovalDrawingPdf, generateMultiApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
+import { savePdf } from "@/lib/savePdf";
 
 interface QuoteData {
   quote_number: string;
@@ -91,7 +92,7 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
         quote,
         payments,
       });
-      doc.save(`${order.order_number}.pdf`);
+      savePdf(doc, `${order.order_number}.pdf`);
     } catch (err) {
       console.error("Failed to generate order PDF:", err);
     } finally {
@@ -119,7 +120,7 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
       const doc = allDrawings.length === 1
         ? await generateApprovalDrawingPdf(inputs[0])
         : await generateMultiApprovalDrawingPdf(inputs);
-      doc.save(`Approval-Drawings-${(quoteId || order.order_number).slice(0, 8)}.pdf`);
+      savePdf(doc, `Approval-Drawings-${(quoteId || order.order_number).slice(0, 8)}.pdf`);
     } catch (err) {
       console.error("Failed to generate approval drawing PDF:", err);
     } finally {
@@ -137,7 +138,7 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
         signed_at: contract.signed_at,
         quotes: quote,
       });
-      doc.save(`Contract-${quote.quote_number}.pdf`);
+      savePdf(doc, `Contract-${quote.quote_number}.pdf`);
     } catch (err) {
       console.error("Failed to generate contract PDF:", err);
     } finally {
@@ -153,7 +154,7 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
         quotes: quote,
       });
       const invoiceNumber = getInvoiceNumber(quote.quote_number, payment.payment_type);
-      doc.save(`${invoiceNumber}.pdf`);
+      savePdf(doc, `${invoiceNumber}.pdf`);
     } catch (err) {
       console.error("Failed to generate invoice PDF:", err);
     } finally {
