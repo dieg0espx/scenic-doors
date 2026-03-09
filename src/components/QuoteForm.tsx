@@ -643,7 +643,11 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
 
   // Client mode — force "new" when prefilling from a lead
   const [clientMode, setClientMode] = useState<"existing" | "new">(
-    prefill ? "new" : initialData?.client_id ? "existing" : clients.length > 0 ? "existing" : "new"
+    prefill ? "new"
+      : initialData?.client_id ? "existing"
+      : (initialData?.client_name || initialData?.client_email) ? "new"
+      : clients.length > 0 ? "existing"
+      : "new"
   );
   const [selectedClientId, setSelectedClientId] = useState<string>(initialData?.client_id || "");
   const [clientSearch, setClientSearch] = useState("");
