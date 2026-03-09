@@ -59,15 +59,18 @@ interface PortalQuoteViewProps {
   quote: QuoteData;
   photos: QuotePhoto[];
   drawing?: ApprovalDrawing | null;
+  drawings?: ApprovalDrawing[];
 }
 
-export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteViewProps) {
+export default function PortalQuoteView({ quote, photos, drawing: legacyDrawing, drawings = [] }: PortalQuoteViewProps) {
   const total = Number(quote.grand_total || quote.cost || 0);
   const items = Array.isArray(quote.items) && quote.items.length > 0 ? quote.items : [];
   const [selectedItemIndex, setSelectedItemIndex] = useState(0);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const selectedItem: any = items[selectedItemIndex] ?? items[0] ?? null;
+  // Match drawing to the selected item index; fall back to legacy single drawing
+  const drawing = drawings[selectedItemIndex] ?? (selectedItemIndex === 0 ? legacyDrawing : null) ?? null;
   const itemPanelCount: number | undefined = drawing?.panel_count ?? selectedItem?.panelCount;
   const itemPanelLayout: string | undefined = drawing?.configuration ?? selectedItem?.panelLayout;
   const selectedDoorType: string = selectedItem?.doorTypeSlug || selectedItem?.name || quote.door_type;
