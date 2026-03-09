@@ -1,53 +1,43 @@
 /**
- * Mobile-safe PDF download.
+ * Mobile-safe PDF save.
  *
- * The problem: on mobile browsers, both a.click() and window.open() fail
- * when called AFTER an await (user-gesture chain is broken by async work).
- *
- * Solution: call openPdfWindow() BEFORE the await (synchronously in the click
- * handler) to preserve the gesture, then pass the window ref to savePdf()
- * which redirects it to the blob URL.
- *
- * Usage:
- *   const w = openPdfWindow();
- *   const doc = await generatePdf(...);
- *   savePdf(doc, "file.pdf", w);
+ * Mobile: uses navigator.share() (native share sheet — save to Files, AirDrop, etc.)
+ * Desktop: uses anchor + download attribute
+ * Fallback: jsPDF's built-in save
  */
-
-/** Call this synchronously inside the click handler, BEFORE any await. */
-export function openPdfWindow(): Window | null {
-  return window.open("", "_blank");
-}
-
-export function savePdf(
+export async function savePdf(
   doc: { save: (name: string) => void; output: (type: "blob") => Blob },
-  filename: string,
-  preOpenedWindow?: Window | null
+  filename: string
 ) {
   try {
     const blob = doc.output("blob");
-    const url = URL.createObjectURL(blob);
 
-    if (preOpenedWindow) {
-      // Redirect the pre-opened window (works on all mobile browsers)
-      preOpenedWindow.location.href = url;
-      setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } else {
-      // No pre-opened window — try anchor download (works on desktop)
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }, 250);
+    // Mobile: try native share sheet (iOS Safari + Chrome Android)
+    const file = new File([blob], filename, { type: "application/pdf" });
+    if (typeof navigator.share === "function" && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      } catch (e) {
+        // User cancelled share — that's fine
+        if (e instanceof Error && e.name === "AbortError") return;
+        // Other error — fall through to anchor download
+      }
     }
+
+    // Desktop / fallback: anchor + download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 250);
   } catch {
-    // If pre-opened window exists but we errored, close it
-    if (preOpenedWindow) preOpenedWindow.close();
     doc.save(filename);
   }
 }
