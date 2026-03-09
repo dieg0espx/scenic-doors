@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Receipt, Download, Loader2, CheckCircle2, Send, Copy, Check, ExternalLink } from "lucide-react";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
-import { savePdf } from "@/lib/savePdf";
+import { savePdf, openPdfWindow } from "@/lib/savePdf";
 import { sendInvoiceToClient } from "@/lib/actions/payments";
 
 interface Payment {
@@ -62,10 +62,12 @@ export default function InvoicesList({ payments }: { payments: Payment[] }) {
 
   async function handleDownload(payment: Payment) {
     setDownloadingId(payment.id);
+    const w = openPdfWindow();
     try {
       const doc = await generateInvoicePdf(payment);
-      savePdf(doc, `${getInvoiceNumber(payment)}.pdf`);
+      savePdf(doc, `${getInvoiceNumber(payment)}.pdf`, w);
     } catch (err) {
+      if (w) w.close();
       console.error("Failed to generate invoice PDF:", err);
     } finally {
       setDownloadingId(null);

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Save, Download, Send, Loader2, CheckCircle2, Eye, X } from "lucide-react";
 import { updateApprovalDrawingAndSyncQuote } from "@/lib/actions/approval-drawings";
 import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
-import { savePdf } from "@/lib/savePdf";
+import { savePdf, openPdfWindow } from "@/lib/savePdf";
 import type { ApprovalDrawing } from "@/lib/types";
 
 interface ApprovalDrawingEditorProps {
@@ -93,6 +93,7 @@ export default function ApprovalDrawingEditor({
 
   async function handleDownloadPdf() {
     setDownloading(true);
+    const w = openPdfWindow();
     try {
       const doc = await generateApprovalDrawingPdf({
         overall_width: form.overall_width,
@@ -107,8 +108,9 @@ export default function ApprovalDrawingEditor({
         signed_at: drawing.signed_at,
         system_type: drawing.system_type,
       });
-      savePdf(doc, `Approval-Drawing-${quoteId.slice(0, 8)}.pdf`);
+      savePdf(doc, `Approval-Drawing-${quoteId.slice(0, 8)}.pdf`, w);
     } catch {
+      if (w) w.close();
       alert("Failed to generate PDF");
     } finally {
       setDownloading(false);

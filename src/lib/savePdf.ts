@@ -1,23 +1,39 @@
 /**
  * Mobile-safe PDF download.
- * Uses anchor+download for desktop, window.open for mobile (iOS Safari
- * breaks a.click() from async code due to user-gesture chain).
+ *
+ * The problem: on mobile browsers, both a.click() and window.open() fail
+ * when called AFTER an await (user-gesture chain is broken by async work).
+ *
+ * Solution: call openPdfWindow() BEFORE the await (synchronously in the click
+ * handler) to preserve the gesture, then pass the window ref to savePdf()
+ * which redirects it to the blob URL.
+ *
+ * Usage:
+ *   const w = openPdfWindow();
+ *   const doc = await generatePdf(...);
+ *   savePdf(doc, "file.pdf", w);
  */
+
+/** Call this synchronously inside the click handler, BEFORE any await. */
+export function openPdfWindow(): Window | null {
+  return window.open("", "_blank");
+}
+
 export function savePdf(
   doc: { save: (name: string) => void; output: (type: "blob") => Blob },
-  filename: string
+  filename: string,
+  preOpenedWindow?: Window | null
 ) {
   try {
     const blob = doc.output("blob");
     const url = URL.createObjectURL(blob);
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-    if (isMobile) {
-      // window.open works reliably on iOS Safari from async code
-      window.open(url, "_blank");
-      // Revoke after a delay to let the new tab load
+    if (preOpenedWindow) {
+      // Redirect the pre-opened window (works on all mobile browsers)
+      preOpenedWindow.location.href = url;
       setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } else {
+      // No pre-opened window — try anchor download (works on desktop)
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
@@ -30,6 +46,8 @@ export function savePdf(
       }, 250);
     }
   } catch {
+    // If pre-opened window exists but we errored, close it
+    if (preOpenedWindow) preOpenedWindow.close();
     doc.save(filename);
   }
 }
