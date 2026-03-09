@@ -18,6 +18,7 @@ import {
 import { updateDeliveryAddress } from "@/lib/actions/quotes";
 import type { QuotePhoto, ApprovalDrawing } from "@/lib/types";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
+import { calculateItemBreakdown, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
 
 interface QuoteData {
   id: string;
@@ -37,6 +38,15 @@ interface QuoteData {
     quantity: number;
     unit_price: number;
     total: number;
+    width?: number;
+    height?: number;
+    panelCount?: number;
+    doorTypeSlug?: string;
+    glassType?: string;
+    ratePerSqFt?: number;
+    squareFeet?: number;
+    glassPriceModifier?: number;
+    baseProductPrice?: number;
   }>;
   subtotal: number;
   installation_cost: number;
@@ -92,6 +102,17 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
           ? String(firstItem.panelCount)
           : null,
       icon: PanelLeft,
+    },
+    {
+      label: "Per-Panel Width",
+      value: (() => {
+        const pc = drawing?.panel_count ?? firstItem?.panelCount;
+        const w = drawing?.overall_width ?? firstItem?.width;
+        const slug = firstItem?.doorTypeSlug;
+        const offset = slug ? (PRODUCT_CONFIGS[slug]?.usableOpeningOffset ?? 0) : 0;
+        return pc && pc > 1 && w ? `${Math.round(((w - offset) / pc) * 10) / 10}"` : null;
+      })(),
+      icon: Ruler,
     },
     {
       label: "Panel Layout",
@@ -233,6 +254,32 @@ export default function PortalQuoteView({ quote, photos, drawing }: PortalQuoteV
           Pricing Summary
         </h3>
         <div className="space-y-2 text-sm">
+          {/* Per-item pricing breakdown */}
+          {Array.isArray(quote.items) && quote.items.map((item, idx) => {
+            const bd = calculateItemBreakdown(item);
+            if (!bd.ratePerSqFt) return null;
+            return (
+              <div key={item.id || idx} className="pb-2 mb-2 border-b border-ocean-100 last:border-0">
+                <p className="text-xs font-semibold text-ocean-700 mb-1">{item.name}</p>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between text-ocean-500">
+                    <span>Base Price ({bd.squareFeet.toFixed(1)} sq ft × ${bd.ratePerSqFt}/sq ft)</span>
+                    <span>${bd.baseProductPrice.toLocaleString()}</span>
+                  </div>
+                  {bd.totalGlassModifier !== 0 && (
+                    <div className="flex justify-between text-ocean-500">
+                      <span>Glass Modifier{bd.panelCount > 1 ? ` (× ${bd.panelCount} panels)` : ""}</span>
+                      <span>{bd.totalGlassModifier < 0 ? "−" : "+"}${Math.abs(bd.totalGlassModifier).toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-ocean-700 font-medium">
+                    <span>Product Price</span>
+                    <span>${bd.productPrice.toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
           {Number(quote.subtotal) > 0 && (
             <div className="flex justify-between text-ocean-600">
               <span>Subtotal</span>

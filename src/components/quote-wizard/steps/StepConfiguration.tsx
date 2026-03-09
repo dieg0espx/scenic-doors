@@ -315,7 +315,11 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                   max={config.maxWidth}
                   className={inputClass("width")}
                 />
-                <p className="mt-1.5 text-xs text-ocean-400">Max width: {config.maxWidth}&quot;</p>
+                <p className="mt-1.5 text-xs text-ocean-400">
+                  {config.usableOpeningOffset > 0
+                    ? <>Usable opening = width &minus; {config.usableOpeningOffset}&quot;.</>
+                    : <>Max width: {config.maxWidth}&quot;</>}
+                </p>
                 {errors.width && <p className="mt-1 text-xs text-red-500">{errors.width}</p>}
               </div>
               <div>
@@ -340,7 +344,8 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
               <div>
                 <label className="block text-sm font-semibold text-ocean-800 mb-1">Panel Count</label>
                 <p className="text-xs text-ocean-400 mb-3">
-                  Per-panel width must be {config.panelMinWidth}&quot;&ndash;{config.panelMaxWidth}&quot;.
+                  {config.usableOpeningOffset > 0 && <>Usable opening = width &minus; {config.usableOpeningOffset}&quot;. </>}
+                  Per-panel must be {config.panelMinWidth}&quot;&ndash;{config.panelMaxWidth}&quot;.
                 </p>
                 {availablePanelCounts.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
@@ -443,14 +448,18 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
                 <p className="text-xs text-ocean-400 mb-3">See how your door configuration looks and operates.</p>
                 <div className="rounded-xl border border-ocean-200 overflow-hidden bg-white">
                   {item.doorTypeSlug === "bi-fold" && (
-                    <BifoldDoorAnimation />
+                    <BifoldDoorAnimation
+                      panelCountOverride={item.panelCount > 0 ? item.panelCount : undefined}
+                      panelLayoutOverride={item.panelLayout || undefined}
+                      compact
+                    />
                   )}
                   {item.doorTypeSlug === "slide-stack" && (
                     <SlideStackDoorAnimation
                       panelCountOverride={item.panelCount > 0 ? item.panelCount : undefined}
                       stackSideOverride={
                         item.panelLayout === '1L + 1R' ? 'split'
-                        : item.panelLayout?.includes('Right') ? 'right'
+                        : item.panelLayout?.includes('Right') || item.panelLayout?.endsWith('R') ? 'right'
                         : item.panelLayout?.includes('Left') || item.panelLayout?.endsWith('L') ? 'left'
                         : undefined
                       }

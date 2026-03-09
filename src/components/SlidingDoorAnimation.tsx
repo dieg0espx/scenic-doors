@@ -161,24 +161,47 @@ const SlidingDoorAnimation = ({
       }
     }
 
-    // For other 4 and 6 panel configurations, stack ALL panels
+    // Special handling for "Operating + Fixed(s) + Operating" pattern
+    // Outer operating panels slide inward behind the nearest fixed panels
+    if (total >= 3 &&
+        panelTypes[0] === 'operating' &&
+        panelTypes[total - 1] === 'operating' &&
+        panelTypes.slice(1, -1).every(t => t === 'fixed')) {
+
+      // Fixed panels stay put
+      if (isFixed) {
+        return { translateX: 0, zIndex: 20 };
+      }
+
+      // First operating panel slides RIGHT behind the first fixed panel
+      if (index === 0) {
+        return { translateX: 100 * progress, zIndex: 10 };
+      }
+      // Last operating panel slides LEFT behind the last fixed panel
+      return { translateX: -100 * progress, zIndex: 10 };
+    }
+
+    // For other 4 and 6 panel configurations, stack operating panels
     if (total === 4 || total === 6) {
+      // Fixed panels never move
+      if (isFixed) {
+        return { translateX: 0, zIndex: 20 };
+      }
+
       // Determine stack direction based on fixed panel position
       // If first panel is Fixed → stack to LEFT (Open to Left)
       // If last panel is Fixed → stack to RIGHT (Open to Right)
 
-      if (panelTypes[0] === 'fixed' && panelTypes[total - 1] === 'operating') {
-        // Stack to the LEFT
+      if (panelTypes[0] === 'fixed') {
+        // Stack to the LEFT — operating panels slide left toward the fixed panel
         const panelsToLeft = index; // How many positions to move left
         const translateX = -panelsToLeft * 100 * progress;
-        // Leftmost panels on top, rightmost on bottom
         const zIndex = 30 - (total - 1 - index);
         return { translateX, zIndex };
       } else {
-        // Stack to the RIGHT (default)
-        const panelsToRight = total - 1 - index; // How many positions to move right
+        // Stack to the RIGHT — operating panels slide right toward the fixed panel
+        const panelsToRight = total - 1 - index;
         const translateX = panelsToRight * 100 * progress;
-        // Rightmost panels on top, leftmost on bottom
         const zIndex = 30 - index;
         return { translateX, zIndex };
       }
@@ -345,7 +368,7 @@ const SlidingDoorAnimation = ({
         flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center',
       }}>
         {/* Panel Count */}
-        {!panelCountOverride && (
+        {!compact && !panelCountOverride && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
             {[2, 3, 4, 6].map(count => (
@@ -367,7 +390,7 @@ const SlidingDoorAnimation = ({
         )}
 
         {/* Layout switcher (when multiple layouts available and no override) */}
-        {!panelLayoutOverride && layoutsForCount.length > 1 && (
+        {!compact && !panelLayoutOverride && layoutsForCount.length > 1 && (
           <div style={{
             display: 'flex', background: '#F4F4F5', padding: '4px',
             borderRadius: '10px', marginLeft: panelCountOverride ? '0px' : '8px',
