@@ -651,20 +651,39 @@ export async function notifyNewQuote(quoteId: string, origin: string) {
       .single();
     if (!fallback) return;
     const emails = await getNotificationEmailsByType("new_quote");
-    if (emails.length === 0) return;
+    if (emails.length > 0) {
+      await sendNewQuoteNotificationEmail(
+        {
+          clientName: fallback.client_name,
+          clientEmail: fallback.client_email,
+          quoteNumber: fallback.quote_number,
+          doorType: fallback.door_type,
+          cost: fallback.grand_total || fallback.cost,
+          assignedRepName: null,
+          adminUrl: `${origin}/admin/quotes/${quoteId}`,
+        },
+        emails
+      );
+    }
 
-    await sendNewQuoteNotificationEmail(
-      {
-        clientName: fallback.client_name,
-        clientEmail: fallback.client_email,
-        quoteNumber: fallback.quote_number,
-        doorType: fallback.door_type,
-        cost: fallback.grand_total || fallback.cost,
-        assignedRepName: null,
+    // Slack notification (fallback path)
+    try {
+      const total = Number(fallback.grand_total || fallback.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
+      await sendSlackNotification({
+        heading: `New Quote ${fallback.quote_number}`,
+        message: `A new quote has been created for *${fallback.client_name}*.`,
+        color: "#7c3aed",
+        details: [
+          { label: "Client", value: fallback.client_name },
+          { label: "Email", value: fallback.client_email },
+          { label: "Door Type", value: fallback.door_type },
+          { label: "Total", value: `$${total}` },
+        ],
         adminUrl: `${origin}/admin/quotes/${quoteId}`,
-      },
-      emails
-    );
+      });
+    } catch {
+      // Don't fail if Slack notification fails
+    }
     return;
   }
 
@@ -678,29 +697,29 @@ export async function notifyNewQuote(quoteId: string, origin: string) {
     allEmails.push(repEmail);
   }
 
-  if (allEmails.length === 0) return;
+  if (allEmails.length > 0) {
+    await sendNewQuoteNotificationEmail(
+      {
+        clientName: quote.client_name,
+        clientEmail: quote.client_email,
+        quoteNumber: quote.quote_number,
+        doorType: quote.door_type,
+        cost: quote.grand_total || quote.cost,
+        assignedRepName: repName,
+        adminUrl: `${origin}/admin/quotes/${quoteId}`,
+      },
+      allEmails
+    );
 
-  await sendNewQuoteNotificationEmail(
-    {
-      clientName: quote.client_name,
-      clientEmail: quote.client_email,
-      quoteNumber: quote.quote_number,
-      doorType: quote.door_type,
-      cost: quote.grand_total || quote.cost,
-      assignedRepName: repName,
-      adminUrl: `${origin}/admin/quotes/${quoteId}`,
-    },
-    allEmails
-  );
+    await recordEmailSent({
+      quote_id: quoteId,
+      recipient_email: allEmails.join(", "),
+      subject: `New Quote ${quote.quote_number} — ${quote.client_name}`,
+      type: "notification",
+    });
+  }
 
-  await recordEmailSent({
-    quote_id: quoteId,
-    recipient_email: allEmails.join(", "),
-    subject: `New Quote ${quote.quote_number} — ${quote.client_name}`,
-    type: "notification",
-  });
-
-  // Slack notification
+  // Slack notification — always attempt regardless of email config
   try {
     const total = Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
     await sendSlackNotification({
