@@ -6,7 +6,7 @@ import { generateOrderPdf } from "@/lib/generateOrderPdf";
 import { generateContractPdf } from "@/lib/generateContractPdf";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { generateApprovalDrawingPdf, generateMultiApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
-import { savePdf, openPdfWindow } from "@/lib/savePdf";
+import { savePdf } from "@/lib/savePdf";
 
 interface QuoteData {
   quote_number: string;
@@ -86,16 +86,14 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
 
   async function handleDownloadOrder() {
     setDownloading("order");
-    const w = openPdfWindow();
     try {
       const doc = await generateOrderPdf({
         ...order,
         quote,
         payments,
       });
-      savePdf(doc, `${order.order_number}.pdf`, w);
+      await savePdf(doc, `${order.order_number}.pdf`);
     } catch (err) {
-      if (w) w.close();
       console.error("Failed to generate order PDF:", err);
     } finally {
       setDownloading(null);
@@ -105,7 +103,6 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
   async function handleDownloadDrawings() {
     if (allDrawings.length === 0) return;
     setDownloading("drawing");
-    const w = openPdfWindow();
     try {
       const inputs = allDrawings.map((d) => ({
         overall_width: d.overall_width,
@@ -123,9 +120,8 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
       const doc = allDrawings.length === 1
         ? await generateApprovalDrawingPdf(inputs[0])
         : await generateMultiApprovalDrawingPdf(inputs);
-      savePdf(doc, `Approval-Drawings-${(quoteId || order.order_number).slice(0, 8)}.pdf`, w);
+      await savePdf(doc, `Approval-Drawings-${(quoteId || order.order_number).slice(0, 8)}.pdf`);
     } catch (err) {
-      if (w) w.close();
       console.error("Failed to generate approval drawing PDF:", err);
     } finally {
       setDownloading(null);
@@ -135,7 +131,6 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
   async function handleDownloadContract() {
     if (!contract) return;
     setDownloading("contract");
-    const w = openPdfWindow();
     try {
       const doc = await generateContractPdf({
         client_name: contract.client_name,
@@ -143,9 +138,8 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
         signed_at: contract.signed_at,
         quotes: quote,
       });
-      savePdf(doc, `Contract-${quote.quote_number}.pdf`, w);
+      await savePdf(doc, `Contract-${quote.quote_number}.pdf`);
     } catch (err) {
-      if (w) w.close();
       console.error("Failed to generate contract PDF:", err);
     } finally {
       setDownloading(null);
@@ -154,16 +148,14 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
 
   async function handleDownloadInvoice(payment: PaymentData) {
     setDownloading(payment.id);
-    const w = openPdfWindow();
     try {
       const doc = await generateInvoicePdf({
         ...payment,
         quotes: quote,
       });
       const invoiceNumber = getInvoiceNumber(quote.quote_number, payment.payment_type);
-      savePdf(doc, `${invoiceNumber}.pdf`, w);
+      await savePdf(doc, `${invoiceNumber}.pdf`);
     } catch (err) {
-      if (w) w.close();
       console.error("Failed to generate invoice PDF:", err);
     } finally {
       setDownloading(null);

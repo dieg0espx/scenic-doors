@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { getPaymentById, submitPaymentConfirmation } from "@/lib/actions/payments";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
-import { savePdf, openPdfWindow } from "@/lib/savePdf";
+import { savePdf } from "@/lib/savePdf";
 import {
   Receipt, Download, CheckCircle2, XCircle, ArrowRight,
   CreditCard, Landmark, Banknote, Loader2, DoorOpen, Layers,
@@ -101,12 +101,11 @@ export default function PublicInvoicePage() {
   async function handleDownloadPdf() {
     if (!payment) return;
     setDownloadingPdf(true);
-    const w = openPdfWindow();
     try {
       const doc = await generateInvoicePdf(payment);
-      savePdf(doc, `${getInvoiceNumber(payment)}.pdf`, w);
+      await savePdf(doc, `${getInvoiceNumber(payment)}.pdf`);
     } catch {
-      if (w) w.close();
+      // silent
     } finally {
       setDownloadingPdf(false);
     }
