@@ -5,7 +5,7 @@ import { Download, Loader2, FileText, ScrollText, Receipt, ClipboardCheck } from
 import { generateOrderPdf } from "@/lib/generateOrderPdf";
 import { generateContractPdf } from "@/lib/generateContractPdf";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
-import { generateApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
+import { generateApprovalDrawingPdf, generateMultiApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
 
 interface QuoteData {
   quote_number: string;
@@ -61,6 +61,7 @@ interface Props {
   contract: ContractData | null;
   payments: PaymentData[];
   drawing?: DrawingData | null;
+  drawings?: DrawingData[];
   quoteId?: string;
 }
 
@@ -76,8 +77,11 @@ function getInvoiceNumber(quoteNumber: string, paymentType: string) {
   return `INV-${quoteNumber.replace("QT-", "")}${isAdvance ? "-A" : "-B"}`;
 }
 
-export default function OrderDownloads({ order, quote, contract, payments, drawing, quoteId }: Props) {
+export default function OrderDownloads({ order, quote, contract, payments, drawing, drawings = [], quoteId }: Props) {
   const [downloading, setDownloading] = useState<DownloadingKey | null>(null);
+
+  // Build full drawings list — prefer array, fall back to single
+  const allDrawings = drawings.length > 0 ? drawings : (drawing ? [drawing] : []);
 
   async function handleDownloadOrder() {
     setDownloading("order");
@@ -95,24 +99,27 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
     }
   }
 
-  async function handleDownloadDrawing() {
-    if (!drawing) return;
+  async function handleDownloadDrawings() {
+    if (allDrawings.length === 0) return;
     setDownloading("drawing");
     try {
-      const doc = await generateApprovalDrawingPdf({
-        overall_width: drawing.overall_width,
-        overall_height: drawing.overall_height,
-        panel_count: drawing.panel_count,
-        slide_direction: drawing.slide_direction,
-        in_swing: drawing.in_swing,
-        frame_color: drawing.frame_color,
-        hardware_color: drawing.hardware_color,
-        customer_name: drawing.customer_name,
-        signature_data: drawing.signature_data,
-        signed_at: drawing.signed_at,
-        system_type: drawing.system_type,
-      });
-      doc.save(`Approval-Drawing-${(quoteId || order.order_number).slice(0, 8)}.pdf`);
+      const inputs = allDrawings.map((d) => ({
+        overall_width: d.overall_width,
+        overall_height: d.overall_height,
+        panel_count: d.panel_count,
+        slide_direction: d.slide_direction,
+        in_swing: d.in_swing,
+        frame_color: d.frame_color,
+        hardware_color: d.hardware_color,
+        customer_name: d.customer_name,
+        signature_data: d.signature_data,
+        signed_at: d.signed_at,
+        system_type: d.system_type,
+      }));
+      const doc = allDrawings.length === 1
+        ? await generateApprovalDrawingPdf(inputs[0])
+        : await generateMultiApprovalDrawingPdf(inputs);
+      doc.save(`Approval-Drawings-${(quoteId || order.order_number).slice(0, 8)}.pdf`);
     } catch (err) {
       console.error("Failed to generate approval drawing PDF:", err);
     } finally {
@@ -184,9 +191,9 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
         </button>
 
         {/* Approval Drawing PDF */}
-        {drawing && (
+        {allDrawings.length > 0 && (
           <button
-            onClick={handleDownloadDrawing}
+            onClick={handleDownloadDrawings}
             disabled={downloading === "drawing"}
             className="w-full flex items-center gap-3 px-4 py-3.5 sm:py-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-all cursor-pointer disabled:opacity-50 group active:scale-[0.98]"
           >
@@ -198,9 +205,14 @@ export default function OrderDownloads({ order, quote, contract, payments, drawi
               )}
             </div>
             <div className="text-left flex-1 min-w-0">
-              <p className="text-white font-medium text-sm">Approval Drawing</p>
+              <p className="text-white font-medium text-sm">
+                Approval Drawing{allDrawings.length > 1 ? "s" : ""}
+              </p>
               <p className="text-white/30 text-xs">
-                {drawing.signed_at ? "Signed" : "Unsigned"} — {drawing.panel_count} panels, {drawing.overall_width}&quot; x {drawing.overall_height}&quot;
+                {allDrawings.length > 1
+                  ? `${allDrawings.length} drawings — ${allDrawings.every((d) => d.signed_at) ? "All signed" : "Pending signatures"}`
+                  : `${allDrawings[0].signed_at ? "Signed" : "Unsigned"} — ${allDrawings[0].panel_count} panels, ${allDrawings[0].overall_width}" x ${allDrawings[0].overall_height}"`
+                }
               </p>
             </div>
             <Download className="w-4 h-4 text-white/20 group-hover:text-white/50 transition-colors shrink-0" />
