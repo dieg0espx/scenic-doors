@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, Clock, CreditCard, DollarSign, Download, Loader2 } from "lucide-react";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
+import { savePdf } from "@/lib/savePdf";
 import type { OrderTracking } from "@/lib/types";
 
 interface PaymentRecord {
@@ -183,7 +184,7 @@ function PaymentCard({
       });
       const isAdvance = payment.payment_type === "advance_50";
       const invoiceNumber = `INV-${quoteInfo.quote_number.replace("QT-", "")}${isAdvance ? "-A" : "-B"}`;
-      doc.save(`${paid ? "Receipt" : "Invoice"}-${invoiceNumber}.pdf`);
+      savePdf(doc, `${paid ? "Receipt" : "Invoice"}-${invoiceNumber}.pdf`);
     } catch {
       // silent
     } finally {
