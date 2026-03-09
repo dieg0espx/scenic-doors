@@ -357,7 +357,7 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
             />
 
             {/* Per-drawing sign section */}
-            {!isSigned && !isSigningThis && (
+            {!isSigned && !isSigningThis && d.status === "sent" && (
               <div className="bg-white rounded-xl border border-ocean-200 p-5 text-center">
                 <p className="text-ocean-500 text-sm mb-3">
                   By signing, you confirm that the specifications above are correct.
@@ -374,6 +374,17 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
                 >
                   Sign Approval Drawing
                 </button>
+              </div>
+            )}
+
+            {!isSigned && !isSigningThis && d.status !== "sent" && (
+              <div className="bg-white rounded-xl border border-ocean-200 p-5 text-center">
+                <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
+                  <Clock className="w-5 h-5 text-amber-500" />
+                </div>
+                <p className="text-ocean-500 text-sm">
+                  This drawing is pending review. You&apos;ll be able to sign once it&apos;s been sent for approval.
+                </p>
               </div>
             )}
 
