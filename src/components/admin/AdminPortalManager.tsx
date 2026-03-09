@@ -54,6 +54,7 @@ interface AdminPortalManagerProps {
   drawings?: ApprovalDrawing[];
   photos: QuotePhoto[];
   followUps: FollowUpEntry[];
+  hideFollowUps?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   documents?: any[];
 }
@@ -118,6 +119,7 @@ export default function AdminPortalManager({
   drawings: initialDrawings,
   photos: initialPhotos,
   followUps: initialFollowUps,
+  hideFollowUps = false,
   documents = [],
 }: AdminPortalManagerProps) {
   // Support both single drawing (legacy) and array
@@ -480,7 +482,7 @@ export default function AdminPortalManager({
       </Section>
 
       {/* Follow-ups */}
-      <Section
+      {!hideFollowUps && <Section
         title="Follow-up Schedule"
         icon={<Calendar className="w-4 h-4 text-orange-400" />}
         isOpen={openSection === "followups"}
@@ -544,7 +546,7 @@ export default function AdminPortalManager({
             </div>
           )}
         </div>
-      </Section>
+      </Section>}
     </div>
   );
 }
