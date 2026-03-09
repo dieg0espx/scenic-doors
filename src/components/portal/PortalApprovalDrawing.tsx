@@ -439,8 +439,8 @@ function DrawingDetails({ drawing, doorType, onDownload, downloading }: { drawin
     { label: "System Type", value: drawing.system_type || "—" },
   ];
 
-  // Use the quote's door_type for animation, fall back to drawing's system_type
-  const animDoorType = doorType || drawing.system_type || "";
+  // Use the drawing's system_type for animation, fall back to quote's door_type
+  const animDoorType = drawing.system_type || doorType || "";
 
   return (
     <div className="bg-white rounded-xl border border-ocean-200 p-5 sm:p-6">
