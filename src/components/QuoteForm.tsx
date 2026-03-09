@@ -528,7 +528,8 @@ function DoorItemCard({
                     if (isTwoTone) {
                       onUpdate({ interiorFinish: "" });
                     } else {
-                      onUpdate({ interiorFinish: item.exteriorFinish || INTERIOR_COLORS[0] });
+                      const defaultInterior = INTERIOR_COLORS.find(c => c !== item.exteriorFinish) || INTERIOR_COLORS[0];
+                      onUpdate({ interiorFinish: defaultInterior });
                     }
                   }}
                 >
