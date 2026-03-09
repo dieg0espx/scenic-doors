@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Factory, Loader2, CheckCircle2, X, Mail } from "lucide-react";
 import { startManufacturing } from "@/lib/actions/orders";
 
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export default function StartManufacturingButton({ orderId, clientName, clientEmail }: Props) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -32,6 +34,7 @@ export default function StartManufacturingButton({ orderId, clientName, clientEm
       await startManufacturing(orderId);
       setDone(true);
       setShowConfirm(false);
+      router.refresh();
     } catch (err) {
       setShowConfirm(false);
       alert(err instanceof Error ? err.message : "Failed to start manufacturing");
