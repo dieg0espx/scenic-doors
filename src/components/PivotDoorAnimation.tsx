@@ -96,14 +96,14 @@ const PivotDoorAnimation = ({ compact }: { compact?: boolean } = {}) => {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: compact ? '16px 12px' : '40px 24px',
+      padding: compact ? '16px 12px' : 'clamp(20px, 4vw, 40px) clamp(16px, 3vw, 24px)',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
       {/* Header */}
       {!compact && (
-      <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px' }}>
+      <div style={{ textAlign: 'center', marginBottom: 'clamp(16px, 3vw, 24px)', maxWidth: '600px', padding: '0 16px' }}>
         <h2 style={{
-          fontSize: '34px',
+          fontSize: 'clamp(22px, 5vw, 34px)',
           fontWeight: '700',
           color: '#18181B',
           margin: '0 0 10px 0',
@@ -111,7 +111,7 @@ const PivotDoorAnimation = ({ compact }: { compact?: boolean } = {}) => {
           Interactive Pivot Preview
         </h2>
         <p style={{
-          fontSize: '15px',
+          fontSize: 'clamp(12px, 3vw, 15px)',
           color: '#71717A',
           margin: 0,
           lineHeight: 1.7,
@@ -145,16 +145,17 @@ const PivotDoorAnimation = ({ compact }: { compact?: boolean } = {}) => {
               key={type.id}
               onClick={() => { setPivotType(type.id); setOpenAmount(0); }}
               style={{
-                padding: '8px 16px',
+                padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 3vw, 16px)',
                 borderRadius: '6px',
                 border: 'none',
                 background: pivotType === type.id ? '#FFFFFF' : 'transparent',
                 color: pivotType === type.id ? '#18181B' : '#71717A',
                 fontWeight: '500',
-                fontSize: '12px',
+                fontSize: 'clamp(10px, 2.5vw, 12px)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 boxShadow: pivotType === type.id ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                whiteSpace: 'nowrap',
               }}
             >
               {type.label}
@@ -177,15 +178,16 @@ const PivotDoorAnimation = ({ compact }: { compact?: boolean } = {}) => {
               key={mat.id}
               onClick={() => setMaterial(mat.id)}
               style={{
-                padding: '8px 16px',
+                padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 3vw, 16px)',
                 borderRadius: '6px',
                 border: 'none',
                 background: material === mat.id ? '#FFFFFF' : 'transparent',
                 color: material === mat.id ? '#18181B' : '#71717A',
                 fontWeight: '500',
-                fontSize: '12px',
+                fontSize: 'clamp(10px, 2.5vw, 12px)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
+                whiteSpace: 'nowrap',
                 boxShadow: material === mat.id ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
               }}
             >
@@ -202,11 +204,12 @@ const PivotDoorAnimation = ({ compact }: { compact?: boolean } = {}) => {
         maxWidth: compact ? '350px' : '500px',
         perspective: '1200px',
         perspectiveOrigin: '50% 50%',
+        padding: '0 16px',
       }}>
         {/* Frame Container */}
         <div style={{
           position: 'relative',
-          height: compact ? '250px' : '420px',
+          height: compact ? '200px' : 'clamp(280px, 50vw, 420px)',
         }}>
           {/* Outer Frame */}
           <div style={{

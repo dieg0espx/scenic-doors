@@ -451,9 +451,9 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
     }}>
       {/* Header */}
       {!compact && (
-        <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px' }}>
+        <div style={{ textAlign: 'center', marginBottom: '24px', maxWidth: '600px', padding: '0 16px' }}>
           <h2 style={{
-            fontSize: '28px',
+            fontSize: 'clamp(20px, 5vw, 28px)',
             fontWeight: '700',
             color: '#1F2937',
             margin: '0 0 8px 0',
@@ -461,7 +461,7 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
             Slide & Stack Door Preview
           </h2>
           <p style={{
-            fontSize: '14px',
+            fontSize: 'clamp(12px, 3vw, 14px)',
             color: '#6B7280',
             margin: 0,
           }}>
@@ -481,21 +481,21 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
       }}>
         {/* Panel Count - hide when in wizard (compact) or controlled externally */}
         {!compact && !panelCountOverride && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(4px, 1vw, 8px)', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 'clamp(11px, 2.5vw, 13px)', color: '#71717A', fontWeight: '500' }}>Panels</span>
             {[2, 3, 4, 5, 6].map(count => (
               <button
                 key={count}
                 onClick={() => { setPanelCount(count); setOpenAmount(0); }}
                 style={{
-                  width: '38px',
-                  height: '38px',
+                  width: 'clamp(32px, 8vw, 38px)',
+                  height: 'clamp(32px, 8vw, 38px)',
                   borderRadius: '10px',
                   border: panelCount === count ? '2px solid #3B82F6' : '2px solid #E4E4E7',
                   background: panelCount === count ? '#EFF6FF' : '#FFFFFF',
                   color: panelCount === count ? '#2563EB' : '#71717A',
                   fontWeight: '600',
-                  fontSize: '14px',
+                  fontSize: 'clamp(12px, 3vw, 14px)',
                   cursor: 'pointer',
                   transition: 'all 0.15s',
                 }}
@@ -524,16 +524,17 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
               key={dir.id}
               onClick={() => { setStackSide(dir.id); setOpenAmount(0); }}
               style={{
-                padding: '8px 16px',
+                padding: 'clamp(6px, 1.5vw, 8px) clamp(10px, 3vw, 16px)',
                 borderRadius: '6px',
                 border: 'none',
                 background: stackSide === dir.id ? '#FFFFFF' : 'transparent',
                 color: stackSide === dir.id ? '#18181B' : '#71717A',
                 fontWeight: '500',
-                fontSize: '12px',
+                fontSize: 'clamp(10px, 2.5vw, 12px)',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
                 boxShadow: stackSide === dir.id ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
+                whiteSpace: 'nowrap',
               }}
             >
               {dir.label}
@@ -544,12 +545,12 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
       </div>
 
       {/* Door Display */}
-      <div style={{ width: '100%', maxWidth: '850px' }}>
+      <div style={{ width: '100%', maxWidth: '850px', padding: '0 16px' }}>
         <Track position="top" grooveCount={Math.min(panelCount, 4)} />
 
         <div style={{
           position: 'relative',
-          height: compact ? '250px' : '380px',
+          height: compact ? '200px' : 'clamp(250px, 50vw, 380px)',
           background: '#FFFFFF',
           overflow: 'hidden',
           borderLeft: '4px solid #52525B',
@@ -588,6 +589,7 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
         justifyContent: 'center',
         width: '100%',
         maxWidth: '340px',
+        padding: '0 16px',
       }}>
         <AnimatedButton value={openAmount} setValue={setOpenAmount} label="Door Position" />
       </div>

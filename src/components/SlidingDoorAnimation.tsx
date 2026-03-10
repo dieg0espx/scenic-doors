@@ -347,16 +347,16 @@ const SlidingDoorAnimation = ({
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      padding: compact ? '16px 12px' : '40px 20px',
+      padding: compact ? '16px 12px' : 'clamp(20px, 4vw, 40px) clamp(12px, 3vw, 20px)',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
       {/* Header */}
       {!compact && (
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#1F2937', margin: '0 0 8px 0' }}>
+        <div style={{ textAlign: 'center', marginBottom: 'clamp(16px, 3vw, 24px)', padding: '0 16px' }}>
+          <h2 style={{ fontSize: 'clamp(20px, 5vw, 28px)', fontWeight: '700', color: '#1F2937', margin: '0 0 8px 0' }}>
             Multi-Slide Door Preview
           </h2>
-          <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }}>
+          <p style={{ fontSize: 'clamp(12px, 3vw, 14px)', color: '#6B7280', margin: 0 }}>
             Operating panels slide over the fixed panels to open
           </p>
         </div>
@@ -369,14 +369,14 @@ const SlidingDoorAnimation = ({
       }}>
         {/* Panel Count */}
         {!compact && !panelCountOverride && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', color: '#71717A', fontWeight: '500' }}>Panels</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(4px, 1vw, 8px)', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 'clamp(11px, 2.5vw, 13px)', color: '#71717A', fontWeight: '500' }}>Panels</span>
             {[2, 3, 4, 6].map(count => (
               <button
                 key={count}
                 onClick={() => { setPanelCount(count); setOpenAmount(0); setSelectedLayoutIndex(0); }}
                 style={{
-                  width: '38px', height: '38px', borderRadius: '10px',
+                  width: 'clamp(32px, 8vw, 38px)', height: 'clamp(32px, 8vw, 38px)', borderRadius: '10px',
                   border: panelCount === count ? '2px solid #3B82F6' : '2px solid #E4E4E7',
                   background: panelCount === count ? '#EFF6FF' : '#FFFFFF',
                   color: panelCount === count ? '#2563EB' : '#71717A',
@@ -416,7 +416,7 @@ const SlidingDoorAnimation = ({
       </div>
 
       {/* Door Animation Container */}
-      <div style={{ width: '100%', maxWidth: '800px', position: 'relative' }}>
+      <div style={{ width: '100%', maxWidth: '800px', position: 'relative', padding: '0 16px' }}>
         {/* Track - Top */}
         <div style={{
           height: '12px',
@@ -430,7 +430,7 @@ const SlidingDoorAnimation = ({
 
         {/* Door Frame */}
         <div style={{
-          position: 'relative', height: compact ? '250px' : '350px',
+          position: 'relative', height: compact ? '200px' : 'clamp(250px, 45vw, 350px)',
           background: '#FFFFFF', overflow: 'hidden',
           border: '3px solid #4B5563', borderTop: 'none', borderBottom: 'none',
         }}>

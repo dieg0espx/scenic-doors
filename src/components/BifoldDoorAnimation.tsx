@@ -152,17 +152,17 @@ export default function BifoldDoorAnimation({
   return (
     <div style={{
       width: '100%',
-      padding: compact ? '16px 12px' : '40px 20px',
+      padding: compact ? '16px 12px' : 'clamp(20px, 4vw, 40px) clamp(12px, 3vw, 20px)',
       background: '#fff',
       fontFamily: 'system-ui, sans-serif',
     }}>
       {/* Title */}
       {!compact && (
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: '700', color: '#1F2937', margin: '0 0 10px 0' }}>
+        <div style={{ textAlign: 'center', marginBottom: 'clamp(20px, 4vw, 30px)', padding: '0 16px' }}>
+          <h2 style={{ fontSize: 'clamp(20px, 5vw, 32px)', fontWeight: '700', color: '#1F2937', margin: '0 0 10px 0' }}>
             Bi-Fold Door Preview
           </h2>
-          <p style={{ fontSize: '16px', color: '#6B7280', margin: 0 }}>
+          <p style={{ fontSize: 'clamp(12px, 3vw, 16px)', color: '#6B7280', margin: 0 }}>
             Interactive door animation - choose panels and fold direction
           </p>
         </div>
@@ -178,20 +178,20 @@ export default function BifoldDoorAnimation({
           flexWrap: 'wrap',
         }}>
           {/* Panel count selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>Panels:</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 1.5vw, 10px)', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 'clamp(11px, 2.5vw, 14px)', fontWeight: '600', color: '#374151' }}>Panels:</span>
             {[2, 3, 4, 5, 6].map(num => (
               <button
                 key={num}
                 onClick={() => { setPanelCount(num); setOpenPercent(0); }}
                 style={{
-                  width: '40px',
-                  height: '40px',
+                  width: 'clamp(34px, 8vw, 40px)',
+                  height: 'clamp(34px, 8vw, 40px)',
                   borderRadius: '8px',
                   border: panelCount === num ? '2px solid #3B82F6' : '2px solid #E5E7EB',
                   background: panelCount === num ? '#EFF6FF' : '#fff',
                   color: panelCount === num ? '#2563EB' : '#6B7280',
-                  fontSize: '16px',
+                  fontSize: 'clamp(13px, 3vw, 16px)',
                   fontWeight: '600',
                   cursor: 'pointer',
                 }}
@@ -212,15 +212,16 @@ export default function BifoldDoorAnimation({
                 key={option.id}
                 onClick={() => { setFoldDirection(option.id); setOpenPercent(0); }}
                 style={{
-                  padding: '10px 20px',
+                  padding: 'clamp(7px, 1.5vw, 10px) clamp(12px, 3vw, 20px)',
                   borderRadius: '6px',
                   border: 'none',
                   background: foldDirection === option.id ? '#fff' : 'transparent',
                   color: foldDirection === option.id ? '#1F2937' : '#6B7280',
-                  fontSize: '14px',
+                  fontSize: 'clamp(11px, 2.5vw, 14px)',
                   fontWeight: '600',
                   cursor: 'pointer',
                   boxShadow: foldDirection === option.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {option.label}
@@ -235,6 +236,7 @@ export default function BifoldDoorAnimation({
         maxWidth: '900px',
         margin: '0 auto',
         perspective: '1500px',
+        padding: '0 16px',
       }}>
         {/* Top track */}
         <div style={{
@@ -260,7 +262,7 @@ export default function BifoldDoorAnimation({
           ref={containerRef}
           style={{
           position: 'relative',
-          height: compact ? '200px' : '400px',
+          height: compact ? '200px' : 'clamp(250px, 50vw, 400px)',
           width: '100%',
           background: '#F9FAFB',
           overflow: 'visible',
