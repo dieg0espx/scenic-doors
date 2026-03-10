@@ -57,85 +57,89 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
   const getPanelTransform = (index: number, total: number, amount: number, direction: string) => {
     const progress = amount / 100;
     const panelWidth = 100 / total;
+    const FOLDED_WIDTH = 16; // Folded panel width in % - thicker panels when open
+    const GAP = -15; // Overlap for tight stacking
+
+    // Width transition from full to folded
+    const currentWidth = panelWidth - (panelWidth - FOLDED_WIDTH) * progress;
+
+    // Closed position for this panel
+    const closedX = index * panelWidth;
+
+    // Calculate open position based on direction
+    let openX = 0;
+    let rotationAngle = 0;
+    let zIndex = 0;
 
     if (direction === 'right') {
-      // Panels slide right and stack completely at the right edge with folding
-      const containerDistanceToMove = (total - 1 - index) * panelWidth;
-      const elementDistanceToMove = (containerDistanceToMove / panelWidth) * 100;
-      const stackOffset = index * 3;
-      const rotationAngle = (index % 2 === 0 ? 75 : -75) * progress; // Alternate folding
-      return {
-        translateX: elementDistanceToMove * progress + stackOffset * progress,
-        rotateY: rotationAngle,
-        zIndex: index,
-      };
+      // All panels stack at the right edge - pushed all the way to the side
+      // Calculate total stack width, then position from the right edge
+      const stackWidth = total * FOLDED_WIDTH + (total - 1) * GAP;
+      const stackStartX = 100 - stackWidth;
+      openX = stackStartX + index * (FOLDED_WIDTH + GAP);
+      rotationAngle = 85; // Tighter rotation for compact stack
+      zIndex = index;
     } else if (direction === 'left') {
-      // Panels slide left and stack completely at the left edge with folding
-      const containerDistanceToMove = index * panelWidth;
-      const elementDistanceToMove = (containerDistanceToMove / panelWidth) * 100;
-      const stackOffset = (total - 1 - index) * 3;
-      const rotationAngle = (index % 2 === 0 ? -75 : 75) * progress; // Alternate folding
-      return {
-        translateX: -elementDistanceToMove * progress - stackOffset * progress,
-        rotateY: rotationAngle,
-        zIndex: total - index,
-      };
+      // All panels stack at the left edge - starting from 0
+      openX = index * (FOLDED_WIDTH + GAP);
+      rotationAngle = -85; // Tighter rotation for compact stack
+      zIndex = total - index;
     } else {
-      // Split - left half goes left, right half goes right, both with folding
+      // Split mode
       const mid = Math.floor(total / 2);
       if (index < mid) {
-        // Left half panels go left with folding
-        const containerDistanceToMove = index * panelWidth;
-        const elementDistanceToMove = (containerDistanceToMove / panelWidth) * 100;
-        const stackOffset = (mid - 1 - index) * 3;
-        const rotationAngle = (index % 2 === 0 ? -75 : 75) * progress;
-        return {
-          translateX: -elementDistanceToMove * progress - stackOffset * progress,
-          rotateY: rotationAngle,
-          zIndex: mid - index,
-        };
+        // Left half stacks at left edge - starting from 0
+        openX = index * (FOLDED_WIDTH + GAP);
+        rotationAngle = -85; // Tighter rotation for compact stack
+        zIndex = mid - index;
       } else {
-        // Right half panels go right with folding
+        // Right half stacks at right edge - pushed all the way to the side
         const rightIndex = index - mid;
-        const rightTotal = total - mid;
-        const rightPanelWidth = 100 / total;
-        const containerDistanceToMove = (rightTotal - 1 - rightIndex) * rightPanelWidth;
-        const elementDistanceToMove = (containerDistanceToMove / rightPanelWidth) * 100;
-        const stackOffset = rightIndex * 3;
-        const rotationAngle = (rightIndex % 2 === 0 ? 75 : -75) * progress;
-        return {
-          translateX: elementDistanceToMove * progress + stackOffset * progress,
-          rotateY: rotationAngle,
-          zIndex: rightIndex,
-        };
+        const rightCount = total - mid;
+        const stackWidth = rightCount * FOLDED_WIDTH + (rightCount - 1) * GAP;
+        const stackStartX = 100 - stackWidth;
+        openX = stackStartX + rightIndex * (FOLDED_WIDTH + GAP);
+        rotationAngle = 85; // Tighter rotation for compact stack
+        zIndex = rightIndex;
       }
     }
+
+    // Interpolate between closed and open positions
+    const currentX = closedX + (openX - closedX) * progress;
+    const currentRotation = rotationAngle * progress;
+
+    return {
+      leftPosition: currentX,
+      rotateY: currentRotation,
+      zIndex,
+      width: currentWidth,
+    };
   };
 
-  const GlassPanel = ({ index, total, translateX, rotateY, zIndex, isLast, isFirst }: {
+  const GlassPanel = ({ index, total, leftPosition, rotateY, zIndex, width, isLast, isFirst }: {
     index: number;
     total: number;
-    translateX: number;
+    leftPosition: number;
     rotateY: number;
     zIndex: number;
+    width: number;
     isLast: boolean;
     isFirst: boolean;
   }) => {
-    const panelWidth = 100 / total;
     const isLocked = openAmount < 3;
 
     return (
       <div
         style={{
           position: 'absolute',
-          left: `${index * panelWidth}%`,
+          left: `${leftPosition}%`,
           top: 0,
-          width: `${panelWidth}%`,
+          width: `${width}%`,
           height: '100%',
-          transform: `translateX(${translateX}%) rotateY(${rotateY}deg)`,
+          transform: `rotateY(${rotateY}deg)`,
           transformStyle: 'preserve-3d',
           zIndex,
-          transition: 'transform 0.12s ease-out',
+          transition: 'left 0.12s ease-out, transform 0.12s ease-out, width 0.12s ease-out',
           padding: '0 1px',
           boxSizing: 'border-box',
         }}
@@ -144,13 +148,12 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
           width: '100%',
           height: '100%',
           background: 'linear-gradient(165deg, rgba(220,235,250,0.25) 0%, rgba(200,220,240,0.15) 30%, rgba(180,210,235,0.2) 100%)',
-          border: '3px solid #71717A',
+          border: '8px solid #71717A',
           position: 'relative',
           boxShadow: `
             inset 0 0 60px rgba(255,255,255,0.1),
             4px 0 20px rgba(0,0,0,0.08)
           `,
-          backfaceVisibility: 'hidden',
         }}>
           {/* Top frame */}
           <div style={{
@@ -223,6 +226,20 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
             height: '20%',
             background: 'linear-gradient(-45deg, rgba(255,255,255,0.15) 0%, transparent 70%)',
           }} />
+
+          {/* Hinges - bi-fold doors have visible hinges */}
+          {[20, 50, 80].map(topPercent => (
+            <div key={topPercent} style={{
+              position: 'absolute',
+              top: `${topPercent}%`,
+              left: '-3px',
+              width: '8px',
+              height: '25px',
+              background: '#3F3F46',
+              borderRadius: '2px',
+              boxShadow: '1px 1px 3px rgba(0,0,0,0.3)',
+            }} />
+          ))}
 
           {/* Handle - on moving panels (not fixed panels) */}
           {(() => {
@@ -542,15 +559,16 @@ const SlideStackDoorAnimation = ({ panelCountOverride, stackSideOverride, compac
           <OutdoorScene opacity={openAmount > 15 ? Math.min((openAmount - 15) / 60, 1) : 0} />
 
           {[...Array(panelCount)].map((_, i) => {
-            const { translateX, rotateY, zIndex } = getPanelTransform(i, panelCount, openAmount, stackSide);
+            const { leftPosition, rotateY, zIndex, width } = getPanelTransform(i, panelCount, openAmount, stackSide);
             return (
               <GlassPanel
                 key={i}
                 index={i}
                 total={panelCount}
-                translateX={translateX}
+                leftPosition={leftPosition}
                 rotateY={rotateY}
                 zIndex={zIndex}
+                width={width}
                 isFirst={i === 0}
                 isLast={i === panelCount - 1}
               />
