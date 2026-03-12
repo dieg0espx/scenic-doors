@@ -55,29 +55,27 @@ export default function DoorTypeAnimation({ doorType, compact = true, panelCount
       );
     case "bifold":
       return (
+        <SlideStackDoorAnimation
+          compact={compact}
+          panelCountOverride={panelCount}
+          stackSideOverride={
+            panelLayout
+              ? panelLayout.toLowerCase().includes('+') ? 'split'
+                : panelLayout.toLowerCase().includes('l') ? 'left'
+                : panelLayout.toLowerCase().includes('r') ? 'right'
+                : undefined
+              : undefined
+          }
+        />
+      );
+    case "slidestack":
+      return (
         <BifoldDoorAnimation
           compact={compact}
           panelCountOverride={panelCount}
           panelLayoutOverride={panelLayout}
         />
       );
-    case "slidestack": {
-      // Derive stack side from panel layout string if available
-      let stackSide: "left" | "right" | "split" | undefined;
-      if (panelLayout) {
-        const lower = panelLayout.toLowerCase();
-        if (lower.includes("+")) stackSide = "split";
-        else if (lower.includes("l")) stackSide = "left";
-        else if (lower.includes("r")) stackSide = "right";
-      }
-      return (
-        <SlideStackDoorAnimation
-          compact={compact}
-          panelCountOverride={panelCount}
-          stackSideOverride={stackSide}
-        />
-      );
-    }
     default:
       return null;
   }
