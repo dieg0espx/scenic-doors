@@ -1,7 +1,6 @@
 "use client";
 
 import SlidingDoorAnimation from "@/components/SlidingDoorAnimation";
-import BifoldDoorAnimation from "@/components/BifoldDoorAnimation";
 import SlideStackDoorAnimation from "@/components/SlideStackDoorAnimation";
 
 const SLUG_MAP: Record<string, string> = {
@@ -55,10 +54,17 @@ export default function DoorTypeAnimation({ doorType, compact = true, panelCount
       );
     case "bifold":
       return (
-        <BifoldDoorAnimation
+        <SlideStackDoorAnimation
           compact={compact}
           panelCountOverride={panelCount}
-          panelLayoutOverride={panelLayout}
+          stackSideOverride={
+            panelLayout
+              ? panelLayout.toLowerCase().includes('+') ? 'split'
+                : panelLayout.toLowerCase().includes('l') ? 'left'
+                : panelLayout.toLowerCase().includes('r') ? 'right'
+                : undefined
+              : undefined
+          }
         />
       );
     case "slidestack": {
