@@ -204,10 +204,8 @@ export function calculateItemTotal(item: ConfiguredItem): number {
   const sqft = calculateSquareFeet(item.width, item.height);
   const rate = RATES_PER_SQFT[item.doorTypeSlug] ?? 0;
   const glassPerUnit = GLASS_MODIFIERS[item.glassType] ?? 0;
-  const glassMultiplier = item.doorTypeSlug === "bi-fold"
-    ? Math.ceil((item.panelCount || 1) / 2)
-    : (item.panelCount || 1);
-  const glassMod = glassPerUnit * glassMultiplier;
+  // Legacy system: apply glass modifier once per door (not multiplied by panels/hinges)
+  const glassMod = glassPerUnit;
   return round2(sqft * rate + glassMod);
 }
 
@@ -290,10 +288,8 @@ export function calculateItemBreakdown(item: {
       ? (GLASS_MODIFIERS[item.glassType] ?? 0)
       : 0;
 
-  const glassMultiplier = item.doorTypeSlug === "bi-fold"
-    ? Math.ceil(panelCount / 2)
-    : panelCount;
-  const totalGlassModifier = round2(glassPriceModifier * glassMultiplier);
+  // Legacy system: apply glass modifier once per door (not multiplied by panels/hinges)
+  const totalGlassModifier = round2(glassPriceModifier);
   const productPrice = round2(baseProductPrice + totalGlassModifier);
 
   return {
