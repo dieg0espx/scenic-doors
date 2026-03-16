@@ -4,7 +4,7 @@ export const RATES_PER_SQFT: Record<string, number> = {
   "multi-slide-pocket": 105,
   "ultra-slim": 130,
   "bi-fold": 110,
-  "slide-stack": 121.785714,
+  "slide-stack": 120,
   "awning-window": 95,
 };
 

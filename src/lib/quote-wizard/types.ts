@@ -89,7 +89,7 @@ export const initialContact: ContactInfo = {
 };
 
 export const initialServices: ServiceOptions = {
-  includeInstallation: false,
+  includeInstallation: true,
 };
 
 export const initialGeneralPreferences: GeneralPreferences = {
