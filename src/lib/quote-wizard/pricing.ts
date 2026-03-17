@@ -4,7 +4,7 @@ export const RATES_PER_SQFT: Record<string, number> = {
   "multi-slide-pocket": 105,
   "ultra-slim": 130,
   "bi-fold": 110,
-  "slide-stack": 120,
+  "slide-stack": 121.785714,
   "awning-window": 95,
 };
 
@@ -204,8 +204,7 @@ export function calculateItemTotal(item: ConfiguredItem): number {
   const sqft = calculateSquareFeet(item.width, item.height);
   const rate = RATES_PER_SQFT[item.doorTypeSlug] ?? 0;
   const glassPerUnit = GLASS_MODIFIERS[item.glassType] ?? 0;
-  // Legacy system: apply glass modifier once per door (not multiplied by panels/hinges)
-  const glassMod = glassPerUnit;
+  const glassMod = glassPerUnit * item.panelCount;
   return round2(sqft * rate + glassMod);
 }
 
@@ -288,8 +287,7 @@ export function calculateItemBreakdown(item: {
       ? (GLASS_MODIFIERS[item.glassType] ?? 0)
       : 0;
 
-  // Legacy system: apply glass modifier once per door (not multiplied by panels/hinges)
-  const totalGlassModifier = round2(glassPriceModifier);
+  const totalGlassModifier = round2(glassPriceModifier * panelCount);
   const productPrice = round2(baseProductPrice + totalGlassModifier);
 
   return {
