@@ -512,7 +512,7 @@ export default async function QuoteDetailPage({
                 )}
                 {Number(quote.delivery_cost) > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Delivery</span>
+                    <span className="text-white/40">Delivery{quote.delivery_type === "white_glove" ? " (White Glove)" : " (Regular)"}</span>
                     <span className="text-white/60">${Number(quote.delivery_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}

@@ -209,7 +209,7 @@ export default function InstallationPage() {
                 className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-lg"
               >
                 <img
-                  src="/images/products/multi-slide/opening-door.avif"
+                  src="https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_5_u8v3er"
                   alt="Professional installation team at work"
                   className="w-full h-full object-cover"
                 />
@@ -222,7 +222,7 @@ export default function InstallationPage() {
                 className="relative aspect-[4/3] overflow-hidden rounded-lg shadow-lg"
               >
                 <img
-                  src="/images/products/ultra-slim/corner-garden.avif"
+                  src="https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_16_bxdpky"
                   alt="Completed door installation"
                   className="w-full h-full object-cover"
                 />

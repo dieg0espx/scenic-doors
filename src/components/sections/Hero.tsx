@@ -17,7 +17,7 @@ export default function Hero() {
           className="absolute inset-0 w-full h-full object-cover"
         >
           <source
-            src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc%2F68802acea296d5bb4690542e_scenic_homepage_hero2_1080-transcode.mp4"
+            src="https://res.cloudinary.com/dku1gnuat/video/upload/q_auto/scenic_homepage_hero1_tmkxyz.mp4"
             type="video/mp4"
           />
         </video>

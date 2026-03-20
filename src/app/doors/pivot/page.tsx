@@ -34,9 +34,9 @@ const materials = [
 ];
 
 const gallery = [
-  "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=2032&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=2070&auto=format&fit=crop",
+  "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_30_gozmrj",
+  "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_14_jnem60",
+  "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_6_nfzizw",
 ];
 
 export default function PivotDoorsPage() {
@@ -122,7 +122,7 @@ export default function PivotDoorsPage() {
                 transition={{ duration: 0.6 }}
               >
                 <img
-                  src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
+                  src="https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_28_pmmsrb"
                   alt="Custom pivot door design"
                   className="w-full aspect-[4/5] object-cover"
                 />

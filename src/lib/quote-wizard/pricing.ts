@@ -16,8 +16,14 @@ export const GLASS_MODIFIERS: Record<string, number> = {
 };
 
 export const INSTALLATION_RATE = 30;
-export const DELIVERY_COST = 800;
+export const DELIVERY_REGULAR = 800;
+export const DELIVERY_WHITE_GLOVE = 1500;
+export const DELIVERY_COST = DELIVERY_REGULAR; // backwards compat default
 export const TAX_RATE = 0.08;
+
+export function getDeliveryCost(type: "regular" | "white_glove"): number {
+  return type === "white_glove" ? DELIVERY_WHITE_GLOVE : DELIVERY_REGULAR;
+}
 
 /* ── Product-specific configuration rules ─────────────── */
 
@@ -210,17 +216,12 @@ export function calculateItemTotal(item: ConfiguredItem): number {
 
 export function calculateQuoteTotals(
   items: ConfiguredItem[],
-  services: ServiceOptions
+  services: ServiceOptions,
+  manualInstallationCost?: number
 ) {
   const subtotal = items.reduce((sum, item) => sum + item.itemTotal, 0);
-  const totalSqFt = items.reduce(
-    (sum, item) => sum + calculateSquareFeet(item.width, item.height),
-    0
-  );
-  const installationCost = services.includeInstallation
-    ? round2(totalSqFt * INSTALLATION_RATE)
-    : 0;
-  const deliveryCost = DELIVERY_COST;
+  const installationCost = round2(manualInstallationCost ?? 0);
+  const deliveryCost = getDeliveryCost(services.deliveryType ?? "regular");
   const taxableAmount = subtotal + installationCost + deliveryCost;
   const tax = round2(taxableAmount * TAX_RATE);
   const grandTotal = round2(taxableAmount + tax);

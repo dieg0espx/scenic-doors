@@ -9,18 +9,14 @@ import {
   Trash2,
   Plus,
   Truck,
-  Check,
   Loader2,
-  Shield,
   Wrench,
-  Eye,
-  ClipboardCheck,
-  Trash,
-  GraduationCap,
   Package,
+  Check,
+  X,
 } from "lucide-react";
 import type { ConfiguredItem, WizardState, WizardAction } from "@/lib/quote-wizard/types";
-import { calculateQuoteTotals, DELIVERY_COST, INSTALLATION_RATE, calculateSquareFeet, PRODUCT_CONFIGS, calculateItemBreakdown, GLASS_MODIFIERS } from "@/lib/quote-wizard/pricing";
+import { calculateQuoteTotals, DELIVERY_REGULAR, DELIVERY_WHITE_GLOVE, calculateSquareFeet, PRODUCT_CONFIGS, calculateItemBreakdown, GLASS_MODIFIERS } from "@/lib/quote-wizard/pricing";
 import { getLayoutImageUrl } from "@/lib/quote-wizard/layout-images";
 import DoorTypeAnimation from "@/components/DoorTypeAnimation";
 import { createQuote, sendQuoteToClient, assignQuote, notifyNewQuote, sendEstimateConfirmation } from "@/lib/actions/quotes";
@@ -35,38 +31,6 @@ interface StepQuoteSummaryProps {
 
 /* ── Constants ────────────────────────────────────────── */
 
-const INSTALLATION_FEATURES = [
-  {
-    icon: Shield,
-    title: "Site Preparation and Protection",
-    desc: "Secure and properly prepare the work area, ensuring adjacent surfaces, finishes, and property are fully protected throughout the installation process.",
-  },
-  {
-    icon: Wrench,
-    title: "Professional Weatherproofing & Installation by Certified Technicians",
-    desc: "All installation and weatherproofing work is performed by trained technicians in accordance with industry standards for safety, precision, and quality workmanship.",
-  },
-  {
-    icon: Eye,
-    title: "Final Adjustments and Operation Testing",
-    desc: "Upon completion, all components will be adjusted and tested to confirm proper alignment, smooth function, and optimal operating performance.",
-  },
-  {
-    icon: Trash,
-    title: "Cleanup and Debris Removal",
-    desc: "All installation-related debris will be removed and the work area will be left broom-clean upon completion.",
-  },
-  {
-    icon: GraduationCap,
-    title: "Operation Demonstration and Care Instructions",
-    desc: "Customer will receive a walkthrough on product operation, maintenance guidelines, and recommended care procedures to ensure long-term performance.",
-  },
-  {
-    icon: ClipboardCheck,
-    title: "1-Year Installation Warranty",
-    desc: "Workmanship is warrantied for one (1) year from the installation date, covering defects arising from labor or installation methods.",
-  },
-];
 
 /* ── Helpers ──────────────────────────────────────────── */
 
@@ -480,7 +444,7 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
         delivery_cost: isMedium ? 0 : totals.deliveryCost,
         tax: isMedium ? 0 : totals.tax,
         grand_total: isMedium ? firstItem.ratePerSqFt : totals.grandTotal,
-        delivery_type: "delivery",
+        delivery_type: services.deliveryType === "white_glove" ? "white_glove" : "delivery",
         intent_level: state.intentLevel || "full",
         notes: mediumNotes,
         ...(referralUser ? { assigned_to: referralUser.id, shared_with: [referralUser.id] } : {}),
@@ -614,13 +578,13 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
               <div className="flex items-center gap-2.5">
                 <Package className="w-4 h-4 text-ocean-400 shrink-0" />
                 <span className="text-xs sm:text-sm text-ocean-600">
-                  <span className="font-medium text-ocean-700">Delivery</span> &mdash; ${DELIVERY_COST.toLocaleString()}
+                  <span className="font-medium text-ocean-700">Delivery</span> &mdash; from ${DELIVERY_REGULAR.toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Wrench className="w-4 h-4 text-ocean-400 shrink-0" />
                 <span className="text-xs sm:text-sm text-ocean-600">
-                  <span className="font-medium text-ocean-700">Professional Installation</span> &mdash; ${INSTALLATION_RATE}/sq ft
+                  <span className="font-medium text-ocean-700">Professional Installation</span> &mdash; TBD
                 </span>
               </div>
             </div>
@@ -662,17 +626,77 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
           <div className="mb-6 sm:mb-8">
             <h3 className="font-heading font-bold text-ocean-900 text-base sm:text-lg mb-4 sm:mb-5">Services</h3>
 
-            {/* Delivery — always included */}
+            {/* Delivery Options */}
             <div className="mb-5 sm:mb-6">
-              <div className="flex items-center justify-between p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 border-primary-500 bg-primary-50/60">
-                <div className="flex items-center gap-2.5 sm:gap-3">
-                  <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-primary-500" />
-                  <div>
-                    <h4 className="font-bold text-sm sm:text-base text-ocean-900">Delivery</h4>
-                    <p className="text-xs text-ocean-500 mt-0.5">Included with every order</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-ocean-700">Delivery Options</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Regular Delivery */}
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "SET_SERVICES", payload: { deliveryType: "regular" } })}
+                  className={`text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                    services.deliveryType !== "white_glove"
+                      ? "border-primary-500 bg-primary-50/60"
+                      : "border-ocean-200 bg-white hover:border-ocean-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-bold text-sm sm:text-base text-ocean-900">Regular Delivery</h4>
+                    <span className={`text-sm sm:text-base font-bold ${services.deliveryType !== "white_glove" ? "text-primary-600" : "text-ocean-500"}`}>
+                      ${DELIVERY_REGULAR.toLocaleString()}
+                    </span>
                   </div>
-                </div>
-                <span className="text-sm sm:text-base font-bold text-primary-600">${DELIVERY_COST.toLocaleString()}</span>
+                  <p className="text-xs text-ocean-500 mb-2.5">Curbside delivery only.</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-ocean-400">
+                      <X className="w-3 h-3 text-red-400 shrink-0" /> Customer unloads truck
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-ocean-400">
+                      <X className="w-3 h-3 text-red-400 shrink-0" /> Customer disposes materials
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-ocean-400">
+                      <X className="w-3 h-3 text-red-400 shrink-0" /> No stair transport
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-ocean-400">
+                      <X className="w-3 h-3 text-red-400 shrink-0" /> No unpacking service
+                    </div>
+                  </div>
+                </button>
+
+                {/* White Glove */}
+                <button
+                  type="button"
+                  onClick={() => dispatch({ type: "SET_SERVICES", payload: { deliveryType: "white_glove" } })}
+                  className={`text-left p-4 sm:p-5 rounded-xl sm:rounded-2xl border-2 transition-all cursor-pointer ${
+                    services.deliveryType === "white_glove"
+                      ? "border-primary-500 bg-primary-50/60"
+                      : "border-ocean-200 bg-white hover:border-ocean-300"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-bold text-sm sm:text-base text-ocean-900">White Glove</h4>
+                    <span className={`text-sm sm:text-base font-bold ${services.deliveryType === "white_glove" ? "text-primary-600" : "text-ocean-500"}`}>
+                      ${DELIVERY_WHITE_GLOVE.toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-ocean-500 mb-2.5">Full-service delivery.</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs text-green-600">
+                      <Check className="w-3 h-3 shrink-0" /> Delivery to install area
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-green-600">
+                      <Check className="w-3 h-3 shrink-0" /> Materials removed
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-green-600">
+                      <Check className="w-3 h-3 shrink-0" /> Stair transport (2 stories)
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-green-600">
+                      <Check className="w-3 h-3 shrink-0" /> Unpack & inspect
+                    </div>
+                  </div>
+                </button>
               </div>
             </div>
 
@@ -681,78 +705,16 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-semibold text-ocean-700">Installation Service</p>
               </div>
-              <div className={`rounded-xl sm:rounded-2xl border-2 transition-all overflow-hidden ${
-                services.includeInstallation
-                  ? "border-primary-500 bg-white"
-                  : "border-ocean-200 bg-white"
-              }`}>
-                {/* Toggle header */}
-                <button
-                  onClick={() =>
-                    dispatch({
-                      type: "SET_SERVICES",
-                      payload: { includeInstallation: !services.includeInstallation },
-                    })
-                  }
-                  className="w-full p-4 sm:p-5 text-left cursor-pointer hover:bg-ocean-50/30 transition-colors"
-                >
-                  <div className="flex items-start sm:items-center justify-between gap-3">
-                    <div className="flex items-start sm:items-center gap-2.5 sm:gap-3 min-w-0">
-                      <Wrench className={`w-4 h-4 sm:w-5 sm:h-5 shrink-0 mt-0.5 sm:mt-0 ${services.includeInstallation ? "text-primary-500" : "text-ocean-400"}`} />
-                      <div className="min-w-0">
-                        <h4 className="font-bold text-sm sm:text-base text-ocean-900 leading-tight">
-                          Professional Weatherproofing & Installation
-                        </h4>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs sm:text-sm font-bold text-primary-600">${INSTALLATION_RATE}/sq ft</span>
-                          {services.includeInstallation && (
-                            <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-green-600">
-                              <Check className="w-3 h-3" /> Included &mdash; ${totals.installationCost.toLocaleString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="shrink-0">
-                      <div
-                        className={`w-10 h-6 rounded-full transition-colors flex items-center px-0.5 ${
-                          services.includeInstallation ? "bg-primary-500" : "bg-ocean-200"
-                        }`}
-                      >
-                        <div
-                          className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                            services.includeInstallation ? "translate-x-4" : "translate-x-0"
-                          }`}
-                        />
-                      </div>
-                    </div>
+              <div className="rounded-xl sm:rounded-2xl border-2 border-ocean-200 bg-white p-4 sm:p-5">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <Wrench className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-ocean-400" />
+                  <div>
+                    <h4 className="font-bold text-sm sm:text-base text-ocean-900 leading-tight">
+                      Professional Weatherproofing & Installation
+                    </h4>
+                    <span className="text-xs sm:text-sm font-bold text-amber-600">TBD</span>
                   </div>
-                </button>
-
-                {/* Expanded installation details */}
-                {services.includeInstallation && (
-                  <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-ocean-100">
-                    <p className="text-xs sm:text-sm text-ocean-500 mt-3 mb-4">
-                      Complete professional installation with weatherproofing, sealing, and quality inspection.
-                    </p>
-                    <div className="space-y-4">
-                      {INSTALLATION_FEATURES.map((feature) => {
-                        const Icon = feature.icon;
-                        return (
-                          <div key={feature.title} className="flex gap-3">
-                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-primary-50 flex items-center justify-center shrink-0 mt-0.5">
-                              <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary-500" />
-                            </div>
-                            <div>
-                              <p className="text-xs sm:text-sm font-semibold text-ocean-800">{feature.title}</p>
-                              <p className="text-[11px] sm:text-xs text-ocean-500 leading-relaxed mt-0.5">{feature.desc}</p>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
@@ -765,14 +727,12 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
                 <span>All Items Subtotal</span>
                 <span className="font-medium">${totals.subtotal.toLocaleString()}</span>
               </div>
-              {totals.installationCost > 0 && (
-                <div className="flex justify-between text-ocean-600">
-                  <span>Installation</span>
-                  <span className="font-medium">${totals.installationCost.toLocaleString()}</span>
-                </div>
-              )}
               <div className="flex justify-between text-ocean-600">
-                <span>Delivery</span>
+                <span>Installation</span>
+                <span className="font-medium text-amber-600">TBD</span>
+              </div>
+              <div className="flex justify-between text-ocean-600">
+                <span>Delivery ({services.deliveryType === "white_glove" ? "White Glove" : "Regular"})</span>
                 <span className="font-medium">${totals.deliveryCost.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-ocean-600">

@@ -222,7 +222,7 @@ export default function ContactPage() {
                 </h2>
                 <div className="aspect-square bg-ocean-100 mb-6 overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
+                    src="https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_11_swmzfp"
                     alt="Scenic Doors Showroom"
                     className="w-full h-full object-cover"
                   />

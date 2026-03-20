@@ -20,7 +20,7 @@ export default function Introduction() {
           >
             <div className="aspect-[4/3] overflow-hidden w-full max-w-3xl mx-auto lg:mx-0">
               <img
-                src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop"
+                src="https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_8_naagu9"
                 alt="Luxury home with panoramic doors"
                 className="w-full h-full object-cover"
               />

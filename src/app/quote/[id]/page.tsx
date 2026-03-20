@@ -288,17 +288,17 @@ export default function PublicQuotePage() {
           {quote.delivery_type && (
             <div className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-3.5 mb-6">
               <div className="flex items-center gap-2 mb-1.5">
-                {quote.delivery_type === "delivery" ? (
-                  <Truck className="w-3.5 h-3.5 text-sky-400" />
-                ) : (
+                {quote.delivery_type === "pickup" ? (
                   <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                ) : (
+                  <Truck className="w-3.5 h-3.5 text-sky-400" />
                 )}
                 <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">
-                  {quote.delivery_type === "delivery" ? "Delivery" : "Pickup"}
+                  {quote.delivery_type === "pickup" ? "Pickup" : quote.delivery_type === "white_glove" ? "White Glove Delivery" : "Regular Delivery"}
                 </p>
               </div>
               <p className="text-white font-medium text-sm">
-                {quote.delivery_type === "delivery" && quote.delivery_address
+                {(quote.delivery_type === "delivery" || quote.delivery_type === "white_glove") && quote.delivery_address
                   ? quote.delivery_address
                   : quote.delivery_type === "pickup"
                     ? "Client will pick up"

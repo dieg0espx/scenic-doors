@@ -46,7 +46,10 @@
       "Bash(netstat:*)",
       "Bash(npm:*)",
       "WebFetch(domain:scenic-doors-z8rg.vercel.app)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(python -m json.tool)",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f\"\"{r[''''public_id'''']}.{r[''''format'''']} \\({r[''''width'''']}x{r[''''height'''']}\\)\"\"\\) for r in data[''''resources'''']]\")",
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f\"\"{r[''''public_id'''']}.{r[''''format'''']} \\({r[''''width'''']}x{r[''''height'''']}\\) [{r[''''resource_type'''']}]\"\"\\) for r in data[''''resources'''']]\")"
     ]
   }
 }

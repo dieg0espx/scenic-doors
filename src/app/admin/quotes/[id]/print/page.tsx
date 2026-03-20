@@ -165,15 +165,17 @@ export default async function QuotePrintPage({
                   <td className="txt-right">${Number(quote.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
                 </tr>
               )}
-              {Number(quote.installation_cost) > 0 && (
-                <tr>
-                  <td>Installation</td>
+              <tr>
+                <td>Installation</td>
+                {Number(quote.installation_cost) > 0 ? (
                   <td className="txt-right">${Number(quote.installation_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
-                </tr>
-              )}
+                ) : (
+                  <td className="txt-right" style={{ color: "#d97706", fontWeight: 600 }}>TBD</td>
+                )}
+              </tr>
               {Number(quote.delivery_cost) > 0 && (
                 <tr>
-                  <td>Delivery</td>
+                  <td>Delivery{quote.delivery_type === "white_glove" ? " (White Glove)" : " (Regular)"}</td>
                   <td className="txt-right">${Number(quote.delivery_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
                 </tr>
               )}

@@ -17,8 +17,8 @@ import {
   getPanelLayouts,
   calculateItemTotal,
   calculateQuoteTotals,
-  DELIVERY_COST,
-  INSTALLATION_RATE,
+  DELIVERY_REGULAR,
+  DELIVERY_WHITE_GLOVE,
   TAX_RATE,
   GLASS_MODIFIERS,
   RATES_PER_SQFT,
@@ -680,12 +680,19 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
     return [createEmptyItem()];
   });
 
-  // Services — hydrate from initialData when editing
+  // Services
   const [services, setServices] = useState<ServiceOptions>(() => {
-    if (!initialData) return { includeInstallation: false };
-    const includeInstallation = Number(initialData.installation_cost || 0) > 0;
-    return { includeInstallation };
+    const dt = initialData?.delivery_type as string | undefined;
+    return {
+      includeInstallation: false,
+      deliveryType: dt === "white_glove" ? "white_glove" : "regular",
+    };
   });
+
+  // Manual installation cost — admin can set this later
+  const [manualInstallationCost, setManualInstallationCost] = useState<number>(
+    () => Number(initialData?.installation_cost || 0)
+  );
 
   // Filter clients based on search
   const filteredClients = clients.filter(
@@ -733,8 +740,8 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
 
   // Calculate totals
   const totals = useMemo(() => {
-    return calculateQuoteTotals(items, services);
-  }, [items, services]);
+    return calculateQuoteTotals(items, services, manualInstallationCost || undefined);
+  }, [items, services, manualInstallationCost]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -784,7 +791,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
       size: firstItem ? `${firstItem.width}" x ${firstItem.height}"` : "",
       cost: totals.grandTotal,
       notes: notes || undefined,
-      delivery_type: "delivery",
+      delivery_type: services.deliveryType === "white_glove" ? "white_glove" : "delivery",
       client_id: clientMode === "existing" ? selectedClientId || undefined : undefined,
       save_as_client: clientMode === "new" ? saveAsClient : undefined,
       client_phone: clientMode === "new" && saveAsClient ? newClientPhone || undefined : undefined,
@@ -1245,37 +1252,65 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
           </div>
         </div>
         <div className="p-5 sm:p-6 space-y-4">
-          {/* Delivery — always $800 */}
+          {/* Delivery Options */}
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
               <Truck className="w-3.5 h-3.5" /> Delivery
             </label>
-            <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-300">
-              <span className="text-sm font-medium">Delivery (included)</span>
-              <span className="text-sm font-bold">${DELIVERY_COST.toLocaleString()}</span>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setServices((s) => ({ ...s, deliveryType: "regular" }))}
+                className={`text-left px-4 py-3 rounded-xl border transition-all cursor-pointer ${
+                  services.deliveryType !== "white_glove"
+                    ? "bg-sky-500/10 border-sky-500/30 text-sky-300"
+                    : "bg-white/[0.04] border-white/[0.08] text-white/50 hover:border-white/[0.15]"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">Regular</span>
+                  <span className="text-sm font-bold">${DELIVERY_REGULAR.toLocaleString()}</span>
+                </div>
+                <p className="text-[11px] opacity-60">Curbside delivery only</p>
+              </button>
+              <button
+                type="button"
+                onClick={() => setServices((s) => ({ ...s, deliveryType: "white_glove" }))}
+                className={`text-left px-4 py-3 rounded-xl border transition-all cursor-pointer ${
+                  services.deliveryType === "white_glove"
+                    ? "bg-sky-500/10 border-sky-500/30 text-sky-300"
+                    : "bg-white/[0.04] border-white/[0.08] text-white/50 hover:border-white/[0.15]"
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium">White Glove</span>
+                  <span className="text-sm font-bold">${DELIVERY_WHITE_GLOVE.toLocaleString()}</span>
+                </div>
+                <p className="text-[11px] opacity-60">Full-service delivery</p>
+              </button>
             </div>
           </div>
 
           {/* Installation */}
           <div>
-            <label
-              className="flex items-center gap-3 cursor-pointer group"
-              onClick={() => setServices((s) => ({ ...s, includeInstallation: !s.includeInstallation }))}
-            >
-              <div
-                className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
-                  services.includeInstallation
-                    ? "bg-sky-500 border-sky-500"
-                    : "border-white/[0.12] bg-transparent group-hover:border-white/[0.25]"
-                }`}
-              >
-                {services.includeInstallation && <Check className="w-3.5 h-3.5 text-white" />}
-              </div>
-              <div>
-                <span className="text-white/70 text-sm font-medium">Include Installation</span>
-                <span className="text-white/30 text-sm ml-2">(${INSTALLATION_RATE}/sq ft)</span>
-              </div>
+            <label className="flex items-center gap-2 text-sm font-medium text-white/40 mb-2 uppercase tracking-wider">
+              <Wrench className="w-3.5 h-3.5" /> Installation Cost
             </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 text-sm">$</span>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={manualInstallationCost || ""}
+                onChange={(e) => setManualInstallationCost(Number(e.target.value) || 0)}
+                placeholder="TBD — enter amount when ready"
+                className="w-full pl-8 pr-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-white/20 text-sm focus:outline-none focus:border-sky-500/40 focus:ring-1 focus:ring-sky-500/20 transition-all"
+              />
+            </div>
+            {!manualInstallationCost && (
+              <p className="text-amber-400/60 text-xs mt-1.5">Installation cost is TBD — will not be included in totals until set.</p>
+            )}
           </div>
         </div>
       </div>
@@ -1313,16 +1348,18 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
             </div>
 
             <div className="flex items-center justify-between text-sm">
-              <span className="text-white/50">Delivery</span>
+              <span className="text-white/50">Delivery ({services.deliveryType === "white_glove" ? "White Glove" : "Regular"})</span>
               <span className="text-white/70 font-medium">${totals.deliveryCost.toLocaleString()}</span>
             </div>
 
-            {totals.installationCost > 0 && (
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-white/50">Installation</span>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-white/50">Installation</span>
+              {totals.installationCost > 0 ? (
                 <span className="text-white/70 font-medium">${totals.installationCost.toLocaleString()}</span>
-              </div>
-            )}
+              ) : (
+                <span className="text-amber-400 font-medium">TBD</span>
+              )}
+            </div>
 
             <div className="flex items-center justify-between text-sm">
               <span className="text-white/50">Tax ({(TAX_RATE * 100).toFixed(0)}%)</span>

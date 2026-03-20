@@ -12,15 +12,15 @@ const products = [
       "Each glass wall system is engineered to operate in the most extreme conditions while delivering energy-efficiency, superior security and interior comfort.",
     images: [
       {
-        src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_22_h0jqzq",
         caption: "Seamless Operation",
       },
       {
-        src: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_24_rlaoyx",
         caption: "Energy Efficient",
       },
       {
-        src: "https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_12_yozv9h",
         caption: "Weather Resistant",
       },
     ],
@@ -33,15 +33,15 @@ const products = [
       "Transform entire walls into seamless indoor-outdoor transitions. Our folding systems stack effortlessly, maximizing your opening and your view.",
     images: [
       {
-        src: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_7_er7okz",
         caption: "Maximum Opening",
       },
       {
-        src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_4_ohg10o",
         caption: "Indoor-Outdoor",
       },
       {
-        src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_3_q6oa3n",
         caption: "Premium Design",
       },
     ],
@@ -54,15 +54,15 @@ const products = [
       "The ultimate in flexibility. Slide panels stack to one or both sides, creating massive openings that blur the line between indoors and out.",
     images: [
       {
-        src: "https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_9_c5axra",
         caption: "Flexible Design",
       },
       {
-        src: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_10_na2bfu",
         caption: "Stacking System",
       },
       {
-        src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_6_nfzizw",
         caption: "Open Living",
       },
     ],
@@ -75,15 +75,15 @@ const products = [
       "Make a statement from the moment guests arrive. Our pivot doors combine engineering precision with bold architectural presence.",
     images: [
       {
-        src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_28_pmmsrb",
         caption: "Architectural",
       },
       {
-        src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_30_gozmrj",
         caption: "Precision",
       },
       {
-        src: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=2070&auto=format&fit=crop",
+        src: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_14_jnem60",
         caption: "Statement Entry",
       },
     ],
