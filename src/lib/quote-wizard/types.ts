@@ -32,6 +32,7 @@ export interface ConfiguredItem {
 
 export interface ServiceOptions {
   includeInstallation: boolean;
+  deliveryType?: "regular" | "white_glove";
 }
 
 export interface GeneralPreferences {
@@ -90,6 +91,7 @@ export const initialContact: ContactInfo = {
 
 export const initialServices: ServiceOptions = {
   includeInstallation: true,
+  deliveryType: "regular",
 };
 
 export const initialGeneralPreferences: GeneralPreferences = {

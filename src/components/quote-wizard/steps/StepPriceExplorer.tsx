@@ -234,10 +234,11 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
           return (
             <div
               key={product.slug}
-              className={`bg-white rounded-xl sm:rounded-2xl border-2 overflow-hidden transition-all duration-200 ${
+              onClick={() => toggleInterest(product.slug)}
+              className={`bg-white rounded-xl sm:rounded-2xl border-2 overflow-hidden transition-all duration-200 cursor-pointer ${
                 selected
                   ? "border-primary-500 shadow-md shadow-primary-500/10"
-                  : "border-ocean-200"
+                  : "border-ocean-200 hover:border-ocean-300"
               }`}
             >
               {/* Collapsed card — image, name, features, actions */}
@@ -274,7 +275,7 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
                   {/* Action row */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => toggleInterest(product.slug)}
+                      onClick={(e) => { e.stopPropagation(); toggleInterest(product.slug); }}
                       className={`px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all cursor-pointer active:scale-[0.97] ${
                         selected
                           ? "bg-primary-500 text-white hover:bg-primary-600"
@@ -285,7 +286,7 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
                     </button>
                     {(hasAnimation || (info && info.panelOptions.length > 1)) && (
                       <button
-                        onClick={() => setExpandedSlug(isExpanded ? null : product.slug)}
+                        onClick={(e) => { e.stopPropagation(); setExpandedSlug(isExpanded ? null : product.slug); }}
                         className="flex items-center gap-1 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold text-ocean-500 hover:text-ocean-700 hover:bg-ocean-50 transition-all cursor-pointer"
                       >
                         {isExpanded ? (
@@ -309,7 +310,7 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
 
               {/* Expanded detail section — animation + panel pricing */}
               {isExpanded && (
-                <div className="border-t border-ocean-100">
+                <div className="border-t border-ocean-100" onClick={(e) => e.stopPropagation()}>
                   {/* Animation */}
                   {hasAnimation && (
                     <div className="border-b border-ocean-100">

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { DollarSign, Lightbulb, Target, ChevronRight } from "lucide-react";
+import { DollarSign, Target, ChevronRight } from "lucide-react";
 import type { WizardAction } from "@/lib/quote-wizard/types";
 
 interface StepIntentSelectionProps {
@@ -18,16 +18,6 @@ const TIERS = [
     iconColor: "text-sky-600",
     activeBorder: "border-sky-400",
     activeShadow: "shadow-sky-100",
-  },
-  {
-    key: "medium" as const,
-    icon: Lightbulb,
-    title: "I have a general idea",
-    description: "Tell us your preferences and we'll prepare a tailored estimate.",
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
-    activeBorder: "border-amber-400",
-    activeShadow: "shadow-amber-100",
   },
   {
     key: "full" as const,

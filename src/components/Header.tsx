@@ -11,25 +11,25 @@ const doorTypes = [
     name: "Multi-Slide Systems",
     description: "Effortless operation, expansive design",
     href: "/doors/multi-slide",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=400&h=300&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_400/scenic_doors_HDR_22_h0jqzq",
   },
   {
     name: "Bifold / Folding Doors",
     description: "Transform walls into seamless transitions",
     href: "/doors/folding",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_400/scenic_doors_HDR_7_er7okz",
   },
   {
     name: "Slide & Stack Systems",
     description: "Ultimate flexibility for open living",
     href: "/doors/slide-stack",
-    image: "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=400&h=300&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_400/scenic_doors_HDR_9_c5axra",
   },
   {
     name: "Pivot Entry Doors",
     description: "Bold architectural presence",
     href: "/doors/pivot",
-    image: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=400&h=300&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_400/scenic_doors_HDR_28_pmmsrb",
   },
 ];
 

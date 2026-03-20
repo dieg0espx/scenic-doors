@@ -308,15 +308,17 @@ export default function PortalQuoteView({ quote, photos, drawing: legacyDrawing,
               <span>${Number(quote.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
             </div>
           )}
-          {Number(quote.installation_cost) > 0 && (
-            <div className="flex justify-between text-ocean-600">
-              <span>Installation</span>
+          <div className="flex justify-between text-ocean-600">
+            <span>Installation</span>
+            {Number(quote.installation_cost) > 0 ? (
               <span>${Number(quote.installation_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-            </div>
-          )}
+            ) : (
+              <span className="font-medium text-amber-600">TBD</span>
+            )}
+          </div>
           {Number(quote.delivery_cost) > 0 && (
             <div className="flex justify-between text-ocean-600">
-              <span>Delivery</span>
+              <span>Delivery{quote.delivery_type === "white_glove" ? " (White Glove)" : " (Regular)"}</span>
               <span>${Number(quote.delivery_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
             </div>
           )}

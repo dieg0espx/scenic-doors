@@ -14,7 +14,7 @@ const projects = [
     category: "folding",
     type: "Folding Glass Wall",
     location: "Malibu, CA",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_1_c1inxz",
     size: "large",
   },
   {
@@ -23,7 +23,7 @@ const projects = [
     category: "multi-slide",
     type: "Multi-Slide System",
     location: "Beverly Hills, CA",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2053&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_22_h0jqzq",
     size: "small",
   },
   {
@@ -32,7 +32,7 @@ const projects = [
     category: "pivot",
     type: "Pivot Entry Door",
     location: "Laguna Beach, CA",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_15_ddqcxd",
     size: "small",
   },
   {
@@ -41,7 +41,7 @@ const projects = [
     category: "folding",
     type: "Folding Glass Wall",
     location: "Newport Coast, CA",
-    image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=2070&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_4_ohg10o",
     size: "medium",
   },
   {
@@ -50,7 +50,7 @@ const projects = [
     category: "multi-slide",
     type: "Multi-Slide System",
     location: "La Jolla, CA",
-    image: "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?q=80&w=2070&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_12_yozv9h",
     size: "small",
   },
   {
@@ -59,7 +59,7 @@ const projects = [
     category: "pivot",
     type: "Pivot Entry Door",
     location: "Palos Verdes, CA",
-    image: "https://images.unsplash.com/photo-1600607687644-c7171b42498f?q=80&w=2070&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_20_jqwyls",
     size: "small",
   },
   {
@@ -68,7 +68,7 @@ const projects = [
     category: "folding",
     type: "Folding Glass Wall",
     location: "Santa Barbara, CA",
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?q=80&w=2032&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_33_bpvi7t",
     size: "large",
   },
   {
@@ -77,7 +77,7 @@ const projects = [
     category: "multi-slide",
     type: "Multi-Slide System",
     location: "Coronado, CA",
-    image: "https://images.unsplash.com/photo-1600585154526-990dced4db0d?q=80&w=2070&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_26_u8o85i",
     size: "medium",
   },
 ];

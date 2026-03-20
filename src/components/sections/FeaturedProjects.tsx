@@ -8,25 +8,25 @@ const projects = [
   {
     title: "Malibu Estate",
     type: "Folding Glass Wall",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=2075&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_2_enszw2",
     size: "large",
   },
   {
     title: "Beverly Hills",
     type: "Multi-Slide System",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2053&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_15_ddqcxd",
     size: "small",
   },
   {
     title: "Laguna Beach",
     type: "Pivot Entry Door",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2070&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_32_jy0fuc",
     size: "small",
   },
   {
     title: "Newport Coast",
     type: "Indoor-Outdoor Living",
-    image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?q=80&w=2070&auto=format&fit=crop",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_26_u8o85i",
     size: "medium",
   },
 ];
