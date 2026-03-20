@@ -55,7 +55,7 @@ export async function getPaymentsForInvoices() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("payments")
-    .select("*, quotes(quote_number, door_type, cost, material, color, glass_type, size, client_email, delivery_type, delivery_address)")
+    .select("*, quotes(quote_number, door_type, cost, material, color, glass_type, size, client_email, delivery_type, delivery_address, subtotal, installation_cost, delivery_cost, tax, grand_total)")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -124,7 +124,7 @@ export async function getPaymentById(id: string) {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("payments")
-    .select("*, quotes(quote_number, door_type, cost, material, color, glass_type, size, client_name, client_email, delivery_type, delivery_address)")
+    .select("*, quotes(quote_number, door_type, cost, material, color, glass_type, size, client_name, client_email, delivery_type, delivery_address, subtotal, installation_cost, delivery_cost, tax, grand_total)")
     .eq("id", id)
     .single();
 

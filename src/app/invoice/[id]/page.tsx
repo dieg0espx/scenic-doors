@@ -35,6 +35,11 @@ interface Payment {
     client_email: string;
     delivery_type?: string;
     delivery_address?: string;
+    subtotal?: number;
+    installation_cost?: number;
+    delivery_cost?: number;
+    tax?: number;
+    grand_total?: number;
   };
 }
 
@@ -276,14 +281,57 @@ export default function PublicInvoicePage() {
             </div>
           )}
 
-          {/* Amount Due */}
+          {/* Price Breakdown & Amount Due */}
           <div className="rounded-xl bg-gradient-to-r from-emerald-500/[0.08] to-emerald-500/[0.04] border border-emerald-500/[0.1] p-4 sm:p-5 mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-white/40 text-xs">Project Total</p>
-              <p className="text-white/50 text-sm">
-                ${Number(payment.quotes.cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-              </p>
-            </div>
+            {Number(payment.quotes.subtotal || 0) > 0 ? (
+              <div className="space-y-1.5 mb-3 pb-3 border-b border-white/[0.06]">
+                <div className="flex items-center justify-between">
+                  <p className="text-white/40 text-xs">Subtotal</p>
+                  <p className="text-white/50 text-sm">
+                    ${Number(payment.quotes.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                {Number(payment.quotes.installation_cost || 0) > 0 && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-white/40 text-xs">Installation</p>
+                    <p className="text-white/50 text-sm">
+                      ${Number(payment.quotes.installation_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {Number(payment.quotes.delivery_cost || 0) > 0 && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-white/40 text-xs">
+                      Delivery{payment.quotes.delivery_type === "white_glove" ? " (White Glove)" : ""}
+                    </p>
+                    <p className="text-white/50 text-sm">
+                      ${Number(payment.quotes.delivery_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                {Number(payment.quotes.tax || 0) > 0 && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-white/40 text-xs">Tax</p>
+                    <p className="text-white/50 text-sm">
+                      ${Number(payment.quotes.tax).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                )}
+                <div className="flex items-center justify-between pt-1.5">
+                  <p className="text-white/60 text-xs font-medium">Grand Total</p>
+                  <p className="text-white/70 text-sm font-semibold">
+                    ${Number(payment.quotes.grand_total || payment.quotes.cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-white/[0.06]">
+                <p className="text-white/40 text-xs">Project Total</p>
+                <p className="text-white/50 text-sm">
+                  ${Number(payment.quotes.cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <p className="text-white/40 text-xs uppercase tracking-wider font-medium">Amount Due</p>
               <p className="text-3xl font-bold text-white">

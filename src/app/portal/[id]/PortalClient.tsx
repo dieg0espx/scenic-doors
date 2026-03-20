@@ -206,6 +206,11 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
               client_email: quote.client_email,
               delivery_type: quote.delivery_type || undefined,
               delivery_address: quote.delivery_address || undefined,
+              subtotal: Number(quote.subtotal || 0),
+              installation_cost: Number(quote.installation_cost || 0),
+              delivery_cost: Number(quote.delivery_cost || 0),
+              tax: Number(quote.tax || 0),
+              grand_total: Number(quote.grand_total || 0),
             }}
           />
         )}

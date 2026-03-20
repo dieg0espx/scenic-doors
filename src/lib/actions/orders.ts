@@ -238,14 +238,14 @@ export async function completeManufacturing(orderId: string): Promise<void> {
   // Fetch order with quote data
   const { data: order, error } = await supabase
     .from("orders")
-    .select("*, quotes(quote_number, client_name, client_email, door_type, cost, grand_total)")
+    .select("*, quotes(quote_number, client_name, client_email, door_type, cost, grand_total, installation_cost)")
     .eq("id", orderId)
     .single();
 
   if (error || !order) throw new Error("Order not found");
 
   const now = new Date().toISOString();
-  const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string; cost: number; grand_total: number } | null;
+  const quote = order.quotes as { quote_number: string; client_name: string; client_email: string; door_type: string; cost: number; grand_total: number; installation_cost: number } | null;
 
   // Update order_tracking: manufacturing → deposit_2_pending
   const { data: updatedTracking, error: trackingErr } = await supabase
@@ -306,7 +306,19 @@ export async function completeManufacturing(orderId: string): Promise<void> {
     try {
       const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
       const totalCost = Number(quote.grand_total ?? quote.cost ?? 0);
-      const balanceAmount = Math.round(totalCost * 50) / 100;
+
+      // Get the advance payment amount to calculate the real remaining balance
+      const { data: advancePayments } = await supabase
+        .from("payments")
+        .select("amount")
+        .eq("quote_id", order.quote_id)
+        .eq("payment_type", "advance_50")
+        .eq("status", "completed");
+
+      const advancePaid = (advancePayments ?? []).reduce(
+        (sum: number, p: { amount: number }) => sum + Number(p.amount), 0
+      );
+      const balanceAmount = Math.round((totalCost - advancePaid) * 100) / 100;
 
       await createAndSendBalanceInvoice({
         quoteId: order.quote_id,

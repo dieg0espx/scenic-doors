@@ -4,18 +4,27 @@ const LOGO_URL = "https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/68
 
 async function fetchImageAsPngBase64(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const timeout = setTimeout(() => reject(new Error("Logo load timeout")), 5000);
+    const img = new window.Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("Canvas not supported"));
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas.toDataURL("image/png"));
+      clearTimeout(timeout);
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Canvas not supported"));
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (e) {
+        reject(e);
+      }
     };
-    img.onerror = reject;
+    img.onerror = () => {
+      clearTimeout(timeout);
+      reject(new Error("Failed to load logo"));
+    };
     img.src = url;
   });
 }
@@ -38,6 +47,11 @@ interface InvoiceData {
     client_email: string;
     delivery_type?: string;
     delivery_address?: string;
+    subtotal?: number;
+    installation_cost?: number;
+    delivery_cost?: number;
+    tax?: number;
+    grand_total?: number;
   };
 }
 
@@ -173,7 +187,14 @@ export async function generateInvoicePdf(payment: InvoiceData) {
   doc.text("AMOUNT", margin + contentWidth - 4, y + 6, { align: "right" });
   y += 16;
 
-  // Project line item
+  // Product line item
+  const subtotal = Number(payment.quotes.subtotal || 0);
+  const installCost = Number(payment.quotes.installation_cost || 0);
+  const deliveryCost = Number(payment.quotes.delivery_cost || 0);
+  const tax = Number(payment.quotes.tax || 0);
+  const grandTotal = Number(payment.quotes.grand_total || payment.quotes.cost || 0);
+  const hasBreakdown = subtotal > 0;
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(30, 30, 30);
@@ -186,55 +207,97 @@ export async function generateInvoicePdf(payment: InvoiceData) {
   const specLine = `${payment.quotes.color} | ${payment.quotes.glass_type} | ${payment.quotes.size}`;
   doc.text(specLine, margin + 4, y);
 
-  // qty & total on the first line
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(70, 70, 70);
   doc.text("1", margin + contentWidth - 50, y - 4.5, { align: "right" });
-
-  const totalCost = Number(payment.quotes.cost);
+  const productAmount = hasBreakdown ? subtotal : grandTotal;
   doc.text(
-    `$${totalCost.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+    `$${productAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
     margin + contentWidth - 4,
     y - 4.5,
     { align: "right" }
   );
 
-  y += 8;
+  y += 10;
 
-  // Divider
+  // Divider before totals
   doc.setDrawColor(230, 230, 230);
   doc.line(margin, y, pageWidth - margin, y);
+  y += 6;
+
+  // --- Price Breakdown ---
+  const labelX = margin + contentWidth - 65;
+  const valueX = margin + contentWidth - 4;
+
+  function drawSummaryLine(label: string, value: number, bold = false) {
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(bold ? 30 : 120, bold ? 30 : 120, bold ? 30 : 120);
+    doc.text(label, labelX, y, { align: "right" });
+    doc.setTextColor(bold ? 30 : 70, bold ? 30 : 70, bold ? 30 : 70);
+    doc.text(
+      `$${value.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+      valueX,
+      y,
+      { align: "right" }
+    );
+    y += 5.5;
+  }
+
+  if (hasBreakdown) {
+    drawSummaryLine("Subtotal", subtotal);
+
+    if (installCost > 0) {
+      drawSummaryLine("Installation", installCost);
+    }
+
+    if (deliveryCost > 0) {
+      const deliveryLabel = payment.quotes.delivery_type === "white_glove"
+        ? "Delivery (White Glove)"
+        : "Delivery";
+      drawSummaryLine(deliveryLabel, deliveryCost);
+    }
+
+    if (tax > 0) {
+      drawSummaryLine("Tax", tax);
+    }
+
+    // Thin line before grand total
+    doc.setDrawColor(220, 220, 220);
+    doc.line(labelX - 10, y - 2, valueX, y - 2);
+    y += 2;
+
+    drawSummaryLine("Grand Total", grandTotal, true);
+  } else {
+    drawSummaryLine("Project Total", grandTotal, true);
+  }
+
   y += 2;
 
-  // Payment breakdown (if advance, show 50% of total)
+  // Payment split line
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  doc.text("Project Total:", margin + contentWidth - 60, y + 5);
-  doc.setTextColor(70, 70, 70);
   doc.text(
-    `$${totalCost.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-    margin + contentWidth - 4,
-    y + 5,
+    `${isAdvance ? "50% Advance" : "Balance"} Due:`,
+    labelX,
+    y,
     { align: "right" }
   );
 
-  doc.setTextColor(120, 120, 120);
-  doc.text(`${isAdvance ? "50% Advance" : "50% Balance"} Due:`, margin + contentWidth - 60, y + 11);
-
-  y += 15;
+  y += 4;
 
   // Amount due box
+  const amount = Number(payment.amount);
   doc.setFillColor(240, 253, 244);
   doc.roundedRect(margin + contentWidth - 70, y, 70, 12, 2, 2, "F");
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
   doc.setTextColor(22, 163, 74);
-  const amount = Number(payment.amount);
   doc.text(
     `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
-    margin + contentWidth - 4,
+    valueX,
     y + 8.5,
     { align: "right" }
   );

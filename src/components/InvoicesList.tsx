@@ -27,6 +27,11 @@ interface Payment {
     client_email: string;
     delivery_type?: string;
     delivery_address?: string;
+    subtotal?: number;
+    installation_cost?: number;
+    delivery_cost?: number;
+    tax?: number;
+    grand_total?: number;
   };
 }
 

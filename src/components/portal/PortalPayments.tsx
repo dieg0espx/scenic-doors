@@ -27,6 +27,11 @@ interface QuoteInfo {
   client_email: string;
   delivery_type?: string;
   delivery_address?: string;
+  subtotal?: number;
+  installation_cost?: number;
+  delivery_cost?: number;
+  tax?: number;
+  grand_total?: number;
 }
 
 interface PortalPaymentsProps {
@@ -168,10 +173,12 @@ function PaymentCard({
   quoteInfo?: QuoteInfo;
 }) {
   const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
 
   async function handleDownload() {
     if (!payment || !quoteInfo) return;
     setDownloading(true);
+    setDownloadError("");
     try {
       const doc = await generateInvoicePdf({
         id: payment.id,
@@ -185,8 +192,9 @@ function PaymentCard({
       const isAdvance = payment.payment_type === "advance_50";
       const invoiceNumber = `INV-${quoteInfo.quote_number.replace("QT-", "")}${isAdvance ? "-A" : "-B"}`;
       await savePdf(doc, `${paid ? "Receipt" : "Invoice"}-${invoiceNumber}.pdf`);
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("Invoice download failed:", err);
+      setDownloadError("Failed to generate PDF. Please try again.");
     } finally {
       setDownloading(false);
     }
@@ -255,6 +263,9 @@ function PaymentCard({
           )}
           {paid ? "Download Receipt" : "Download Invoice"}
         </button>
+      )}
+      {downloadError && (
+        <p className="text-red-500 text-xs mt-1 px-1">{downloadError}</p>
       )}
     </div>
   );

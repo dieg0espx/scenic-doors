@@ -30,6 +30,7 @@ import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
 import PortalLinkBar from "@/components/admin/PortalLinkBar";
 import QuoteShareCard from "@/components/admin/QuoteShareCard";
 import OrderActionsDropdown from "@/components/admin/OrderActionsDropdown";
+import InstallationCostInput from "@/components/InstallationCostInput";
 
 export const dynamic = "force-dynamic";
 
@@ -587,15 +588,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <span className="text-white/60">${Number(quote?.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
-                {Number(quote?.installation_cost) > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Installation</span>
-                    <span className="text-white/60">${Number(quote?.installation_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                  </div>
-                )}
+                <InstallationCostInput
+                  quoteId={order.quote_id}
+                  initialCost={Number(quote?.installation_cost || 0)}
+                />
                 {Number(quote?.delivery_cost) > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-white/40">Delivery</span>
+                    <span className="text-white/40">Delivery{quote?.delivery_type === "white_glove" ? " (White Glove)" : " (Regular)"}</span>
                     <span className="text-white/60">${Number(quote?.delivery_cost).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
@@ -869,6 +868,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
               client_email: order.client_email,
               delivery_type: deliveryType,
               delivery_address: deliveryAddress,
+              subtotal: Number(quote?.subtotal || 0),
+              installation_cost: Number(quote?.installation_cost || 0),
+              delivery_cost: Number(quote?.delivery_cost || 0),
+              tax: Number(quote?.tax || 0),
+              grand_total: Number(quote?.grand_total || 0),
             }}
             contract={contract ? {
               client_name: (contract.client_name as string) || order.client_name,
