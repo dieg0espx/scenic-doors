@@ -986,3 +986,38 @@ export async function sendEstimateConfirmation(quoteId: string) {
     type: "confirmation",
   });
 }
+
+export async function updateInstallationCost(quoteId: string, installationCost: number) {
+  const supabase = await createClient();
+
+  // Fetch current quote to recalculate grand_total
+  const { data: quote, error: fetchErr } = await supabase
+    .from("quotes")
+    .select("subtotal, delivery_cost, tax, grand_total, cost")
+    .eq("id", quoteId)
+    .single();
+
+  if (fetchErr || !quote) throw new Error("Quote not found");
+
+  const subtotal = Number(quote.subtotal || 0);
+  const deliveryCost = Number(quote.delivery_cost || 0);
+  const taxableAmount = subtotal + installationCost + deliveryCost;
+  const TAX_RATE = 0.08;
+  const tax = Math.round(taxableAmount * TAX_RATE * 100) / 100;
+  const grandTotal = Math.round((taxableAmount + tax) * 100) / 100;
+
+  const { error } = await supabase
+    .from("quotes")
+    .update({
+      installation_cost: installationCost,
+      tax,
+      grand_total: grandTotal,
+      cost: grandTotal,
+    })
+    .eq("id", quoteId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/orders`);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+}
