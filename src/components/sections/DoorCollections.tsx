@@ -11,8 +11,7 @@ const doors = [
     shortTitle: "Multi-Slide",
     description:
       "Effortless operation meets expansive design. Multi-slide systems offer unparalleled flexibility for large openings while maintaining clean architectural lines.",
-    image:
-      "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_22_h0jqzq",
+    image: "/images/multi-slide.png",
     href: "/doors/multi-slide",
   },
   {
@@ -21,8 +20,7 @@ const doors = [
     shortTitle: "Bifold/Folding",
     description:
       "Transform entire walls into seamless indoor-outdoor transitions. Our folding systems stack effortlessly, maximizing your opening and your view.",
-    image:
-      "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_7_er7okz",
+    image: "/images/bifold.png",
     href: "/doors/folding",
   },
   {
@@ -31,8 +29,7 @@ const doors = [
     shortTitle: "Slide & Stack",
     description:
       "The ultimate in flexibility. Slide panels stack to one or both sides, creating massive openings that blur the line between indoors and out.",
-    image:
-      "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_9_c5axra",
+    image: "/images/slide-stack.png",
     href: "/doors/slide-stack",
   },
   {
@@ -41,8 +38,7 @@ const doors = [
     shortTitle: "Pivot",
     description:
       "Make a statement from the moment guests arrive. Our pivot doors combine engineering precision with bold architectural presence.",
-    image:
-      "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_28_pmmsrb",
+    image: "/images/pivot.png",
     href: "/doors/pivot",
   },
 ];
