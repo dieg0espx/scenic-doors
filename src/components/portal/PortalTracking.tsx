@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import {
   Clock,
   Factory,
@@ -8,8 +9,35 @@ import {
   Package,
   MapPin,
   ExternalLink,
+  Ship,
+  Loader2,
+  RefreshCw,
+  Anchor,
 } from "lucide-react";
 import type { OrderTracking } from "@/lib/types";
+
+interface CoscoMilestone {
+  location: string;
+  date: string;
+  activity: string;
+  vessel?: string;
+  voyage?: string;
+  isEstimate?: boolean;
+}
+
+interface CoscoRoute {
+  from: string;
+  to: string;
+  vessel: string;
+  voyage: string;
+}
+
+interface CoscoTrackingData {
+  route: CoscoRoute | null;
+  milestones: CoscoMilestone[];
+  containers: string[];
+  error?: string;
+}
 
 interface PortalTrackingProps {
   tracking: OrderTracking | null;
@@ -22,6 +50,165 @@ const STAGE_STEPS = [
   { key: "shipping", label: "Shipping", icon: Truck },
   { key: "delivered", label: "Delivered", icon: CheckCircle2 },
 ];
+
+function CoscoLiveTracking({ trackingNumber }: { trackingNumber: string }) {
+  const [data, setData] = useState<CoscoTrackingData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTracking = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/cosco-tracking?number=${encodeURIComponent(trackingNumber)}`
+      );
+      const json = await res.json();
+      if (json.error && !json.milestones?.length) {
+        setError(json.error);
+      } else {
+        setData(json);
+      }
+    } catch {
+      setError("Unable to load tracking updates");
+    } finally {
+      setLoading(false);
+    }
+  }, [trackingNumber]);
+
+  useEffect(() => {
+    fetchTracking();
+  }, [fetchTracking]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-ocean-200 p-5 sm:p-6">
+        <div className="flex items-center justify-center gap-3 py-8">
+          <Loader2 className="w-5 h-5 text-cyan-500 animate-spin" />
+          <span className="text-sm text-ocean-500">Loading COSCO tracking data...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !data?.milestones?.length) {
+    return (
+      <div className="bg-white rounded-xl border border-ocean-200 p-5 sm:p-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-ocean-900 uppercase tracking-wider flex items-center gap-2">
+            <Ship className="w-4 h-4 text-cyan-500" /> COSCO Shipment Tracking
+          </h3>
+          <button
+            onClick={fetchTracking}
+            className="text-ocean-400 hover:text-ocean-600 transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+        <p className="text-sm text-ocean-500 text-center py-4">
+          {error || "No tracking updates available yet. Check back later."}
+        </p>
+      </div>
+    );
+  }
+
+  const { route, milestones, containers } = data;
+
+  return (
+    <div className="bg-white rounded-xl border border-ocean-200 p-5 sm:p-6">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-semibold text-ocean-900 uppercase tracking-wider flex items-center gap-2">
+          <Ship className="w-4 h-4 text-cyan-500" /> COSCO Shipment Tracking
+        </h3>
+        <button
+          onClick={fetchTracking}
+          className="inline-flex items-center gap-1.5 text-xs text-ocean-400 hover:text-ocean-600 transition-colors cursor-pointer"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Refresh
+        </button>
+      </div>
+
+      {/* Route summary */}
+      {route && (route.from || route.to) && (
+        <div className="bg-cyan-50 rounded-lg p-3 mb-4">
+          <div className="flex items-center gap-2 text-sm text-cyan-800">
+            <Anchor className="w-4 h-4 text-cyan-500 shrink-0" />
+            <span className="font-medium">{route.from.split(",")[0]}</span>
+            <span className="text-cyan-400">→</span>
+            <span className="font-medium">{route.to.split(",")[0]}</span>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5 ml-6 text-xs text-cyan-600">
+            {route.vessel && <span>Vessel: {route.vessel}</span>}
+            {route.voyage && <span>Voyage: {route.voyage}</span>}
+            {containers.length > 0 && <span>Container: {containers.join(", ")}</span>}
+          </div>
+        </div>
+      )}
+
+      {/* Milestones timeline */}
+      <div className="space-y-0">
+        {milestones.map((m, i) => {
+          const isLatest = i === milestones.length - 1 && !m.isEstimate;
+          const isEstimate = m.isEstimate;
+          return (
+            <div key={i} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                    isEstimate
+                      ? "bg-amber-100 text-amber-500 border-2 border-dashed border-amber-300"
+                      : isLatest
+                        ? "bg-cyan-500 text-white ring-4 ring-cyan-500/20"
+                        : "bg-cyan-100 text-cyan-600"
+                  }`}
+                >
+                  <Anchor className="w-4 h-4" />
+                </div>
+                {i < milestones.length - 1 && (
+                  <div className={`w-0.5 h-10 ${isEstimate ? "bg-amber-200 border-dashed" : "bg-cyan-200"}`} />
+                )}
+              </div>
+              <div className="pb-6 min-w-0">
+                <p
+                  className={`text-sm font-medium ${
+                    isEstimate
+                      ? "text-amber-600"
+                      : isLatest
+                        ? "text-cyan-700"
+                        : "text-ocean-700"
+                  }`}
+                >
+                  {m.activity}
+                  {isLatest && (
+                    <span className="ml-2 text-xs bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded-full">
+                      Latest
+                    </span>
+                  )}
+                  {isEstimate && (
+                    <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                      Estimated
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-ocean-500 mt-0.5">
+                  {m.date && new Date(m.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+                  {m.location && ` — ${m.location}`}
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function PortalTracking({ tracking }: PortalTrackingProps) {
   if (!tracking) {
@@ -39,6 +226,7 @@ export default function PortalTracking({ tracking }: PortalTrackingProps) {
   }
 
   const currentStageIndex = STAGE_STEPS.findIndex((s) => s.key === tracking.stage);
+  const isCosco = tracking.shipping_carrier?.toUpperCase() === "COSCO";
 
   return (
     <div className="space-y-6">
@@ -146,13 +334,22 @@ export default function PortalTracking({ tracking }: PortalTrackingProps) {
               href={tracking.tracking_link}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary-600 hover:text-primary-500 transition-colors"
+              className={`mt-4 inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-lg transition-colors ${
+                isCosco
+                  ? "bg-cyan-500 text-white hover:bg-cyan-600"
+                  : "bg-primary-500 text-white hover:bg-primary-600"
+              }`}
             >
-              <ExternalLink className="w-4 h-4" />
-              Track Shipment
+              {isCosco ? <Ship className="w-4 h-4" /> : <ExternalLink className="w-4 h-4" />}
+              {isCosco ? "Track on COSCO" : "Track Shipment"}
             </a>
           )}
         </div>
+      )}
+
+      {/* COSCO Live Tracking */}
+      {isCosco && tracking.tracking_number && (
+        <CoscoLiveTracking trackingNumber={tracking.tracking_number} />
       )}
 
       {/* Shipping Updates */}
