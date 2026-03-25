@@ -13,6 +13,7 @@ interface Props {
 }
 
 const CARRIERS = [
+  { value: "COSCO", label: "COSCO", color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20" },
   { value: "FedEx", label: "FedEx", color: "text-orange-400 bg-orange-500/10 border-orange-500/20" },
   { value: "UPS", label: "UPS", color: "text-amber-400 bg-amber-500/10 border-amber-500/20" },
   { value: "USPS", label: "USPS", color: "text-blue-400 bg-blue-500/10 border-blue-500/20" },
@@ -20,6 +21,11 @@ const CARRIERS = [
   { value: "Freight", label: "Freight", color: "text-slate-400 bg-slate-500/10 border-slate-500/20" },
   { value: "Other", label: "Other", color: "text-white/50 bg-white/[0.04] border-white/[0.08]" },
 ];
+
+// Auto-generate tracking link for COSCO from the tracking number (Bill of Lading)
+function buildCoscoTrackingLink(trackingNumber: string): string {
+  return `https://elines.coscoshipping.com/ebusiness/cargoTracking?trackingType=BILLOFLADING&number=${encodeURIComponent(trackingNumber)}`;
+}
 
 export default function TrackingCodeInput({
   trackingId,
@@ -39,7 +45,12 @@ export default function TrackingCodeInput({
     if (!trackingNumber.trim()) return;
     setSaving(true);
     try {
-      await updateTrackingInfo(trackingId, quoteId, trackingNumber.trim(), carrier, trackingLink.trim());
+      // Auto-generate COSCO tracking link if carrier is COSCO and no manual link provided
+      const finalLink = carrier === "COSCO" && !trackingLink.trim()
+        ? buildCoscoTrackingLink(trackingNumber.trim())
+        : trackingLink.trim();
+      await updateTrackingInfo(trackingId, quoteId, trackingNumber.trim(), carrier, finalLink);
+      setTrackingLink(finalLink);
       setSaved(true);
       setEditing(false);
       setTimeout(() => setSaved(false), 2000);
@@ -141,10 +152,16 @@ export default function TrackingCodeInput({
             type="url"
             value={trackingLink}
             onChange={(e) => setTrackingLink(e.target.value)}
-            placeholder="https://..."
-            className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-white/15 focus:outline-none focus:ring-1 focus:ring-sky-500/50 focus:border-sky-500/30 transition-all"
+            placeholder={carrier === "COSCO" ? "Auto-generated from tracking number" : "https://..."}
+            disabled={carrier === "COSCO" && !trackingLink}
+            className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white text-sm placeholder:text-white/15 focus:outline-none focus:ring-1 focus:ring-sky-500/50 focus:border-sky-500/30 transition-all disabled:opacity-40"
           />
         </div>
+        {carrier === "COSCO" && (
+          <p className="text-cyan-400/60 text-[11px] mt-1.5">
+            COSCO tracking link will be auto-generated from the Bill of Lading number above.
+          </p>
+        )}
       </div>
 
       {/* Actions */}
