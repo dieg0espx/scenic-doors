@@ -160,13 +160,8 @@ export default function PublicInvoicePage() {
   }, []);
 
   useEffect(() => {
-    console.log("[Square] useEffect triggered, payment status:", payment?.status);
-    if (payment && payment.status === "pending") {
-      console.log("[Square] Calling initSquareCard...");
-      initSquareCard().catch((err) => {
-        console.error("[Square] initSquareCard failed:", err);
-        setError("Failed to load payment form");
-      });
+    if (payment && payment.status !== "completed") {
+      initSquareCard().catch(() => setError("Failed to load payment form"));
     }
     return () => {
       if (cardRef.current) {
