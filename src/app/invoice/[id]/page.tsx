@@ -126,11 +126,13 @@ export default function PublicInvoicePage() {
 
     // Fetch Square config (app ID, location ID, environment) from our API
     const configRes = await fetch("/api/square/config");
+    const configData = await configRes.json();
     if (!configRes.ok) {
-      setError("Failed to load payment form");
+      console.error("Square config error:", configData);
+      setError(configData.error || "Failed to load payment form");
       return;
     }
-    const { appId, locationId, environment } = await configRes.json();
+    const { appId, locationId, environment } = configData;
     const sdkUrl = getSquareSdkUrl(environment);
 
     // Load SDK script if not already loaded
