@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Image from "next/image";
 import { useParams } from "next/navigation";
 import { getPaymentById, submitPaymentConfirmation } from "@/lib/actions/payments";
 import { generateInvoicePdf } from "@/lib/generateInvoicePdf";
 import { savePdf } from "@/lib/savePdf";
 import {
-  Receipt, Download, CheckCircle2, XCircle, ArrowRight,
-  CreditCard, Landmark, Banknote, Loader2, DoorOpen, Layers,
+  Receipt, Download, CheckCircle2, XCircle,
+  CreditCard, Loader2, DoorOpen, Layers,
   Palette, GlassWater, Ruler, Truck, MapPin, Shield,
 } from "lucide-react";
 
@@ -48,12 +48,29 @@ const typeLabels: Record<string, string> = {
   balance_50: "50% Balance Payment",
 };
 
-const PAYMENT_METHODS = [
-  { value: "bank_transfer", label: "Bank Transfer", icon: Landmark },
-  { value: "zelle", label: "Zelle", icon: Banknote },
-  { value: "check", label: "Check", icon: CreditCard },
-  { value: "cash", label: "Cash", icon: Banknote },
-];
+declare global {
+  interface Window {
+    Square?: {
+      payments: (appId: string, locationId: string) => Promise<SquarePayments>;
+    };
+  }
+}
+
+interface SquarePayments {
+  card: () => Promise<SquareCard>;
+}
+
+interface SquareCard {
+  attach: (selector: string) => Promise<void>;
+  tokenize: () => Promise<{ status: string; token?: string; errors?: { message: string }[] }>;
+  destroy: () => void;
+}
+
+function getSquareSdkUrl(environment: string) {
+  return environment === "production"
+    ? "https://web.squarecdn.com/v1/square.js"
+    : "https://sandbox.web.squarecdn.com/v1/square.js";
+}
 
 function getInvoiceNumber(payment: Payment) {
   const isAdvance = payment.payment_type === "advance_50";
@@ -88,11 +105,11 @@ export default function PublicInvoicePage() {
   const [payment, setPayment] = useState<Payment | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState("");
-  const [reference, setReference] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [cardReady, setCardReady] = useState(false);
+  const cardRef = useRef<SquareCard | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -102,6 +119,55 @@ export default function PublicInvoicePage() {
     }
     load();
   }, [params.id]);
+
+  // Load Square SDK and attach card form
+  const initSquareCard = useCallback(async () => {
+    if (cardRef.current) return;
+
+    // Fetch Square config (app ID, location ID, environment) from our API
+    const configRes = await fetch("/api/square/config");
+    if (!configRes.ok) {
+      setError("Failed to load payment form");
+      return;
+    }
+    const { appId, locationId, environment } = await configRes.json();
+    const sdkUrl = getSquareSdkUrl(environment);
+
+    // Load SDK script if not already loaded
+    if (!window.Square) {
+      await new Promise<void>((resolve, reject) => {
+        if (document.querySelector(`script[src="${sdkUrl}"]`)) {
+          const check = setInterval(() => {
+            if (window.Square) { clearInterval(check); resolve(); }
+          }, 100);
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = sdkUrl;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error("Failed to load Square SDK"));
+        document.head.appendChild(script);
+      });
+    }
+
+    const payments = await window.Square!.payments(appId, locationId);
+    const card = await payments.card();
+    await card.attach("#square-card-container");
+    cardRef.current = card;
+    setCardReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (payment && payment.status === "pending") {
+      initSquareCard();
+    }
+    return () => {
+      if (cardRef.current) {
+        cardRef.current.destroy();
+        cardRef.current = null;
+      }
+    };
+  }, [payment, initSquareCard]);
 
   async function handleDownloadPdf() {
     if (!payment) return;
@@ -118,14 +184,43 @@ export default function PublicInvoicePage() {
 
   async function handleSubmitPayment(e: React.FormEvent) {
     e.preventDefault();
-    if (!payment || !selectedMethod || !reference.trim()) return;
+    if (!payment || !cardRef.current) return;
     setSubmitting(true);
     setError("");
     try {
-      await submitPaymentConfirmation(payment.id, selectedMethod, reference.trim());
+      // Tokenize card
+      const tokenResult = await cardRef.current.tokenize();
+      if (tokenResult.status !== "OK" || !tokenResult.token) {
+        const msg = tokenResult.errors?.map(e => e.message).join(", ") || "Card tokenization failed";
+        setError(msg);
+        setSubmitting(false);
+        return;
+      }
+
+      // Charge via Square
+      const res = await fetch("/api/square/pay", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sourceId: tokenResult.token,
+          amount: payment.amount,
+          paymentId: payment.id,
+          clientName: payment.client_name,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Payment failed");
+        setSubmitting(false);
+        return;
+      }
+
+      // Mark payment as completed in our system
+      await submitPaymentConfirmation(payment.id, "square", data.squarePaymentId);
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to submit payment confirmation");
+      setError(err instanceof Error ? err.message : "Payment failed");
     } finally {
       setSubmitting(false);
     }
@@ -395,52 +490,25 @@ export default function PublicInvoicePage() {
                 <CreditCard className="w-4.5 h-4.5 text-emerald-400" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-white">Submit Payment</h3>
-                <p className="text-white/30 text-xs">Select your payment method and provide a reference</p>
+                <h3 className="text-lg font-bold text-white">Pay with Card</h3>
+                <p className="text-white/30 text-xs">Enter your card details below</p>
               </div>
             </div>
 
-            {/* Payment Method */}
+            {/* Square Card Form */}
             <div className="mb-5">
               <label className="text-white/40 text-[11px] uppercase tracking-wider font-medium mb-3 block">
-                Payment Method
+                Card Details
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                {PAYMENT_METHODS.map(({ value, label, icon: Icon }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setSelectedMethod(value)}
-                    className={`relative flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-2.5 px-4 py-3.5 rounded-xl border text-sm font-medium transition-all cursor-pointer ${
-                      selectedMethod === value
-                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 ring-2 ring-emerald-500/20"
-                        : "bg-white/[0.03] border-white/[0.08] text-white/40 hover:border-white/[0.15] hover:bg-white/[0.05]"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="text-xs sm:text-sm">{label}</span>
-                    {selectedMethod === value && (
-                      <CheckCircle2 className="w-3.5 h-3.5 absolute top-1.5 right-1.5 text-emerald-400" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Reference */}
-            <div className="mb-5">
-              <label htmlFor="payment_reference" className="text-white/40 text-[11px] uppercase tracking-wider font-medium mb-2 block">
-                Payment Reference / Confirmation Number
-              </label>
-              <input
-                id="payment_reference"
-                type="text"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                required
-                className="w-full px-4 py-3 rounded-xl bg-white/[0.03] border border-white/[0.08] text-white text-sm placeholder-white/20 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all hover:border-white/[0.15] hover:bg-white/[0.05]"
-                placeholder="e.g. Transaction ID, check #..."
+              <div
+                id="square-card-container"
+                className="rounded-xl bg-white/[0.03] border border-white/[0.08] p-1 min-h-[50px]"
               />
+              {!cardReady && (
+                <div className="flex items-center gap-2 text-white/20 text-xs mt-2">
+                  <Loader2 className="w-3 h-3 animate-spin" /> Loading card form...
+                </div>
+              )}
             </div>
 
             {error && (
@@ -452,21 +520,21 @@ export default function PublicInvoicePage() {
             <div className="flex items-start gap-2 mb-5 text-white/25 text-xs leading-relaxed">
               <Shield className="w-4 h-4 shrink-0 mt-0.5" />
               <p>
-                By submitting, you confirm the payment of{" "}
-                <span className="text-white/50 font-semibold">${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>{" "}
-                via the selected method. Your payment will be processed immediately.
+                Your card will be charged{" "}
+                <span className="text-white/50 font-semibold">${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>.
+                Payments are securely processed by Square.
               </p>
             </div>
 
             <button
               type="submit"
-              disabled={submitting || !selectedMethod || !reference.trim()}
+              disabled={submitting || !cardReady}
               className="w-full flex items-center justify-center gap-2 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-base sm:text-sm transition-all shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-[0.98]"
             >
               {submitting ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Submitting...</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> Processing Payment...</>
               ) : (
-                <>Confirm Payment <ArrowRight className="w-4 h-4" /></>
+                <>Pay ${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}</>
               )}
             </button>
           </form>
