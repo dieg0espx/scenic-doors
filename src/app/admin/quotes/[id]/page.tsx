@@ -36,12 +36,15 @@ import { getFollowUps } from "@/lib/actions/follow-ups";
 import { getQuoteNotes } from "@/lib/actions/quote-notes";
 import { getQuoteTasks } from "@/lib/actions/quote-tasks";
 import { getAdminUsers } from "@/lib/actions/admin-users";
+import { getPaymentsByQuoteId } from "@/lib/actions/payments";
 import { getCurrentAdminUser } from "@/lib/auth";
 import QuoteDetailClient from "./QuoteDetailClient";
 import AdminPortalManager from "@/components/admin/AdminPortalManager";
 import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
 import PortalLinkBar from "@/components/admin/PortalLinkBar";
 import QuoteShareCard from "@/components/admin/QuoteShareCard";
+import SendDepositButton from "@/components/SendDepositButton";
+import PriceOverrideEditor from "@/components/admin/PriceOverrideEditor";
 import { calculateItemBreakdown, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
 
 export const dynamic = "force-dynamic";
@@ -81,7 +84,7 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [quote, emails, drawing, allDrawings, photos, followUps, documents, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
+  const [quote, emails, drawing, allDrawings, photos, followUps, documents, notes, tasks, allAdminUsers, currentAdminUser, payments] = await Promise.all([
     getQuoteDetail(id),
     getEmailHistory(id),
     getApprovalDrawing(id).catch(() => null),
@@ -93,6 +96,7 @@ export default async function QuoteDetailPage({
     getQuoteTasks(id).catch(() => []),
     getAdminUsers(),
     getCurrentAdminUser(),
+    getPaymentsByQuoteId(id).catch(() => []),
   ]);
 
   if (!quote) redirect("/admin/quotes");
@@ -114,6 +118,9 @@ export default async function QuoteDetailPage({
   const lsc = leadStatusConfig[leadStatus] || leadStatusConfig.new;
   const qsc = quoteStatusLabels[quote.status] || quoteStatusLabels.draft;
   const itemsCount = Array.isArray(quote.items) ? quote.items.length : 0;
+  const drawingSigned = drawing?.status === "signed";
+  const hasAdvancePayment = payments.some((p: { payment_type: string }) => p.payment_type === "advance_50");
+  const showDepositBanner = drawingSigned && !hasAdvancePayment && leadStatus !== "order" && total > 0;
 
   const directionLabels: Record<string, string> = {
     left: "Slides Left",
@@ -313,6 +320,26 @@ export default async function QuoteDetailPage({
             </div>
           )}
 
+          {/* Deposit Banner — shown when approval drawing is signed but no deposit sent yet */}
+          {showDepositBanner && (
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3 sm:px-4 py-2.5 sm:py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-emerald-300">Approval Drawing Signed</p>
+                  <p className="text-xs text-emerald-300/60">
+                    Send the 50% deposit invoice to create the order.
+                  </p>
+                </div>
+              </div>
+              <div className="sm:shrink-0">
+                <SendDepositButton quoteId={id} clientName={quote.client_name} amount={Math.round(total * 50) / 100} compact />
+              </div>
+            </div>
+          )}
+
           {/* Portal Link */}
           <PortalLinkBar quoteId={id} />
         </div>
@@ -454,12 +481,14 @@ export default async function QuoteDetailPage({
               <h2 className="text-base font-semibold text-white">Pricing</h2>
             </div>
             <div className="p-4 sm:p-6">
-              {/* Grand Total - prominent */}
+              {/* Grand Total - prominent, editable before deposit */}
               <div className="text-center mb-5 pb-5 border-b border-white/[0.06]">
                 <p className="text-white/30 text-[11px] uppercase tracking-wider font-medium mb-1">Grand Total</p>
-                <p className="text-3xl font-bold text-white">
-                  ${total.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </p>
+                <PriceOverrideEditor
+                  quoteId={id}
+                  currentTotal={total}
+                  locked={hasAdvancePayment}
+                />
               </div>
 
               {/* Per-item pricing breakdown */}

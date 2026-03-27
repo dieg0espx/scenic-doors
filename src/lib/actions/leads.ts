@@ -284,6 +284,213 @@ export async function getLeadsForUser(
   return data ?? [];
 }
 
+/**
+ * Returns a map of lead_id → most advanced portal_stage among its quotes.
+ */
+export async function getLeadPipelineStages(
+  leadIds: string[]
+): Promise<Record<string, string>> {
+  if (leadIds.length === 0) return {};
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("quotes")
+    .select("lead_id, portal_stage, status")
+    .in("lead_id", leadIds);
+
+  if (error) {
+    if (error.message.includes("schema cache")) return {};
+    throw new Error(error.message);
+  }
+
+  // Stage ordering — higher index = further along
+  const stageOrder: Record<string, number> = {
+    quote_sent: 0,
+    drawing_requested: 1,
+    approval_pending: 2,
+    approval_signed: 3,
+    deposit_1_pending: 4,
+    manufacturing: 5,
+    deposit_2_pending: 6,
+    shipping: 7,
+    delivered: 8,
+  };
+
+  const map: Record<string, string> = {};
+  for (const row of data ?? []) {
+    if (!row.lead_id) continue;
+    const stage = row.portal_stage || "quote_sent";
+    const current = map[row.lead_id];
+    if (!current || (stageOrder[stage] ?? 0) > (stageOrder[current] ?? 0)) {
+      map[row.lead_id] = stage;
+    }
+    // If quote was declined, mark it unless there's a further stage already
+    if (row.status === "declined" && !current) {
+      map[row.lead_id] = "declined";
+    }
+  }
+  return map;
+}
+
+export interface PipelineStep {
+  key: string;
+  label: string;
+  status: "completed" | "current" | "upcoming";
+  date: string | null;
+  detail: string | null;
+}
+
+export interface QuotePipeline {
+  quoteId: string;
+  quoteNumber: string;
+  grandTotal: number;
+  steps: PipelineStep[];
+}
+
+/**
+ * Returns detailed pipeline timeline for each quote linked to a lead.
+ */
+export async function getLeadPipelineDetails(
+  quoteIds: string[]
+): Promise<QuotePipeline[]> {
+  if (quoteIds.length === 0) return [];
+  const supabase = await createClient();
+
+  // Fetch all related data in parallel
+  const [quotesRes, drawingsRes, paymentsRes, ordersRes] = await Promise.all([
+    supabase.from("quotes").select("id, quote_number, portal_stage, status, grand_total, cost, sent_at, viewed_at, accepted_at, declined_at, created_at").in("id", quoteIds),
+    supabase.from("approval_drawings").select("quote_id, status, sent_at, signed_at, customer_name").in("quote_id", quoteIds),
+    supabase.from("payments").select("quote_id, payment_type, status, amount, paid_at, created_at").in("quote_id", quoteIds).order("created_at", { ascending: true }),
+    supabase.from("order_tracking").select("quote_id, manufacturing_started_at, manufacturing_completed_at, shipped_at, delivered_at, tracking_number").in("quote_id", quoteIds),
+  ]);
+
+  const quotes = quotesRes.data ?? [];
+  const drawings = drawingsRes.data ?? [];
+  const payments = paymentsRes.data ?? [];
+  const orders = ordersRes.data ?? [];
+
+  // Index by quote_id
+  const drawingsByQuote: Record<string, typeof drawings> = {};
+  for (const d of drawings) {
+    (drawingsByQuote[d.quote_id] ??= []).push(d);
+  }
+  const paymentsByQuote: Record<string, typeof payments> = {};
+  for (const p of payments) {
+    (paymentsByQuote[p.quote_id] ??= []).push(p);
+  }
+  const orderByQuote: Record<string, (typeof orders)[0]> = {};
+  for (const o of orders) {
+    orderByQuote[o.quote_id] = o;
+  }
+
+  // Stage ordering for "current" detection
+  const stageOrder: Record<string, number> = {
+    quote_sent: 0, drawing_requested: 1, approval_pending: 2,
+    approval_signed: 3, deposit_1_pending: 4, manufacturing: 5,
+    deposit_2_pending: 6, shipping: 7, delivered: 8,
+  };
+
+  function fmt(d: string | null): string | null {
+    if (!d) return null;
+    return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  return quotes.map((q) => {
+    const qDrawings = drawingsByQuote[q.id] ?? [];
+    const qPayments = paymentsByQuote[q.id] ?? [];
+    const order = orderByQuote[q.id];
+    const stage = q.portal_stage || "quote_sent";
+    const currentIdx = stageOrder[stage] ?? 0;
+
+    // Find specific data
+    const bestDrawing = qDrawings.find((d) => d.status === "signed") || qDrawings[0];
+    const deposit = qPayments.find((p) => p.payment_type === "advance_50");
+    const balance = qPayments.find((p) => p.payment_type === "balance_50");
+
+    function stepStatus(idx: number): "completed" | "current" | "upcoming" {
+      if (idx < currentIdx) return "completed";
+      if (idx === currentIdx) return "current";
+      return "upcoming";
+    }
+
+    const steps: PipelineStep[] = [
+      {
+        key: "quote_sent",
+        label: "Quote Sent",
+        status: stepStatus(0),
+        date: fmt(q.sent_at || q.created_at),
+        detail: q.sent_at ? "Sent to client" : "Quote created",
+      },
+      {
+        key: "approval_pending",
+        label: "Approval Drawing",
+        status: bestDrawing
+          ? bestDrawing.status === "signed" ? "completed"
+          : bestDrawing.sent_at ? stepStatus(2)
+          : stepStatus(1)
+          : stepStatus(2),
+        date: bestDrawing?.sent_at ? fmt(bestDrawing.sent_at) : null,
+        detail: bestDrawing
+          ? bestDrawing.status === "signed"
+            ? `Signed by ${bestDrawing.customer_name || "client"}`
+            : bestDrawing.sent_at ? "Sent, awaiting signature" : "Draft created"
+          : null,
+      },
+      {
+        key: "deposit_1_pending",
+        label: "50% Deposit",
+        status: deposit?.status === "completed" ? "completed" : stepStatus(4),
+        date: deposit?.paid_at ? fmt(deposit.paid_at) : deposit?.created_at ? fmt(deposit.created_at) : null,
+        detail: deposit
+          ? deposit.status === "completed"
+            ? `$${Number(deposit.amount).toLocaleString()} paid`
+            : `$${Number(deposit.amount).toLocaleString()} pending`
+          : null,
+      },
+      {
+        key: "manufacturing",
+        label: "Manufacturing",
+        status: order?.manufacturing_completed_at ? "completed" : stepStatus(5),
+        date: order?.manufacturing_started_at ? fmt(order.manufacturing_started_at) : null,
+        detail: order
+          ? order.manufacturing_completed_at ? `Completed ${fmt(order.manufacturing_completed_at)}` : order.manufacturing_started_at ? "In progress" : null
+          : null,
+      },
+      {
+        key: "deposit_2_pending",
+        label: "Final Payment",
+        status: balance?.status === "completed" ? "completed" : stepStatus(6),
+        date: balance?.paid_at ? fmt(balance.paid_at) : balance?.created_at ? fmt(balance.created_at) : null,
+        detail: balance
+          ? balance.status === "completed"
+            ? `$${Number(balance.amount).toLocaleString()} paid`
+            : `$${Number(balance.amount).toLocaleString()} pending`
+          : null,
+      },
+      {
+        key: "shipping",
+        label: "Shipping",
+        status: order?.delivered_at ? "completed" : stepStatus(7),
+        date: order?.shipped_at ? fmt(order.shipped_at) : null,
+        detail: order?.tracking_number ? `Tracking: ${order.tracking_number}` : order?.shipped_at ? "Shipped" : null,
+      },
+      {
+        key: "delivered",
+        label: "Delivered",
+        status: stepStatus(8),
+        date: order?.delivered_at ? fmt(order.delivered_at) : null,
+        detail: order?.delivered_at ? "Order delivered" : null,
+      },
+    ];
+
+    return {
+      quoteId: q.id,
+      quoteNumber: q.quote_number,
+      grandTotal: Number(q.grand_total || q.cost || 0),
+      steps,
+    };
+  });
+}
+
 export async function getLeadMetricsForUser(
   userId: string,
   role: string

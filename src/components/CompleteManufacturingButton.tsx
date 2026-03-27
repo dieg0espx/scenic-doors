@@ -46,7 +46,7 @@ export default function CompleteManufacturingButton({ orderId, clientName, clien
         className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm font-medium hover:bg-emerald-500/15 transition-colors cursor-pointer disabled:opacity-50"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-        {loading ? "Processing..." : "Complete Manufacturing"}
+        {loading ? "Processing..." : "Ready to Ship"}
       </button>
 
       {/* Confirmation Modal */}
@@ -78,9 +78,9 @@ export default function CompleteManufacturingButton({ orderId, clientName, clien
 
             {/* Content */}
             <div className="px-6 pb-2 text-center">
-              <h3 className="text-lg font-bold text-white mb-2">Complete Manufacturing</h3>
+              <h3 className="text-lg font-bold text-white mb-2">Ready to Ship</h3>
               <p className="text-white/40 text-sm leading-relaxed">
-                This will mark manufacturing as complete, send the balance invoice, and notify the client.
+                This will mark the order as ready to be shipped, send the balance invoice, and notify the client.
               </p>
             </div>
 

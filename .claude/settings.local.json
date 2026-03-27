@@ -49,7 +49,11 @@
       "Bash(ls:*)",
       "Bash(python -m json.tool)",
       "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f\"\"{r[''''public_id'''']}.{r[''''format'''']} \\({r[''''width'''']}x{r[''''height'''']}\\)\"\"\\) for r in data[''''resources'''']]\")",
-      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f\"\"{r[''''public_id'''']}.{r[''''format'''']} \\({r[''''width'''']}x{r[''''height'''']}\\) [{r[''''resource_type'''']}]\"\"\\) for r in data[''''resources'''']]\")"
+      "Bash(python -c \"import json,sys; data=json.load\\(sys.stdin\\); [print\\(f\"\"{r[''''public_id'''']}.{r[''''format'''']} \\({r[''''width'''']}x{r[''''height'''']}\\) [{r[''''resource_type'''']}]\"\"\\) for r in data[''''resources'''']]\")",
+      "WebFetch(domain:elines.coscoshipping.com)",
+      "Bash(find /c/Users/52999/Desktop/scenic-doors -type f \\\\\\(-name *.sql -o -name *migration* -o -name *schema* \\\\\\))",
+      "Bash(wc:*)",
+      "Bash(find /c/Users/52999/Desktop/scenic-doors/src/components -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))"
     ]
   }
 }

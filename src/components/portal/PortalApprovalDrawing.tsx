@@ -8,6 +8,7 @@ import {
   Loader2,
   Download,
   ClipboardCheck,
+  PenLine,
 } from "lucide-react";
 import { signApprovalDrawing, requestApprovalDrawing } from "@/lib/actions/approval-drawings";
 import { generateApprovalDrawingPdf, generateMultiApprovalDrawingPdf } from "@/lib/generateApprovalDrawingPdf";
@@ -44,10 +45,15 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
   const [signingDrawingId, setSigningDrawingId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState(quoteName);
   const [signatureData, setSignatureData] = useState<string | null>(null);
+  const [signedLocally, setSignedLocally] = useState<Set<string>>(new Set());
+  const [useTypedSignature, setUseTypedSignature] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const typedCanvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const hasSignatureRef = useRef(false);
   const isCanvasInitRef = useRef(false);
+  const signSectionRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const signPadRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   function drawingToPdfInput(d: ApprovalDrawing) {
     return {
@@ -149,10 +155,13 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
     );
   }
 
-  // Check if all drawings are signed
-  const allSigned = allDrawings.every((d) => d.status === "signed");
+  // Check if all drawings are signed (including locally signed ones)
+  const isDrawingSigned = (d: ApprovalDrawing) => d.status === "signed" || signedLocally.has(d.id);
+  const allSigned = allDrawings.every(isDrawingSigned);
   // Find the first unsigned drawing for signing
-  const unsignedDrawing = allDrawings.find((d) => d.status !== "signed");
+  const unsignedDrawing = allDrawings.find((d) => !isDrawingSigned(d));
+  // Count how many still need signing
+  const unsignedCount = allDrawings.filter((d) => !isDrawingSigned(d) && d.status === "sent").length;
 
   const getCoords = useCallback((e: MouseEvent | TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
@@ -254,7 +263,71 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
       canvas.removeEventListener("mouseup", handleMouseUp);
       canvas.removeEventListener("mouseleave", handleMouseUp);
     };
-  }, [showSignPad, getCoords]);
+  }, [showSignPad, getCoords, useTypedSignature]);
+
+  // Generate a typed signature image from the customer name
+  const generateTypedSignature = useCallback(() => {
+    const canvas = typedCanvasRef.current;
+    if (!canvas || !customerName.trim()) {
+      setSignatureData(null);
+      return;
+    }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Clear canvas with white background
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the name in a cursive font
+    const fontSize = Math.min(60, canvas.width / (customerName.length * 0.55));
+    ctx.font = `italic ${fontSize}px "Dancing Script", "Segoe Script", "Comic Sans MS", cursive`;
+    ctx.fillStyle = "#1a2634";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(customerName.trim(), canvas.width / 2, canvas.height / 2 + 5);
+
+    // Draw a subtle baseline
+    ctx.beginPath();
+    ctx.strokeStyle = "#d1d5db";
+    ctx.lineWidth = 1;
+    const baseY = canvas.height / 2 + fontSize * 0.4;
+    ctx.moveTo(canvas.width * 0.1, baseY);
+    ctx.lineTo(canvas.width * 0.9, baseY);
+    ctx.stroke();
+
+    setSignatureData(canvas.toDataURL("image/png"));
+  }, [customerName]);
+
+  // Auto-regenerate typed signature when name changes
+  useEffect(() => {
+    if (useTypedSignature && showSignPad) {
+      generateTypedSignature();
+    }
+  }, [useTypedSignature, showSignPad, customerName, generateTypedSignature]);
+
+  function scrollToAndOpenSign(drawingId: string) {
+    isCanvasInitRef.current = false;
+    hasSignatureRef.current = false;
+    setSignatureData(null);
+    setSigningDrawingId(drawingId);
+    setShowSignPad(true);
+    // If typed mode is active, regenerate for the new drawing after render
+    if (useTypedSignature) {
+      setTimeout(() => generateTypedSignature(), 50);
+    }
+    // Wait for render then scroll to the sign pad itself
+    setTimeout(() => {
+      const padEl = signPadRefs.current.get(drawingId);
+      if (padEl) {
+        padEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else {
+        // Fallback to the drawing section
+        const el = signSectionRefs.current.get(drawingId);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "end" });
+      }
+    }, 150);
+  }
 
   function clearCanvas() {
     const canvas = canvasRef.current;
@@ -275,7 +348,24 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
     setSigning(true);
     try {
       await signApprovalDrawing(drawingToSign.id, customerName, signatureData);
-      window.location.reload();
+
+      // Track this drawing as signed locally
+      const newSignedLocally = new Set(signedLocally);
+      newSignedLocally.add(drawingToSign.id);
+      setSignedLocally(newSignedLocally);
+
+      // Find the next unsigned drawing
+      const nextUnsigned = allDrawings.find(
+        (d) => d.id !== drawingToSign.id && d.status === "sent" && !newSignedLocally.has(d.id)
+      );
+
+      if (nextUnsigned) {
+        // Auto-advance to the next drawing
+        scrollToAndOpenSign(nextUnsigned.id);
+      } else {
+        // All done — reload to show signed state
+        window.location.reload();
+      }
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to sign");
     } finally {
@@ -328,17 +418,33 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
     <div className="space-y-6">
       <div className="bg-amber-50 rounded-xl border border-amber-200 p-4 flex items-center gap-3">
         <FileText className="w-5 h-5 text-amber-600 shrink-0" />
-        <p className="text-sm text-amber-800">
+        <p className="text-sm text-amber-800 flex-1">
           Please review the approval drawing{allDrawings.length > 1 ? "s" : ""} below and sign to confirm your order specifications.
         </p>
+        {unsignedCount > 0 && !showSignPad && (
+          <button
+            onClick={() => {
+              const firstUnsigned = allDrawings.find((d) => d.status === "sent" && !signedLocally.has(d.id));
+              if (firstUnsigned) scrollToAndOpenSign(firstUnsigned.id);
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-500 text-white text-sm font-semibold transition-colors cursor-pointer shrink-0"
+          >
+            <PenLine className="w-4 h-4" />
+            Ready to Sign{unsignedCount > 1 ? ` (${unsignedCount})` : ""}?
+          </button>
+        )}
       </div>
 
       {allDrawings.map((d, idx) => {
-        const isSigned = d.status === "signed";
+        const isSigned = isDrawingSigned(d);
         const isSigningThis = showSignPad && signingDrawingId === d.id;
 
         return (
-          <div key={d.id} className="space-y-4">
+          <div
+            key={d.id}
+            ref={(el) => { if (el) signSectionRefs.current.set(d.id, el); }}
+            className="space-y-4"
+          >
             {hasMultipleItems && (
               <h4 className="text-sm font-semibold text-ocean-700">
                 {quoteItems[idx]?.name || `Door ${idx + 1}`}
@@ -363,13 +469,7 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
                   By signing, you confirm that the specifications above are correct.
                 </p>
                 <button
-                  onClick={() => {
-                    isCanvasInitRef.current = false;
-                    hasSignatureRef.current = false;
-                    setSignatureData(null);
-                    setSigningDrawingId(d.id);
-                    setShowSignPad(true);
-                  }}
+                  onClick={() => scrollToAndOpenSign(d.id)}
                   className="bg-primary-600 hover:bg-primary-500 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors cursor-pointer text-sm"
                 >
                   Sign Approval Drawing
@@ -389,7 +489,10 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
             )}
 
             {isSigningThis && (
-              <div className="bg-white rounded-xl border border-ocean-200 p-6">
+              <div
+                ref={(el) => { if (el) signPadRefs.current.set(d.id, el); }}
+                className="bg-white rounded-xl border border-ocean-200 p-6"
+              >
                 <h3 className="text-lg font-semibold text-ocean-900 mb-4">Sign Below</h3>
 
                 <div className="mb-4">
@@ -402,28 +505,77 @@ export default function PortalApprovalDrawing({ drawing: legacyDrawing, drawings
                   />
                 </div>
 
+                {/* Toggle: draw vs type */}
+                <label className="flex items-center gap-2.5 mb-4 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={useTypedSignature}
+                    onChange={(e) => {
+                      const typed = e.target.checked;
+                      setUseTypedSignature(typed);
+                      if (typed) {
+                        // Generate typed signature immediately
+                        setTimeout(() => generateTypedSignature(), 50);
+                      } else {
+                        // Switching back to draw — clear signature and force canvas reinit
+                        hasSignatureRef.current = false;
+                        setSignatureData(null);
+                        isCanvasInitRef.current = false;
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-ocean-300 text-primary-600 focus:ring-primary-500/30 cursor-pointer"
+                  />
+                  <span className="text-sm text-ocean-600">Use my name as signature</span>
+                </label>
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-ocean-700 mb-1.5">Signature</label>
-                  <div className="border-2 border-dashed border-ocean-300 rounded-lg overflow-hidden bg-white">
-                    <canvas
-                      ref={canvasRef}
-                      width={600}
-                      height={200}
-                      className="w-full h-[150px] sm:h-[200px] cursor-crosshair touch-none"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <p className="text-xs text-ocean-400">
-                      {signatureData ? "Signature captured" : "Sign above using mouse or touch"}
-                    </p>
-                    <button
-                      onClick={clearCanvas}
-                      disabled={!signatureData}
-                      className="text-xs text-ocean-400 hover:text-ocean-600 disabled:opacity-40 cursor-pointer"
-                    >
-                      Clear signature
-                    </button>
-                  </div>
+
+                  {useTypedSignature ? (
+                    <>
+                      {/* Typed signature preview */}
+                      <div className="border-2 border-dashed border-ocean-300 rounded-lg overflow-hidden bg-white relative">
+                        <canvas
+                          ref={typedCanvasRef}
+                          width={600}
+                          height={200}
+                          className="w-full h-[150px] sm:h-[200px]"
+                        />
+                        {!customerName.trim() && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <p className="text-ocean-300 text-sm">Enter your name above</p>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-ocean-400 mt-1.5">
+                        {signatureData ? "Signature generated from your name" : "Enter your name above to generate signature"}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      {/* Hand-drawn signature canvas */}
+                      <div className="border-2 border-dashed border-ocean-300 rounded-lg overflow-hidden bg-white">
+                        <canvas
+                          ref={canvasRef}
+                          width={600}
+                          height={200}
+                          className="w-full h-[150px] sm:h-[200px] cursor-crosshair touch-none"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between mt-1.5">
+                        <p className="text-xs text-ocean-400">
+                          {signatureData ? "Signature captured" : "Sign above using mouse or touch"}
+                        </p>
+                        <button
+                          onClick={clearCanvas}
+                          disabled={!signatureData}
+                          className="text-xs text-ocean-400 hover:text-ocean-600 disabled:opacity-40 cursor-pointer"
+                        >
+                          Clear signature
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex gap-3">

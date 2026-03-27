@@ -17,7 +17,7 @@ export async function createPayment({
   contractId?: string;
   clientName: string;
   amount: number;
-  paymentType?: "advance_50" | "balance_50";
+  paymentType?: "advance_50" | "balance_50" | "installation";
 }) {
   const supabase = await createClient();
   const insert: Record<string, unknown> = {
@@ -104,8 +104,8 @@ export async function sendInvoiceToClient(id: string, origin: string) {
   if (error || !payment) throw new Error("Payment not found");
 
   const quotes = payment.quotes as { quote_number: string; client_name: string; client_email: string };
-  const isAdvance = payment.payment_type === "advance_50";
-  const invoiceNumber = `INV-${quotes.quote_number.replace("QT-", "")}${isAdvance ? "-A" : "-B"}`;
+  const suffix = payment.payment_type === "advance_50" ? "-A" : payment.payment_type === "installation" ? "-I" : "-B";
+  const invoiceNumber = `INV-${quotes.quote_number.replace("QT-", "")}${suffix}`;
 
   await sendInvoiceEmail({
     clientName: quotes.client_name,
@@ -162,8 +162,8 @@ export async function submitPaymentConfirmation(
 
     if (payment) {
       const quotes = payment.quotes as { quote_number: string; client_name: string; client_email: string };
-      const isAdvance = payment.payment_type === "advance_50";
-      const invoiceNumber = `INV-${quotes.quote_number.replace("QT-", "")}${isAdvance ? "-A" : "-B"}`;
+      const suffix = payment.payment_type === "advance_50" ? "-A" : payment.payment_type === "installation" ? "-I" : "-B";
+      const invoiceNumber = `INV-${quotes.quote_number.replace("QT-", "")}${suffix}`;
 
       await sendPaymentReceiptEmail({
         clientName: quotes.client_name,
@@ -195,27 +195,73 @@ export async function submitPaymentConfirmation(
           .update({ portal_stage: "shipping" })
           .eq("id", payment.quote_id);
       } else if (payment.payment_type === "advance_50") {
-        // Advance paid → order in progress
-        await supabase
+        // Advance paid → create order + order_tracking if they don't exist yet
+        const { data: existingOrder } = await supabase
           .from("orders")
-          .update({ status: "in_progress" })
-          .eq("quote_id", payment.quote_id);
-        // Sync order_tracking
-        await supabase
-          .from("order_tracking")
-          .update({ deposit_1_paid: true, deposit_1_paid_at: paidAt, stage: "manufacturing" })
-          .eq("quote_id", payment.quote_id);
-        // Advance portal stage
+          .select("id")
+          .eq("quote_id", payment.quote_id)
+          .maybeSingle();
+
+        if (!existingOrder) {
+          // Fetch quote grand_total for deposit amounts
+          const { data: quoteData } = await supabase
+            .from("quotes")
+            .select("grand_total")
+            .eq("id", payment.quote_id)
+            .single();
+          const totalAmount = Number(quoteData?.grand_total || 0);
+          const halfAmount = Math.round(totalAmount * 50) / 100;
+
+          await supabase
+            .from("orders")
+            .insert({
+              quote_id: payment.quote_id,
+              client_name: quotes.client_name,
+              client_email: quotes.client_email,
+              status: "in_progress",
+            });
+
+          await supabase
+            .from("order_tracking")
+            .insert({
+              quote_id: payment.quote_id,
+              stage: "manufacturing",
+              deposit_1_amount: halfAmount,
+              deposit_2_amount: halfAmount,
+              deposit_1_paid: true,
+              deposit_1_paid_at: paidAt,
+            });
+        } else {
+          // Order already exists, just update status
+          await supabase
+            .from("orders")
+            .update({ status: "in_progress" })
+            .eq("quote_id", payment.quote_id);
+
+          await supabase
+            .from("order_tracking")
+            .update({ deposit_1_paid: true, deposit_1_paid_at: paidAt, stage: "manufacturing" })
+            .eq("quote_id", payment.quote_id);
+        }
+
+        // Set lead_status to "order" so it moves from quotes to orders list
         await supabase
           .from("quotes")
-          .update({ portal_stage: "manufacturing" })
+          .update({ portal_stage: "manufacturing", lead_status: "order" })
           .eq("id", payment.quote_id);
+      } else if (payment.payment_type === "installation") {
+        // Mark installation quote as paid
+        await supabase
+          .from("installation_quotes")
+          .update({ status: "paid", updated_at: paidAt })
+          .eq("quote_id", payment.quote_id)
+          .eq("payment_id", id);
       }
 
       // Send internal notification
       const notifyEmails = await getNotificationEmailsByType("payment_received");
       if (notifyEmails.length > 0) {
-        const typeLabel = payment.payment_type === "advance_50" ? "50% Advance" : "50% Balance";
+        const typeLabel = payment.payment_type === "advance_50" ? "50% Advance" : payment.payment_type === "installation" ? "Installation" : "50% Balance";
         const formattedAmt = Number(payment.amount).toLocaleString("en-US", { minimumFractionDigits: 2 });
         const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
         await sendInternalNotificationEmail(
@@ -352,6 +398,16 @@ export async function createAndSendDepositInvoice({
   });
 
   await sendInvoiceToClient(payment.id, origin);
+
+  // Advance portal stage to deposit_1_pending
+  const supabase = await createClient();
+  await supabase
+    .from("quotes")
+    .update({ portal_stage: "deposit_1_pending" })
+    .eq("id", quoteId);
+
   revalidatePath("/admin/orders");
+  revalidatePath(`/admin/quotes/${quoteId}`);
+  revalidatePath(`/portal/${quoteId}`);
   return payment;
 }

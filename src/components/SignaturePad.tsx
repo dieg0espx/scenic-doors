@@ -5,13 +5,18 @@ import { Eraser, PenLine } from "lucide-react";
 
 interface SignaturePadProps {
   onSignature: (dataUrl: string) => void;
+  theme?: "dark" | "light";
+  typedName?: string;
 }
 
-export default function SignaturePad({ onSignature }: SignaturePadProps) {
+export default function SignaturePad({ onSignature, theme = "dark", typedName }: SignaturePadProps) {
+  const isDark = theme === "dark";
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const typedCanvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [useTyped, setUseTyped] = useState(false);
 
   useEffect(() => {
     setIsTouchDevice("ontouchstart" in window);
@@ -126,6 +131,50 @@ export default function SignaturePad({ onSignature }: SignaturePadProps) {
     };
   }, [isDrawing, getCoordinates, onSignature]);
 
+  const generateTypedSignature = useCallback(() => {
+    const canvas = typedCanvasRef.current;
+    const name = typedName?.trim();
+    if (!canvas || !name) {
+      onSignature("");
+      return;
+    }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, rect.width, rect.height);
+
+    const fontSize = Math.min(48, rect.width / (name.length * 0.55));
+    ctx.font = `italic ${fontSize}px "Dancing Script", "Segoe Script", "Comic Sans MS", cursive`;
+    ctx.fillStyle = "#1a1a1a";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(name, rect.width / 2, rect.height / 2 + 5);
+
+    // Baseline
+    ctx.beginPath();
+    ctx.strokeStyle = "#e0e0e0";
+    ctx.lineWidth = 1;
+    const baseY = rect.height / 2 + fontSize * 0.4;
+    ctx.moveTo(rect.width * 0.1, baseY);
+    ctx.lineTo(rect.width * 0.9, baseY);
+    ctx.stroke();
+
+    onSignature(canvas.toDataURL("image/png"));
+  }, [typedName, onSignature]);
+
+  useEffect(() => {
+    if (useTyped) {
+      generateTypedSignature();
+    }
+  }, [useTyped, typedName, generateTypedSignature]);
+
   function handleClear() {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -153,36 +202,88 @@ export default function SignaturePad({ onSignature }: SignaturePadProps) {
 
   return (
     <div>
-      <div className="rounded-xl border-2 border-dashed border-white/[0.12] overflow-hidden bg-white">
-        <canvas
-          ref={canvasRef}
-          className="w-full h-52 sm:h-44 cursor-crosshair"
-          style={{ touchAction: "none" }}
+      {/* Toggle: draw vs type */}
+      <label className={`flex items-center gap-2.5 mb-3 cursor-pointer select-none ${isDark ? "text-white/50" : "text-ocean-600"}`}>
+        <input
+          type="checkbox"
+          checked={useTyped}
+          onChange={(e) => {
+            const typed = e.target.checked;
+            setUseTyped(typed);
+            if (!typed) {
+              handleClear();
+            }
+          }}
+          className="w-4 h-4 rounded border-ocean-300 text-primary-600 focus:ring-primary-500/30 cursor-pointer"
         />
-      </div>
-      <div className="flex items-center justify-between mt-3">
-        <p className="text-[13px] text-white/30 flex items-center gap-1.5">
-          {hasDrawn ? (
-            <>
-              <PenLine className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-emerald-400/80">Signature captured</span>
-            </>
-          ) : (
-            <>
-              <PenLine className="w-3.5 h-3.5" />
-              {isTouchDevice ? "Use your finger to sign above" : "Draw your signature above"}
-            </>
-          )}
-        </p>
-        <button
-          type="button"
-          onClick={handleClear}
-          className="flex items-center gap-1.5 text-[13px] text-white/30 hover:text-white/60 transition-colors cursor-pointer px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08]"
-        >
-          <Eraser className="w-3.5 h-3.5" />
-          Clear
-        </button>
-      </div>
+        <span className="text-sm">Use my name as signature</span>
+      </label>
+
+      {useTyped ? (
+        <>
+          <div className={`rounded-xl border-2 border-dashed overflow-hidden bg-white relative ${isDark ? "border-white/[0.12]" : "border-ocean-200"}`}>
+            <canvas
+              ref={typedCanvasRef}
+              className="w-full h-52 sm:h-44"
+            />
+            {!typedName?.trim() && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className={`text-sm ${isDark ? "text-white/20" : "text-ocean-300"}`}>Enter your name above</p>
+              </div>
+            )}
+          </div>
+          <p className={`text-[13px] mt-3 flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-ocean-400"}`}>
+            {typedName?.trim() ? (
+              <>
+                <PenLine className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-400/80">Signature generated from your name</span>
+              </>
+            ) : (
+              <>
+                <PenLine className="w-3.5 h-3.5" />
+                Enter your name to generate signature
+              </>
+            )}
+          </p>
+        </>
+      ) : (
+        <>
+          <div className={`rounded-xl border-2 border-dashed overflow-hidden bg-white ${isDark ? "border-white/[0.12]" : "border-ocean-200"}`}>
+            <canvas
+              ref={canvasRef}
+              className="w-full h-52 sm:h-44 cursor-crosshair"
+              style={{ touchAction: "none" }}
+            />
+          </div>
+          <div className="flex items-center justify-between mt-3">
+            <p className={`text-[13px] flex items-center gap-1.5 ${isDark ? "text-white/30" : "text-ocean-400"}`}>
+              {hasDrawn ? (
+                <>
+                  <PenLine className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400/80">Signature captured</span>
+                </>
+              ) : (
+                <>
+                  <PenLine className="w-3.5 h-3.5" />
+                  {isTouchDevice ? "Use your finger to sign above" : "Draw your signature above"}
+                </>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={handleClear}
+              className={`flex items-center gap-1.5 text-[13px] transition-colors cursor-pointer px-3 py-1.5 rounded-lg ${
+                isDark
+                  ? "text-white/30 hover:text-white/60 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08]"
+                  : "text-ocean-400 hover:text-ocean-600 bg-ocean-50 border border-ocean-200 hover:bg-ocean-100"
+              }`}
+            >
+              <Eraser className="w-3.5 h-3.5" />
+              Clear
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

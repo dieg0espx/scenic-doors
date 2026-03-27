@@ -740,6 +740,26 @@ export async function notifyNewQuote(quoteId: string, origin: string) {
   }
 }
 
+export async function overrideQuotePrice(
+  quoteId: string,
+  newGrandTotal: number
+) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("quotes")
+    .update({
+      grand_total: newGrandTotal,
+      cost: newGrandTotal,
+      last_activity_at: new Date().toISOString(),
+    })
+    .eq("id", quoteId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+  revalidatePath("/admin/quotes");
+  revalidatePath("/admin/orders");
+}
+
 export async function updateQuote(
   id: string,
   formData: {

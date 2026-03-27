@@ -30,7 +30,9 @@ import QuoteNotesAndTasks from "@/components/admin/QuoteNotesAndTasks";
 import PortalLinkBar from "@/components/admin/PortalLinkBar";
 import QuoteShareCard from "@/components/admin/QuoteShareCard";
 import OrderActionsDropdown from "@/components/admin/OrderActionsDropdown";
-import InstallationCostInput from "@/components/InstallationCostInput";
+import InstallationQuoteBuilder from "@/components/InstallationQuoteBuilder";
+import { getInstallationQuoteByQuoteId } from "@/lib/actions/installation-quotes";
+import PriceOverrideEditor from "@/components/admin/PriceOverrideEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +58,7 @@ const statusConfig: Record<string, { dot: string; bg: string; text: string; labe
 const paymentTypeLabels: Record<string, string> = {
   advance_50: "50% Advance",
   balance_50: "50% Balance",
+  installation: "Installation",
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -152,7 +155,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   const order = await getOrderById(id);
   if (!order) notFound();
 
-  const [payments, drawing, allDrawings, tracking, documents, emails, photos, notes, tasks, allAdminUsers, currentAdminUser] = await Promise.all([
+  const [payments, drawing, allDrawings, tracking, documents, emails, photos, notes, tasks, allAdminUsers, currentAdminUser, installationQuote] = await Promise.all([
     getPaymentsByQuoteId(order.quote_id),
     getApprovalDrawing(order.quote_id).catch(() => null),
     getApprovalDrawings(order.quote_id).catch(() => [] as import("@/lib/types").ApprovalDrawing[]),
@@ -164,6 +167,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     getQuoteTasks(order.quote_id).catch(() => []),
     getAdminUsers(),
     getCurrentAdminUser(),
+    getInstallationQuoteByQuoteId(order.quote_id),
   ]);
 
   // Sync order status based on actual payment states
@@ -417,7 +421,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <p className={`text-sm font-medium ${bannerTheme.text}`}>
                     {nextAction === "deposit" && "Send deposit invoice to get started"}
                     {nextAction === "manufacturing" && "Deposit received \u2014 start manufacturing"}
-                    {nextAction === "complete_manufacturing" && "Manufacturing in progress \u2014 mark as complete"}
+                    {nextAction === "complete_manufacturing" && "Manufacturing complete \u2014 ready to be shipped"}
                     {nextAction === "awaiting_balance" && "Waiting for balance payment"}
                     {nextAction === "tracking" && "Add tracking number"}
                     {nextAction === "shipped" && "Shipped \u2014 mark as delivered"}
@@ -426,7 +430,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                   <p className="text-white/30 text-xs mt-0.5">
                     {nextAction === "deposit" && `Send the 50% deposit invoice ($${(Math.round(cost * 50) / 100).toLocaleString("en-US", { minimumFractionDigits: 2 })}) to the client.`}
                     {nextAction === "manufacturing" && "Begin production now that the deposit has been received."}
-                    {nextAction === "complete_manufacturing" && "Complete manufacturing to send the balance invoice and notify the client."}
+                    {nextAction === "complete_manufacturing" && "Mark as ready to ship to send the balance invoice and notify the client."}
                     {nextAction === "awaiting_balance" && `Balance invoice ($${remaining.toLocaleString("en-US", { minimumFractionDigits: 2 })}) has been sent. Waiting for client payment.`}
                     {nextAction === "tracking" && "Enter the shipping tracking number for client notifications."}
                     {nextAction === "shipped" && "Confirm delivery once the order arrives."}
@@ -578,7 +582,14 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <DollarSign className="w-4 h-4 text-emerald-400" />
               </div>
               <h2 className="text-base font-semibold text-white">Pricing</h2>
-              <span className="text-white font-semibold text-sm ml-auto">${cost.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+              <div className="ml-auto">
+                <PriceOverrideEditor
+                  quoteId={order.quote_id}
+                  currentTotal={cost}
+                  locked={advancePaid}
+                  compact
+                />
+              </div>
             </div>
             <div className="p-4 sm:p-6">
               <div className="space-y-2.5">
@@ -588,9 +599,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <span className="text-white/60">${Number(quote?.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
-                <InstallationCostInput
+                <InstallationQuoteBuilder
                   quoteId={order.quote_id}
-                  initialCost={Number(quote?.installation_cost || 0)}
+                  installationQuote={installationQuote}
                 />
                 {Number(quote?.delivery_cost) > 0 && (
                   <div className="flex justify-between text-sm">

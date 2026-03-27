@@ -46,6 +46,10 @@ const typeLabels: Record<string, { title: string; description: string }> = {
     title: "50% Deposit — Manufacturing",
     description: "Required to begin manufacturing your order",
   },
+  installation: {
+    title: "Installation Payment",
+    description: "Installation service for your door system",
+  },
   balance_50: {
     title: "50% Balance — Shipping",
     description: "Required to begin shipping your order",

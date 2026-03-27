@@ -347,7 +347,7 @@ export default function ContractPage() {
               <label className="flex items-center gap-2 text-[13px] font-medium text-white/40 mb-2">
                 Signature
               </label>
-              <SignaturePad onSignature={setSignatureData} />
+              <SignaturePad onSignature={setSignatureData} typedName={clientName} />
             </div>
 
             {error && (
