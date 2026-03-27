@@ -1,13 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { CheckCircle2, Home, RotateCcw, FileText, PhoneCall, Wrench } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { CheckCircle2, Home, RotateCcw, FileText, PhoneCall, Wrench, CalendarDays, Clock } from "lucide-react";
 import type { ContactInfo, WizardAction } from "@/lib/quote-wizard/types";
+import AppointmentScheduler from "@/components/AppointmentScheduler";
 
 interface StepConfirmationProps {
   contact: ContactInfo;
   dispatch: React.Dispatch<WizardAction>;
   intentLevel?: string;
+  quoteId?: string | null;
+  leadId?: string | null;
 }
 
 const NEXT_STEPS_FULL = [
@@ -82,8 +86,11 @@ function getContent(intentLevel?: string) {
   }
 }
 
-export default function StepConfirmation({ contact, dispatch, intentLevel }: StepConfirmationProps) {
+type ConfirmationView = "choice" | "scheduler" | "done";
+
+export default function StepConfirmation({ contact, dispatch, intentLevel, quoteId, leadId }: StepConfirmationProps) {
   const content = getContent(intentLevel);
+  const [view, setView] = useState<ConfirmationView>("choice");
 
   return (
     <div className="max-w-2xl mx-auto text-center px-1 sm:px-0">
@@ -115,60 +122,144 @@ export default function StepConfirmation({ contact, dispatch, intentLevel }: Ste
         </p>
       </motion.div>
 
-      {/* What happens next */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-white rounded-xl border border-ocean-200 p-6 sm:p-8 mb-8 text-left"
-      >
-        <h3 className="font-heading font-bold text-ocean-900 text-lg mb-6 text-center">
-          What happens next?
-        </h3>
-        <div className="space-y-6">
-          {content.steps.map((step, i) => (
-            <div key={step.title} className="flex gap-4">
-              <div className="shrink-0">
-                <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center">
-                  <step.icon className="w-5 h-5" />
-                </div>
-                {i < content.steps.length - 1 && (
-                  <div className="w-px h-6 bg-ocean-200 mx-auto mt-2" />
-                )}
-              </div>
-              <div>
-                <h4 className="font-semibold text-ocean-900 text-sm">
-                  Step {i + 1}: {step.title}
-                </h4>
-                <p className="text-sm text-ocean-500">{step.description}</p>
+      <AnimatePresence mode="wait">
+        {view === "choice" && (
+          <motion.div
+            key="choice"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ delay: 0.5 }}
+          >
+            {/* Scheduling choice */}
+            <div className="bg-white rounded-xl border border-ocean-200 p-6 sm:p-8 mb-8 text-left">
+              <h3 className="font-heading font-bold text-ocean-900 text-lg mb-2 text-center">
+                Would you like to schedule a consultation?
+              </h3>
+              <p className="text-sm text-ocean-400 text-center mb-6">
+                Meet with a specialist to discuss your project in detail.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  onClick={() => setView("scheduler")}
+                  className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-ocean-200 hover:border-primary-400 hover:bg-primary-50/50 transition-all cursor-pointer group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <CalendarDays className="w-6 h-6" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-ocean-900 text-sm">Schedule a Meeting</p>
+                    <p className="text-xs text-ocean-400 mt-1">Pick a date & time that works for you</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setView("done")}
+                  className="flex flex-col items-center gap-3 p-5 rounded-xl border-2 border-ocean-200 hover:border-ocean-300 hover:bg-ocean-50 transition-all cursor-pointer group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-ocean-100 text-ocean-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Clock className="w-6 h-6" />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-semibold text-ocean-900 text-sm">Wait for a Sales Rep</p>
+                    <p className="text-xs text-ocean-400 mt-1">We&apos;ll reach out to you shortly</p>
+                  </div>
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      </motion.div>
+          </motion.div>
+        )}
 
-      {/* Action Buttons */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
-        className="flex flex-col sm:flex-row gap-3 justify-center"
-      >
-        <a
-          href="/"
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-lg transition-colors"
+        {view === "scheduler" && (
+          <motion.div
+            key="scheduler"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="text-left"
+          >
+            <div className="bg-white rounded-xl border border-ocean-200 p-4 sm:p-6 mb-8">
+              <h3 className="font-heading font-bold text-ocean-900 text-lg mb-4 text-center">
+                Pick a Date & Time
+              </h3>
+              <AppointmentScheduler
+                quoteId={quoteId}
+                leadId={leadId}
+                clientName={`${contact.firstName} ${contact.lastName}`}
+                clientEmail={contact.email}
+                clientPhone={contact.phone}
+                bookedBy="client"
+                onBooked={() => {
+                  // Stay on booked state inside the scheduler
+                }}
+                onCancel={() => setView("choice")}
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {view === "done" && (
+          <motion.div
+            key="done"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            {/* What happens next */}
+            <div className="bg-white rounded-xl border border-ocean-200 p-6 sm:p-8 mb-8 text-left">
+              <h3 className="font-heading font-bold text-ocean-900 text-lg mb-6 text-center">
+                What happens next?
+              </h3>
+              <div className="space-y-6">
+                {content.steps.map((step, i) => (
+                  <div key={step.title} className="flex gap-4">
+                    <div className="shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-primary-50 text-primary-600 flex items-center justify-center">
+                        <step.icon className="w-5 h-5" />
+                      </div>
+                      {i < content.steps.length - 1 && (
+                        <div className="w-px h-6 bg-ocean-200 mx-auto mt-2" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-ocean-900 text-sm">
+                        Step {i + 1}: {step.title}
+                      </h4>
+                      <p className="text-sm text-ocean-500">{step.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Action Buttons - always visible */}
+      {(view === "done" || view === "choice") && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="flex flex-col sm:flex-row gap-3 justify-center"
         >
-          <Home className="w-4 h-4" />
-          Return to Homepage
-        </a>
-        <button
-          onClick={() => dispatch({ type: "RESET" })}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-ocean-200 text-ocean-600 font-medium rounded-lg hover:bg-ocean-50 transition-colors cursor-pointer"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Request Another Quote
-        </button>
-      </motion.div>
+          <a
+            href="/"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-500 text-white font-semibold rounded-lg transition-colors"
+          >
+            <Home className="w-4 h-4" />
+            Return to Homepage
+          </a>
+          <button
+            onClick={() => dispatch({ type: "RESET" })}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-ocean-200 text-ocean-600 font-medium rounded-lg hover:bg-ocean-50 transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Request Another Quote
+          </button>
+        </motion.div>
+      )}
     </div>
   );
 }

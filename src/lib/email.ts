@@ -1422,3 +1422,93 @@ export async function sendInstallationQuoteEmail(data: InstallationQuoteEmailDat
     html,
   });
 }
+
+// ── Appointment Confirmation Email ──
+
+interface AppointmentConfirmationData {
+  clientName: string;
+  clientEmail: string;
+  scheduledAt: string; // ISO string
+  durationMinutes: number;
+  portalUrl?: string;
+}
+
+export async function sendAppointmentConfirmationEmail(data: AppointmentConfirmationData) {
+  const date = new Date(data.scheduledAt);
+  const dateStr = date.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const timeStr = date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+
+  const ctaButton = data.portalUrl
+    ? `<div style="padding:0 32px 32px;text-align:center;">
+        <a href="${data.portalUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
+          View Your Portal
+        </a>
+      </div>`
+    : "";
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="background:#eff6ff;border-bottom:1px solid #dbeafe;padding:24px 32px;text-align:center;">
+        <p style="margin:0;font-size:20px;font-weight:700;color:#1e40af;">Appointment Confirmed</p>
+      </div>
+
+      <div style="padding:28px 32px 24px;">
+        <p style="margin:0 0 20px;font-size:14px;color:#71717a;line-height:1.6;">
+          Hi ${data.clientName}, your consultation with Scenic Doors has been confirmed. We look forward to meeting with you!
+        </p>
+
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:20px;">
+          <table style="width:100%;border-collapse:collapse;">
+            <tr>
+              <td style="padding:8px 0;font-size:13px;color:#a1a1aa;width:100px;">Date</td>
+              <td style="padding:8px 0;font-size:14px;color:#18181b;font-weight:600;">${dateStr}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;font-size:13px;color:#a1a1aa;">Time</td>
+              <td style="padding:8px 0;font-size:14px;color:#2563eb;font-weight:600;">${timeStr}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;font-size:13px;color:#a1a1aa;">Duration</td>
+              <td style="padding:8px 0;font-size:13px;color:#18181b;font-weight:500;">${data.durationMinutes} minutes</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <div style="padding:0 32px 24px;">
+        <p style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.6;">
+          If you need to reschedule or cancel, please visit your client portal or call us at
+          <a href="tel:818-427-6690" style="color:#2563eb;text-decoration:none;font-weight:500;">818-427-6690</a>.
+        </p>
+      </div>
+
+      ${ctaButton}
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
+    to: data.clientEmail,
+    subject: "Appointment Confirmed | Scenic Doors",
+    html,
+  });
+}

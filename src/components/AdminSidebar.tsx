@@ -18,6 +18,7 @@ import {
   X,
   Shield,
   CircleUser,
+  CalendarDays,
 } from "lucide-react";
 
 const baseNavItems = [
@@ -25,6 +26,7 @@ const baseNavItems = [
   { label: "Quotes", href: "/admin/quotes", icon: FileText },
   { label: "Leads", href: "/admin/leads", icon: UserPlus },
   { label: "Orders", href: "/admin/orders", icon: Package },
+  { label: "Calendar", href: "/admin/calendar", icon: CalendarDays },
   { label: "Marketing", href: "/admin/marketing", icon: BarChart3, adminOnly: true },
   { label: "Users", href: "/admin/users", icon: Users, adminOnly: true },
   { label: "Notifications", href: "/admin/notifications", icon: Bell, adminOnly: true },
