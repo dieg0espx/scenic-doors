@@ -135,7 +135,7 @@ const slideVariants = {
   }),
 };
 
-export default function QuoteWizard({ referralCode }: { referralCode?: string }) {
+export default function QuoteWizard({ referralCode, urlSource }: { referralCode?: string; urlSource?: string }) {
   const [state, dispatch] = useReducer(wizardReducer, initialState);
   const { currentStep, intentLevel } = state;
 
@@ -143,7 +143,10 @@ export default function QuoteWizard({ referralCode }: { referralCode?: string })
     if (referralCode) {
       dispatch({ type: "SET_CONTACT", payload: { referralCode } });
     }
-  }, [referralCode]);
+    if (urlSource) {
+      dispatch({ type: "SET_CONTACT", payload: { source: urlSource } });
+    }
+  }, [referralCode, urlSource]);
 
   const stepLabels = getStepLabels(intentLevel);
 
@@ -159,6 +162,7 @@ export default function QuoteWizard({ referralCode }: { referralCode?: string })
           dispatch={dispatch}
           isSubmitting={state.isSubmitting}
           hasUrlReferral={!!referralCode}
+          hasUrlSource={!!urlSource}
         />
       );
     }

@@ -368,10 +368,8 @@ function UserCard({ user, stats, onRefresh }: { user: AdminUser; stats?: { quote
             </div>
           )}
 
-          {/* Quote Link */}
-          {(user.prefix || (user.referral_codes && user.referral_codes.length > 0)) && (
-            <QuoteLinkRow code={user.referral_codes?.[0] || user.prefix || ""} />
-          )}
+          {/* Quote Link — always shown, uses referral code, prefix, or user ID */}
+          <QuoteLinkRow code={user.referral_codes?.[0] || user.prefix || user.id} />
 
           {/* Actions */}
           <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-white/[0.04] [&>button]:py-2.5 [&>button]:sm:py-2">

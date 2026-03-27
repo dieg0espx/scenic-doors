@@ -6,6 +6,24 @@ import { Search, UserPlus, Trash2, Filter, StickyNote, AlertTriangle, X, Chevron
 import type { Lead } from "@/lib/types";
 import { deleteLead, updateLeadWorkflow } from "@/lib/actions/leads";
 
+const SOURCE_LABELS: Record<string, string> = {
+  google: "Google/Search",
+  referral: "Referral",
+  social: "Social Media",
+  event: "Event/Showroom",
+  other: "Other",
+  facebook: "Facebook",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  google_ads: "Google Ads",
+  youtube: "YouTube",
+  email_campaign: "Email Campaign",
+};
+
+function formatSource(source: string): string {
+  return SOURCE_LABELS[source] || source.charAt(0).toUpperCase() + source.slice(1).replace(/_/g, " ");
+}
+
 const tempConfig: Record<string, { bg: string; text: string; dot: string; label: string }> = {
   hot: { bg: "bg-orange-400/10", text: "text-orange-300", dot: "bg-orange-400", label: "Hot" },
   warm: { bg: "bg-amber-400/10", text: "text-amber-300", dot: "bg-amber-400", label: "Warm" },
@@ -513,7 +531,7 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
           <FilterDropdown
             value={sourceFilter}
             onChange={setSourceFilter}
-            options={sources.map((s) => ({ value: s!, label: s! }))}
+            options={sources.map((s) => ({ value: s!, label: formatSource(s!) }))}
             allLabel="All Sources"
           />
           <button
@@ -584,7 +602,7 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
                 <div className="flex items-center gap-1.5 text-xs text-white/30">
                   {lead.phone && <span>{lead.phone}</span>}
                   {lead.phone && lead.source && <span className="text-white/15">·</span>}
-                  {lead.source && <span>{lead.source}</span>}
+                  {lead.source && <span>{formatSource(lead.source)}</span>}
                   {(lead.phone || lead.source) && lead.has_quote && <span className="text-white/15">·</span>}
                   {(() => {
                     const stage = pipelineStages[lead.id];
@@ -669,7 +687,7 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
                     {lead.email && <p className="text-white/50 text-xs">{lead.email}</p>}
                     {lead.phone && <p className="text-white/30 text-xs">{lead.phone}</p>}
                   </td>
-                  <td className="px-5 py-3.5 text-white/40 text-xs">{lead.source || "—"}</td>
+                  <td className="px-5 py-3.5 text-white/40 text-xs">{lead.source ? formatSource(lead.source) : "—"}</td>
                   <td className="px-5 py-3.5">
                     {(() => {
                       const tc = tempConfig[lead.status] || tempConfig.hot;
