@@ -209,7 +209,7 @@ export default async function LeadDetailPage({
                       <Tag className="w-3.5 h-3.5 text-white/20" />
                       <p className="text-white/25 text-[11px] uppercase tracking-wider font-medium">Source</p>
                     </div>
-                    <p className="text-white font-medium text-sm">{lead.source}</p>
+                    <p className="text-white font-medium text-sm capitalize">{lead.source.replace(/_/g, " ")}</p>
                   </div>
                 )}
                 {lead.referral_code && (

@@ -56,7 +56,18 @@ export async function getUserByReferralCode(
     .limit(1)
     .maybeSingle();
 
-  return byPrefix ?? null;
+  if (byPrefix) return byPrefix;
+
+  // Fallback: match against user ID (for users without prefix/referral codes)
+  const { data: byId } = await supabase
+    .from("admin_users")
+    .select("*")
+    .eq("status", "active")
+    .eq("id", code)
+    .limit(1)
+    .maybeSingle();
+
+  return byId ?? null;
 }
 
 export async function getAdminUsers(): Promise<AdminUser[]> {

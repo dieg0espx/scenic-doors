@@ -1,16 +1,19 @@
 import { BarChart3, UserX, FileText, DollarSign, TrendingUp, Calculator, Target, Activity } from "lucide-react";
 import { getMarketingMetrics, getRevenueBySource, getLeadsOverTime, getConversionFunnel } from "@/lib/actions/marketing";
+import { getTrackingLinks } from "@/lib/actions/tracking-links";
 import MarketingCharts from "@/components/admin/MarketingCharts";
+import TrackingLinksManager from "@/components/admin/TrackingLinksManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function MarketingPage() {
-  const [metrics, revenueBySource, leadsOverTime, conversionFunnel] =
+  const [metrics, revenueBySource, leadsOverTime, conversionFunnel, trackingLinks] =
     await Promise.all([
       getMarketingMetrics(),
       getRevenueBySource(),
       getLeadsOverTime(),
       getConversionFunnel(),
+      getTrackingLinks().catch(() => []),
     ]);
 
   const metricCards = [
@@ -63,6 +66,11 @@ export default async function MarketingPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Tracking Links */}
+      <div className="mb-6">
+        <TrackingLinksManager initialLinks={trackingLinks} />
       </div>
 
       <MarketingCharts

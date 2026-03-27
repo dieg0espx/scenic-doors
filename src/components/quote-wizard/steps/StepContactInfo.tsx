@@ -12,6 +12,7 @@ interface StepContactInfoProps {
   dispatch: React.Dispatch<WizardAction>;
   isSubmitting: boolean;
   hasUrlReferral?: boolean;
+  hasUrlSource?: boolean;
 }
 
 const TIMELINE_OPTIONS = [
@@ -107,7 +108,7 @@ function Dropdown({
   );
 }
 
-export default function StepContactInfo({ contact, dispatch, isSubmitting, hasUrlReferral }: StepContactInfoProps) {
+export default function StepContactInfo({ contact, dispatch, isSubmitting, hasUrlReferral, hasUrlSource }: StepContactInfoProps) {
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   function handleChange(field: keyof ContactInfo, value: string) {
@@ -299,7 +300,7 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting, hasUr
           {errors.timeline && <p className="mt-1 text-xs text-red-500">{errors.timeline}</p>}
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className={hasUrlSource ? "" : "grid sm:grid-cols-2 gap-4"}>
           <div>
             <label className="block text-sm font-medium text-ocean-700 mb-1.5">
               What best describes you? <span className="text-red-400">*</span>
@@ -313,19 +314,21 @@ export default function StepContactInfo({ contact, dispatch, isSubmitting, hasUr
             />
             {errors.customerType && <p className="mt-1 text-xs text-red-500">{errors.customerType}</p>}
           </div>
-          <div>
-            <label className="block text-sm font-medium text-ocean-700 mb-1.5">
-              How did you hear about us? <span className="text-red-400">*</span>
-            </label>
-            <Dropdown
-              value={contact.source}
-              onChange={(v) => handleChange("source", v)}
-              options={SOURCE_OPTIONS}
-              placeholder="Select an option..."
-              hasError={!!errors.source}
-            />
-            {errors.source && <p className="mt-1 text-xs text-red-500">{errors.source}</p>}
-          </div>
+          {!hasUrlSource && (
+            <div>
+              <label className="block text-sm font-medium text-ocean-700 mb-1.5">
+                How did you hear about us? <span className="text-red-400">*</span>
+              </label>
+              <Dropdown
+                value={contact.source}
+                onChange={(v) => handleChange("source", v)}
+                options={SOURCE_OPTIONS}
+                placeholder="Select an option..."
+                hasError={!!errors.source}
+              />
+              {errors.source && <p className="mt-1 text-xs text-red-500">{errors.source}</p>}
+            </div>
+          )}
         </div>
 
         <button

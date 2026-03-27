@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 export default async function QuotePage({
   searchParams,
 }: {
-  searchParams: Promise<{ ref?: string }>;
+  searchParams: Promise<{ ref?: string; src?: string }>;
 }) {
   const params = await searchParams;
-  return <QuoteWizard referralCode={params.ref} />;
+  return <QuoteWizard referralCode={params.ref} urlSource={params.src} />;
 }
