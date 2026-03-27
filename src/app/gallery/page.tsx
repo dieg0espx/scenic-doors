@@ -230,9 +230,111 @@ export default function GalleryPage() {
           </div>
         </section>
 
+        {/* Project Description */}
+        <section className="py-16 md:py-20 bg-primary-50">
+          <div className="section-container">
+            <div className="grid md:grid-cols-2 gap-12 items-start">
+              {/* Left Column - Description */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-6">
+                  Transforming Coastal Living
+                </h2>
+                <div className="space-y-4 text-ocean-700">
+                  <p>
+                    This stunning Malibu oceanfront estate showcases the pinnacle of indoor-outdoor living with our custom-installed folding glass wall system. The project features floor-to-ceiling glass panels that completely retract to create an unobstructed connection between the interior living spaces and the breathtaking Pacific Ocean views.
+                  </p>
+                  <p>
+                    Our team expertly installed premium folding glass doors that span over 40 feet, incorporating precision engineering and meticulous craftsmanship to ensure seamless operation and weather-tight performance in the challenging coastal environment.
+                  </p>
+                  <p>
+                    The installation process required careful coordination with architects and contractors to integrate the glass wall system with the home's structural design while maintaining the aesthetic vision of open, flowing spaces that capture natural light and ocean breezes.
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Right Column - Project Details */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="bg-white p-8 shadow-sm">
+                  <h3 className="font-heading text-2xl text-ocean-900 mb-6">
+                    Project Details
+                  </h3>
+                  <div className="space-y-6">
+                    <div>
+                      <dt className="text-sm font-medium text-ocean-500 uppercase tracking-wide mb-1">
+                        Location
+                      </dt>
+                      <dd className="text-lg text-ocean-900">Malibu, California</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-ocean-500 uppercase tracking-wide mb-1">
+                        System Type
+                      </dt>
+                      <dd className="text-lg text-ocean-900">Folding Glass Wall System</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-ocean-500 uppercase tracking-wide mb-1">
+                        Features
+                      </dt>
+                      <dd className="text-ocean-900">
+                        <ul className="space-y-2 mt-2">
+                          <li className="flex items-start">
+                            <span className="text-primary-500 mr-2">•</span>
+                            <span>40+ feet of unobstructed glass panels</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="text-primary-500 mr-2">•</span>
+                            <span>Weather-resistant coastal engineering</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="text-primary-500 mr-2">•</span>
+                            <span>Seamless indoor-outdoor integration</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="text-primary-500 mr-2">•</span>
+                            <span>Premium hardware and finishes</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="text-primary-500 mr-2">•</span>
+                            <span>Custom-engineered structural support</span>
+                          </li>
+                        </ul>
+                      </dd>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
         {/* Gallery Grid */}
         <section className="py-16 bg-white">
           <div className="section-container">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-12"
+            >
+              <h2 className="font-heading text-3xl md:text-4xl text-ocean-900 mb-4">
+                Project Gallery
+              </h2>
+              <p className="text-ocean-600 max-w-2xl mx-auto">
+                Browse through our complete collection of professional photography showcasing every detail of this remarkable installation.
+              </p>
+            </motion.div>
+
             <motion.div
               layout
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
