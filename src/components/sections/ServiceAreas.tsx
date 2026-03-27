@@ -68,8 +68,23 @@ export default function ServiceAreas() {
             <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900 mb-4">
               States Served
             </h2>
-            <p className="text-ocean-600 leading-relaxed mb-6 max-w-lg">
-              Comprehensive coverage across the West Coast & border states
+
+            {/* Shipping Info */}
+            <div className="bg-primary-50 border-l-4 border-primary-500 p-4 mb-6">
+              <p className="font-medium text-ocean-900 text-lg">
+                Ship Worldwide
+              </p>
+              <p className="text-ocean-600 text-sm mt-1">
+                We ship our premium door systems anywhere in the world
+              </p>
+            </div>
+
+            {/* Installation Service Areas */}
+            <p className="font-medium text-ocean-900 mb-3">
+              Installation Service Areas:
+            </p>
+            <p className="text-ocean-600 text-sm mb-4">
+              Use the map to see our professional installation coverage
             </p>
 
             {/* Areas list */}
@@ -108,6 +123,12 @@ export default function ServiceAreas() {
             className="relative"
           >
             <div className="relative rounded-lg p-6">
+              <h3 className="font-heading text-xl text-ocean-900 mb-4 text-center">
+                Installation Service Map
+              </h3>
+              <p className="text-sm text-ocean-600 text-center mb-6">
+                Highlighted states show where we provide professional installation services
+              </p>
               {/* Full USA Map using @mirawision/usa-map-react */}
               <div className="w-full">
                 <UsaMap
