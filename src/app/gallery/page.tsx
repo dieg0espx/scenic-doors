@@ -7,95 +7,205 @@ import Footer from "@/components/Footer";
 import CTABanner from "@/components/sections/CTABanner";
 import { X } from "lucide-react";
 
-const projects = [
+const galleryImages = [
+  // Row 1: Large feature
   {
     id: 1,
-    title: "Malibu Oceanfront Estate",
-    category: "folding",
-    type: "Folding Glass Wall",
-    location: "Malibu, CA",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_1_c1inxz",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_1_pcxtx1",
     size: "large",
   },
   {
     id: 2,
-    title: "Beverly Hills Modern",
-    category: "multi-slide",
-    type: "Multi-Slide System",
-    location: "Beverly Hills, CA",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_22_h0jqzq",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_3_higrvu",
     size: "small",
   },
   {
     id: 3,
-    title: "Laguna Beach Villa",
-    category: "pivot",
-    type: "Pivot Entry Door",
-    location: "Laguna Beach, CA",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_15_ddqcxd",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_4_upipl7",
     size: "small",
   },
   {
     id: 4,
-    title: "Newport Coast Residence",
-    category: "folding",
-    type: "Folding Glass Wall",
-    location: "Newport Coast, CA",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_4_ohg10o",
-    size: "medium",
-  },
-  {
-    id: 5,
-    title: "San Diego Coastal Home",
-    category: "multi-slide",
-    type: "Multi-Slide System",
-    location: "La Jolla, CA",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_12_yozv9h",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_6_dbh3xb",
     size: "small",
   },
   {
+    id: 5,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_7_ebmqus",
+    size: "small",
+  },
+  // Row 2: Small grid
+  {
     id: 6,
-    title: "Palos Verdes Estate",
-    category: "pivot",
-    type: "Pivot Entry Door",
-    location: "Palos Verdes, CA",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_20_jqwyls",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/DJI_20240325134628_0326_D_d9mapt",
     size: "small",
   },
   {
     id: 7,
-    title: "Santa Barbara Retreat",
-    category: "folding",
-    type: "Folding Glass Wall",
-    location: "Santa Barbara, CA",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_33_bpvi7t",
-    size: "large",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/DJI_20240325134611_0323_D_wpqlp2",
+    size: "small",
   },
   {
     id: 8,
-    title: "Coronado Island Home",
-    category: "multi-slide",
-    type: "Multi-Slide System",
-    location: "Coronado, CA",
-    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_26_u8o85i",
-    size: "medium",
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_8_b9u1sr",
+    size: "small",
+  },
+  {
+    id: 9,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_9_qybilp",
+    size: "small",
+  },
+  // Row 3: Large feature
+  {
+    id: 10,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_2_r3o9y7",
+    size: "large",
+  },
+  {
+    id: 11,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_11_bd7stx",
+    size: "small",
+  },
+  {
+    id: 12,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_12_tlwb7k",
+    size: "small",
+  },
+  {
+    id: 13,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_13_uywyn1",
+    size: "small",
+  },
+  {
+    id: 14,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_15_hrbuyc",
+    size: "small",
+  },
+  // Row 4: Small grid
+  {
+    id: 15,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_16_ellxma",
+    size: "small",
+  },
+  {
+    id: 16,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_17_febovi",
+    size: "small",
+  },
+  {
+    id: 17,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_18_msdvq2",
+    size: "small",
+  },
+  {
+    id: 18,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_20_nkms0s",
+    size: "small",
+  },
+  // Row 5: Large feature
+  {
+    id: 19,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_10_dkakay",
+    size: "large",
+  },
+  {
+    id: 20,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_21_elbih1",
+    size: "small",
+  },
+  {
+    id: 21,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_22_bhx4sh",
+    size: "small",
+  },
+  {
+    id: 22,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_23_twvpox",
+    size: "small",
+  },
+  {
+    id: 23,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_25_q5f4w3",
+    size: "small",
+  },
+  // Row 6: Small grid
+  {
+    id: 24,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/DJI_20240325133255_0298_D_am66t5",
+    size: "small",
+  },
+  {
+    id: 25,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_26_oqcbdz",
+    size: "small",
+  },
+  {
+    id: 26,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_27_ziaoc1",
+    size: "small",
+  },
+  {
+    id: 27,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_28_pwcjld",
+    size: "small",
+  },
+  // Row 7: Large feature
+  {
+    id: 28,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_19_m133fq",
+    size: "large",
+  },
+  {
+    id: 29,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_29_uo2anj",
+    size: "small",
+  },
+  {
+    id: 30,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_30_ugxlej",
+    size: "small",
+  },
+  {
+    id: 31,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_31_mg8adx",
+    size: "small",
+  },
+  {
+    id: 32,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_32_uze40g",
+    size: "small",
+  },
+  // Row 8: Small grid
+  {
+    id: 33,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_33_zw0r7q",
+    size: "small",
+  },
+  {
+    id: 34,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_5_b0zmnt",
+    size: "small",
+  },
+  {
+    id: 35,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_14_nl2ypu",
+    size: "small",
+  },
+  {
+    id: 36,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_24_ugkxje",
+    size: "small",
+  },
+  // Row 9: Final large feature
+  {
+    id: 37,
+    image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/DJI_20240325132923_0276_D_qf99nm",
+    size: "large",
   },
 ];
 
-const categories = [
-  { id: "all", label: "All Projects" },
-  { id: "folding", label: "Folding Glass Walls" },
-  { id: "multi-slide", label: "Multi-Slide Systems" },
-  { id: "pivot", label: "Pivot Entry Doors" },
-];
-
 export default function GalleryPage() {
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [selectedProject, setSelectedProject] = useState<typeof projects[0] | null>(null);
-
-  const filteredProjects = activeCategory === "all"
-    ? projects
-    : projects.filter((p) => p.category === activeCategory);
+  const [selectedImage, setSelectedImage] = useState<typeof galleryImages[0] | null>(null);
 
   return (
     <>
@@ -110,39 +220,13 @@ export default function GalleryPage() {
               transition={{ duration: 0.6 }}
               className="max-w-3xl"
             >
-              <span className="text-primary-300 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-                Our Portfolio
-              </span>
               <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl text-white mb-6">
-                Project Gallery
+                Project Malibu
               </h1>
               <p className="text-white/70 text-lg">
-                Explore our collection of completed installations across
-                Southern California. Each project represents our commitment to
-                excellence and attention to detail.
+                A stunning oceanfront estate featuring custom folding glass walls that seamlessly blend indoor and outdoor living spaces.
               </p>
             </motion.div>
-          </div>
-        </section>
-
-        {/* Filter */}
-        <section className="py-8 bg-white border-b border-ocean-200">
-          <div className="section-container">
-            <div className="flex flex-wrap gap-4">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setActiveCategory(category.id)}
-                  className={`px-6 py-2 font-medium text-sm transition-colors ${
-                    activeCategory === category.id
-                      ? "bg-primary-600 text-white"
-                      : "bg-primary-50 text-ocean-700 hover:bg-primary-100"
-                  }`}
-                >
-                  {category.label}
-                </button>
-              ))}
-            </div>
           </div>
         </section>
 
@@ -154,42 +238,30 @@ export default function GalleryPage() {
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
             >
               <AnimatePresence mode="popLayout">
-                {filteredProjects.map((project) => (
+                {galleryImages.map((item) => (
                   <motion.div
-                    key={project.id}
+                    key={item.id}
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ duration: 0.3 }}
                     className={`cursor-pointer group ${
-                      project.size === "large"
+                      item.size === "large"
                         ? "col-span-2 row-span-2"
-                        : project.size === "medium"
+                        : item.size === "medium"
                         ? "col-span-2"
                         : ""
                     }`}
-                    onClick={() => setSelectedProject(project)}
+                    onClick={() => setSelectedImage(item)}
                   >
                     <div className="relative aspect-square overflow-hidden">
                       <img
-                        src={project.image}
-                        alt={project.title}
+                        src={item.image}
+                        alt={`Malibu Project - Image ${item.id}`}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
-                      <div className="absolute inset-0 bg-ocean-900/0 group-hover:bg-ocean-900/60 transition-colors duration-300 flex items-end p-6">
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <span className="text-primary-300 text-xs font-medium tracking-wide uppercase">
-                            {project.type}
-                          </span>
-                          <h3 className="font-heading text-xl text-white">
-                            {project.title}
-                          </h3>
-                          <p className="text-white/70 text-sm">
-                            {project.location}
-                          </p>
-                        </div>
-                      </div>
+                      <div className="absolute inset-0 bg-ocean-900/0 group-hover:bg-ocean-900/40 transition-colors duration-300" />
                     </div>
                   </motion.div>
                 ))}
@@ -204,17 +276,17 @@ export default function GalleryPage() {
 
       {/* Lightbox Modal */}
       <AnimatePresence>
-        {selectedProject && (
+        {selectedImage && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-ocean-900/95 z-50 flex items-center justify-center p-4"
-            onClick={() => setSelectedProject(null)}
+            onClick={() => setSelectedImage(null)}
           >
             <button
               className="absolute top-6 right-6 text-white hover:text-primary-400 transition-colors"
-              onClick={() => setSelectedProject(null)}
+              onClick={() => setSelectedImage(null)}
             >
               <X className="w-8 h-8" />
             </button>
@@ -226,18 +298,18 @@ export default function GalleryPage() {
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={selectedProject.image}
-                alt={selectedProject.title}
-                className="w-full h-auto max-h-[70vh] object-contain"
+                src={selectedImage.image.replace('/w_1200/', '/w_2000/').replace('/w_2000/', '/w_2000/')}
+                alt={`Malibu Oceanfront Estate - Image ${selectedImage.id}`}
+                className="w-full h-auto max-h-[80vh] object-contain"
               />
               <div className="mt-6 text-center">
                 <span className="text-primary-300 text-sm font-medium tracking-wide uppercase">
-                  {selectedProject.type}
+                  Folding Glass Wall System
                 </span>
                 <h3 className="font-heading text-2xl text-white mt-1">
-                  {selectedProject.title}
+                  Malibu Oceanfront Estate
                 </h3>
-                <p className="text-white/70">{selectedProject.location}</p>
+                <p className="text-white/70">Malibu, CA</p>
               </div>
             </motion.div>
           </motion.div>

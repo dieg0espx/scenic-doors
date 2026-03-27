@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 const featuredProject = {
   title: "Malibu Estate",
@@ -32,23 +32,11 @@ export default function FeaturedProjects() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8"
+          className="mb-8"
         >
-          <div>
-            <span className="text-primary-500 font-medium tracking-[0.2em] uppercase text-xs mb-4 block">
-              Our Portfolio
-            </span>
-            <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900">
-              Featured Projects
-            </h2>
-          </div>
-          <Link
-            href="/gallery"
-            className="inline-flex items-center gap-2 text-ocean-700 font-medium hover:text-primary-500 transition-colors group"
-          >
-            View All Projects
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-          </Link>
+          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900">
+            Project Malibu
+          </h2>
         </motion.div>
 
         {/* Bento Grid */}

@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Hero from "@/components/sections/Hero";
-import TrustBar from "@/components/sections/TrustBar";
 import Introduction from "@/components/sections/Introduction";
 import DoorCollections from "@/components/sections/DoorCollections";
 import FeaturedProjects from "@/components/sections/FeaturedProjects";
@@ -20,9 +19,6 @@ export default function Home() {
       <main>
         {/* Hero - Dark ocean with split image */}
         <Hero />
-
-        {/* Trust Bar - Light sand, brand logos */}
-        <TrustBar />
 
         {/* Introduction - Cream, large quote + image */}
         <Introduction />
