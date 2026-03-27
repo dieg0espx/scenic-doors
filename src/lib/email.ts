@@ -912,13 +912,13 @@ export async function sendManufacturingCompletedEmail(data: ManufacturingComplet
 
     <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
       <div style="background:#ecfdf5;border-bottom:1px solid #d1fae5;padding:20px 32px;text-align:center;">
-        <p style="margin:0;font-size:20px;font-weight:700;color:#059669;">Manufacturing Is Complete!</p>
+        <p style="margin:0;font-size:20px;font-weight:700;color:#059669;">Your Order Is Ready to Ship!</p>
       </div>
 
       <div style="padding:24px 32px;">
         <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.clientName},</p>
         <p style="margin:0 0 16px;font-size:14px;color:#71717a;line-height:1.6;">
-          Great news! Your <strong>${data.doorType}</strong> doors have finished manufacturing and are ready for the next step. You&apos;ll receive the balance invoice shortly.
+          Great news! Your <strong>${data.doorType}</strong> doors have finished manufacturing and are ready to be shipped. You&apos;ll receive the balance invoice shortly.
         </p>
         <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;padding:16px 20px;">
           <table style="width:100%;border-collapse:collapse;">
@@ -932,7 +932,7 @@ export async function sendManufacturingCompletedEmail(data: ManufacturingComplet
             </tr>
             <tr>
               <td style="padding:4px 0;font-size:13px;color:#a1a1aa;">Status</td>
-              <td style="padding:4px 0;font-size:13px;color:#059669;font-weight:500;">Manufacturing Complete</td>
+              <td style="padding:4px 0;font-size:13px;color:#059669;font-weight:500;">Ready to Ship</td>
             </tr>
           </table>
         </div>
@@ -959,7 +959,7 @@ export async function sendManufacturingCompletedEmail(data: ManufacturingComplet
   await resend.emails.send({
     from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
-    subject: `Manufacturing Complete — ${data.orderNumber} | Scenic Doors`,
+    subject: `Ready to Ship — ${data.orderNumber} | Scenic Doors`,
     html,
   });
 }
@@ -1328,6 +1328,97 @@ export async function sendFollowUpEmail(data: FollowUpEmailData) {
     from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
     to: data.clientEmail,
     subject: `${msg.subject} — Quote ${data.quoteNumber} | Scenic Doors`,
+    html,
+  });
+}
+
+/* ── Installation Quote Email ──────────────────────── */
+
+interface InstallationQuoteEmailData {
+  clientName: string;
+  clientEmail: string;
+  quoteNumber: string;
+  items: { description: string; price: number }[];
+  total: number;
+  portalUrl: string;
+}
+
+export async function sendInstallationQuoteEmail(data: InstallationQuoteEmailData) {
+  const formattedTotal = Number(data.total).toLocaleString("en-US", { minimumFractionDigits: 2 });
+
+  const itemRows = data.items
+    .map(
+      (item) =>
+        `<tr>
+          <td style="padding:10px 12px;font-size:13px;color:#18181b;border-bottom:1px solid #f4f4f5;">${item.description}</td>
+          <td style="padding:10px 12px;font-size:13px;color:#18181b;font-weight:600;text-align:right;border-bottom:1px solid #f4f4f5;">$${Number(item.price).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+        </tr>`
+    )
+    .join("");
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <img src="https://cdn.prod.website-files.com/6822c3ec52fb3e27fdf7dedc/682a4a63c3ae6524b8363ebc_Scenic%20Doors%20dark%20logo.avif" alt="Scenic Doors" width="180" style="height:auto;margin-bottom:8px;" />
+    </div>
+
+    <div style="background:white;border-radius:16px;border:1px solid #e4e4e7;overflow:hidden;">
+      <div style="padding:32px 32px 24px;">
+        <p style="margin:0 0 8px;font-size:16px;color:#18181b;">Hi ${data.clientName},</p>
+        <p style="margin:0;font-size:14px;color:#71717a;line-height:1.6;">
+          We&rsquo;ve prepared an installation quote for your project (${data.quoteNumber}). Please review the details below.
+        </p>
+      </div>
+
+      <div style="padding:0 32px 24px;">
+        <div style="background:#fafafa;border-radius:12px;border:1px solid #f4f4f5;overflow:hidden;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f4f4f5;">
+                <th style="padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;font-weight:600;text-align:left;">Description</th>
+                <th style="padding:10px 12px;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;color:#a1a1aa;font-weight:600;text-align:right;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRows}
+              <tr style="background:#f0fdf4;">
+                <td style="padding:12px;font-size:14px;font-weight:700;color:#18181b;">Total</td>
+                <td style="padding:12px;font-size:14px;font-weight:700;color:#18181b;text-align:right;">$${formattedTotal}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="padding:0 32px 32px;text-align:center;">
+        <a href="${data.portalUrl}" style="display:inline-block;padding:14px 40px;background:linear-gradient(135deg,#0284c7,#0369a1);color:white;text-decoration:none;border-radius:12px;font-size:14px;font-weight:600;">
+          Review &amp; Approve
+        </a>
+        <p style="margin:16px 0 0;font-size:12px;color:#a1a1aa;">
+          Click above to review, approve, and pay your installation quote.
+        </p>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:24px 0;color:#a1a1aa;font-size:12px;">
+      <p style="margin:0 0 4px;">&copy; ${new Date().getFullYear()} Scenic Doors. All rights reserved.</p>
+      <p style="margin:0;">Premium Door Solutions</p>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  await resend.emails.send({
+    from: process.env.RESEND_FROM || "Scenic Doors <noreply@comcreate.org>",
+    to: data.clientEmail,
+    subject: `Installation Quote — ${data.quoteNumber} | Scenic Doors`,
     html,
   });
 }

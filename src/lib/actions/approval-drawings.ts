@@ -396,59 +396,17 @@ export async function signApprovalDrawing(
 
   if (error) throw new Error(error.message);
 
-  // Fetch quote data for order creation and notification
+  // Fetch quote data for notification
   const { data: quote } = await supabase
     .from("quotes")
-    .select("quote_number, client_name, client_email, grand_total")
+    .select("quote_number, client_name, client_email")
     .eq("id", drawing.quote_id)
     .single();
 
-  // Auto-create order tracking (move to orders)
-  const totalAmount = quote?.grand_total || 0;
-  const halfAmount = Math.round(totalAmount * 50) / 100;
-
-  // Check no duplicate tracking exists
-  const { data: existingTracking } = await supabase
-    .from("order_tracking")
-    .select("id")
-    .eq("quote_id", drawing.quote_id)
-    .maybeSingle();
-
-  if (!existingTracking) {
-    await supabase
-      .from("order_tracking")
-      .insert({
-        quote_id: drawing.quote_id,
-        stage: "deposit_1_pending",
-        deposit_1_amount: halfAmount,
-        deposit_2_amount: halfAmount,
-      });
-  }
-
-  // Auto-create orders record (so it shows on admin orders page)
-  const { data: existingOrder } = await supabase
-    .from("orders")
-    .select("id")
-    .eq("quote_id", drawing.quote_id)
-    .maybeSingle();
-
-  if (!existingOrder) {
-    const { error: orderErr } = await supabase
-      .from("orders")
-      .insert({
-        quote_id: drawing.quote_id,
-        client_name: quote?.client_name ?? customerName,
-        client_email: quote?.client_email ?? "",
-      });
-    if (orderErr) {
-      console.error("Failed to create order record:", orderErr.message);
-    }
-  }
-
-  // Advance portal stage directly to deposit_1_pending (order created)
+  // Advance portal stage to approval_signed (order will be created when first deposit is paid)
   await supabase
     .from("quotes")
-    .update({ portal_stage: "deposit_1_pending", lead_status: "order" })
+    .update({ portal_stage: "approval_signed" })
     .eq("id", drawing.quote_id);
 
   // Send internal notification
@@ -458,16 +416,15 @@ export async function signApprovalDrawing(
       const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
       await sendInternalNotificationEmail(
         {
-          heading: "Approval Drawing Signed — Order Created",
+          heading: "Approval Drawing Signed — Ready for Deposit",
           headingColor: "#2563eb",
           headingBg: "#eff6ff",
           headingBorder: "#dbeafe",
-          message: `${customerName} has signed the approval drawing. An order has been automatically created and is awaiting the first deposit.`,
+          message: `${customerName} has signed the approval drawing. Send the first deposit invoice to create the order.`,
           details: [
             { label: "Quote", value: quote?.quote_number ?? "—" },
             { label: "Client", value: quote?.client_name ?? customerName },
             { label: "Signed By", value: customerName },
-            { label: "Order Total", value: totalAmount ? `$${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` : "—" },
           ],
           adminUrl: `${origin}/admin/quotes/${drawing.quote_id}`,
         },
@@ -482,14 +439,13 @@ export async function signApprovalDrawing(
   try {
     const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
     await sendSlackNotification({
-      heading: "Approval Drawing Signed — Order Created",
-      message: `*${customerName}* has signed the approval drawing. An order has been created and is awaiting the first deposit.`,
+      heading: "Approval Drawing Signed — Ready for Deposit",
+      message: `*${customerName}* has signed the approval drawing. Send the first deposit invoice to create the order.`,
       color: "#2563eb",
       details: [
         { label: "Quote", value: quote?.quote_number ?? "—" },
         { label: "Client", value: quote?.client_name ?? customerName },
         { label: "Signed By", value: customerName },
-        ...(totalAmount ? [{ label: "Order Total", value: `$${totalAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}` }] : []),
       ],
       adminUrl: `${origin}/admin/quotes/${drawing.quote_id}`,
     });

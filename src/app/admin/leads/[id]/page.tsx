@@ -12,8 +12,12 @@ import {
   Link2,
   FileText,
   Plus,
+  CheckCircle2,
+  Circle,
+  Activity,
 } from "lucide-react";
-import { getLeadById } from "@/lib/actions/leads";
+import { getLeadById, getLeadPipelineDetails } from "@/lib/actions/leads";
+import type { QuotePipeline } from "@/lib/actions/leads";
 import { getQuotesByLeadId } from "@/lib/actions/quotes";
 import { getFollowUpsByLeadId } from "@/lib/actions/follow-ups";
 import { getAdminUsers } from "@/lib/actions/admin-users";
@@ -63,6 +67,11 @@ export default async function LeadDetailPage({
   ]);
 
   if (!lead) redirect("/admin/leads");
+
+  // Fetch detailed pipeline for each quote
+  const pipelines = quotes.length > 0
+    ? await getLeadPipelineDetails(quotes.map((q) => q.id)).catch(() => [])
+    : [];
 
   // Sales reps can only access leads shared with them
   if (!isAdmin && !(lead.shared_with ?? []).includes(currentUser.id)) {
@@ -213,6 +222,85 @@ export default async function LeadDetailPage({
               </div>
             </div>
           </div>
+
+          {/* Pipeline Progress */}
+          {pipelines.length > 0 && (
+            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                  <Activity className="w-4 h-4 text-emerald-400" />
+                </div>
+                <h2 className="text-base font-semibold text-white">Pipeline Progress</h2>
+              </div>
+              <div className="divide-y divide-white/[0.04]">
+                {pipelines.map((pipeline) => (
+                  <div key={pipeline.quoteId} className="p-4 sm:p-6">
+                    {pipelines.length > 1 && (
+                      <div className="flex items-center justify-between mb-4">
+                        <Link
+                          href={`/admin/quotes/${pipeline.quoteId}`}
+                          className="text-sm font-medium text-violet-300 hover:text-violet-200 transition-colors"
+                        >
+                          {pipeline.quoteNumber}
+                        </Link>
+                        <span className="text-white/40 text-xs font-medium">
+                          ${pipeline.grandTotal.toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="relative">
+                      {pipeline.steps.map((step, i) => {
+                        const isLast = i === pipeline.steps.length - 1;
+                        return (
+                          <div key={step.key} className="flex gap-3 sm:gap-4">
+                            {/* Timeline line + dot */}
+                            <div className="flex flex-col items-center">
+                              {step.status === "completed" ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                              ) : step.status === "current" ? (
+                                <div className="w-5 h-5 rounded-full border-2 border-violet-400 bg-violet-400/20 shrink-0 flex items-center justify-center">
+                                  <div className="w-2 h-2 rounded-full bg-violet-400 animate-pulse" />
+                                </div>
+                              ) : (
+                                <Circle className="w-5 h-5 text-white/15 shrink-0" />
+                              )}
+                              {!isLast && (
+                                <div className={`w-px flex-1 min-h-[28px] ${
+                                  step.status === "completed" ? "bg-emerald-400/30" : "bg-white/[0.06]"
+                                }`} />
+                              )}
+                            </div>
+                            {/* Content */}
+                            <div className={`pb-4 ${isLast ? "pb-0" : ""}`}>
+                              <p className={`text-sm font-medium ${
+                                step.status === "completed"
+                                  ? "text-emerald-300"
+                                  : step.status === "current"
+                                    ? "text-violet-300"
+                                    : "text-white/25"
+                              }`}>
+                                {step.label}
+                              </p>
+                              {step.detail && (
+                                <p className={`text-xs mt-0.5 ${
+                                  step.status === "upcoming" ? "text-white/15" : "text-white/40"
+                                }`}>
+                                  {step.detail}
+                                </p>
+                              )}
+                              {step.date && (
+                                <p className="text-[10px] text-white/20 mt-0.5">{step.date}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Associated Quotes */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">

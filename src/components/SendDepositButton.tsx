@@ -9,10 +9,12 @@ export default function SendDepositButton({
   quoteId,
   clientName,
   amount,
+  compact = false,
 }: {
   quoteId: string;
   clientName: string;
   amount: number;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -48,9 +50,11 @@ export default function SendDepositButton({
 
   return (
     <div>
-      <p className="text-white/40 text-sm mb-3">
-        Send the 50% deposit invoice (${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}) to the client.
-      </p>
+      {!compact && (
+        <p className="text-white/40 text-sm mb-3">
+          Send the 50% deposit invoice (${amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}) to the client.
+        </p>
+      )}
       <button
         onClick={handleSend}
         disabled={loading}

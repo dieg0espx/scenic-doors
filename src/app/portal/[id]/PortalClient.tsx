@@ -8,6 +8,7 @@ import {
   ClipboardCheck,
   CreditCard,
   Truck,
+  Wrench,
   Loader2,
   XCircle,
 } from "lucide-react";
@@ -16,12 +17,15 @@ import { getApprovalDrawings } from "@/lib/actions/approval-drawings";
 import { getOrderTracking } from "@/lib/actions/order-tracking";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
 import { getPaymentsByQuoteId } from "@/lib/actions/payments";
+import { getInstallationQuoteByQuoteId } from "@/lib/actions/installation-quotes";
+import type { InstallationQuote } from "@/lib/actions/installation-quotes";
 import type { ApprovalDrawing, OrderTracking, QuotePhoto } from "@/lib/types";
 import PortalQuoteView from "@/components/portal/PortalQuoteView";
 import PortalPhotos from "@/components/portal/PortalPhotos";
 import PortalApprovalDrawing from "@/components/portal/PortalApprovalDrawing";
 import PortalPayments from "@/components/portal/PortalPayments";
 import PortalTracking from "@/components/portal/PortalTracking";
+import PortalInstallation from "@/components/portal/PortalInstallation";
 
 interface QuoteData {
   id: string;
@@ -54,11 +58,12 @@ interface QuoteData {
   portal_stage?: string;
 }
 
-const TABS = [
+const BASE_TABS = [
   { id: "quote", label: "Quote", icon: FileText },
   { id: "photos", label: "Photos", icon: Camera },
   { id: "approval", label: "Approval Drawing", icon: ClipboardCheck },
   { id: "payments", label: "Payments", icon: CreditCard },
+  { id: "installation", label: "Installation", icon: Wrench },
   { id: "tracking", label: "Tracking", icon: Truck },
 ];
 
@@ -70,23 +75,34 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
   const [photos, setPhotos] = useState<QuotePhoto[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [payments, setPayments] = useState<any[]>([]);
+  const [installationQuote, setInstallationQuote] = useState<InstallationQuote | null>(null);
   const [activeTab, setActiveTab] = useState("quote");
 
   useEffect(() => {
     async function load() {
       try {
-        const [q, ds, t, p, pay] = await Promise.all([
+        const [q, ds, t, p, pay, iq] = await Promise.all([
           getQuoteById(quoteId),
           getApprovalDrawings(quoteId).catch(() => [] as ApprovalDrawing[]),
           getOrderTracking(quoteId).catch(() => null),
           getQuotePhotos(quoteId).catch(() => []),
           getPaymentsByQuoteId(quoteId).catch(() => []),
+          getInstallationQuoteByQuoteId(quoteId).catch(() => null),
         ]);
         setQuote(q);
         setDrawings(ds);
         setTracking(t);
         setPhotos(p);
         setPayments(pay);
+        setInstallationQuote(iq);
+
+        // Auto-switch to installation tab if linked from email
+        if (typeof window !== "undefined") {
+          const urlTab = new URLSearchParams(window.location.search).get("tab");
+          if (urlTab === "installation" && iq && iq.status !== "draft") {
+            setActiveTab("installation");
+          }
+        }
 
         // Track that the client viewed the portal
         if (q) {
@@ -158,7 +174,13 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
       <div className="bg-white border-b border-ocean-200">
         <div className="max-w-5xl mx-auto px-4">
           <nav className="flex gap-0 overflow-x-auto">
-            {TABS.map((tab) => {
+            {BASE_TABS.filter((tab) => {
+              // Only show installation tab if there's an installation quote that's been sent
+              if (tab.id === "installation") {
+                return installationQuote && installationQuote.status !== "draft";
+              }
+              return true;
+            }).map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
@@ -213,6 +235,9 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
               grand_total: Number(quote.grand_total || 0),
             }}
           />
+        )}
+        {activeTab === "installation" && installationQuote && (
+          <PortalInstallation installationQuote={installationQuote} clientName={quote.client_name} />
         )}
         {activeTab === "tracking" && (
           <PortalTracking tracking={tracking} />

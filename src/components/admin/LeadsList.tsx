@@ -298,10 +298,24 @@ function FilterDropdown({
   );
 }
 
+const pipelineConfig: Record<string, { label: string; bg: string; text: string }> = {
+  quote_sent:         { label: "Quote Sent",         bg: "bg-blue-400/10",    text: "text-blue-300" },
+  drawing_requested:  { label: "Drawing Requested",  bg: "bg-cyan-400/10",    text: "text-cyan-300" },
+  approval_pending:   { label: "Approval Pending",   bg: "bg-indigo-400/10",  text: "text-indigo-300" },
+  approval_signed:    { label: "Approval Signed",    bg: "bg-teal-400/10",    text: "text-teal-300" },
+  deposit_1_pending:  { label: "Deposit Pending",    bg: "bg-amber-400/10",   text: "text-amber-300" },
+  manufacturing:      { label: "Manufacturing",      bg: "bg-purple-400/10",  text: "text-purple-300" },
+  deposit_2_pending:  { label: "Final Payment",      bg: "bg-orange-400/10",  text: "text-orange-300" },
+  shipping:           { label: "Shipping",           bg: "bg-sky-400/10",     text: "text-sky-300" },
+  delivered:          { label: "Delivered",           bg: "bg-emerald-400/10", text: "text-emerald-300" },
+  declined:           { label: "Declined",           bg: "bg-red-400/10",     text: "text-red-300" },
+};
+
 interface Props {
   leads: Lead[];
   needsAttentionIds?: Set<string>;
   isAdmin?: boolean;
+  pipelineStages?: Record<string, string>;
 }
 
 /* ── Bulk Status Dropdown (for bulk actions bar) ───────── */
@@ -358,7 +372,7 @@ function BulkStatusDropdown({ onSelect }: { onSelect: (v: string) => void }) {
   );
 }
 
-export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmin = true }: Props) {
+export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmin = true, pipelineStages = {} }: Props) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<Set<string>>(new Set());
@@ -572,7 +586,19 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
                   {lead.phone && lead.source && <span className="text-white/15">·</span>}
                   {lead.source && <span>{lead.source}</span>}
                   {(lead.phone || lead.source) && lead.has_quote && <span className="text-white/15">·</span>}
-                  {lead.has_quote && <span className="text-emerald-300/70">Has Quote</span>}
+                  {(() => {
+                    const stage = pipelineStages[lead.id];
+                    if (stage) {
+                      const pc = pipelineConfig[stage];
+                      return pc ? (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${pc.bg} ${pc.text}`}>{pc.label}</span>
+                      ) : (
+                        <span className="text-emerald-300/70">Has Quote</span>
+                      );
+                    }
+                    if (lead.has_quote) return <span className="text-emerald-300/70">Has Quote</span>;
+                    return null;
+                  })()}
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-white/[0.04]">
                   <span className="text-white/20 text-xs">
@@ -610,7 +636,7 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Source</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Temp</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Workflow</th>
-              <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Quote</th>
+              <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Stage</th>
               <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Date</th>
               {isAdmin && <th className="text-left px-5 py-3.5 text-[11px] uppercase tracking-wider text-white/30 font-semibold"></th>}
             </tr>
@@ -662,11 +688,21 @@ export default function LeadsList({ leads, needsAttentionIds = new Set(), isAdmi
                     />
                   </td>
                   <td className="px-5 py-3.5">
-                    {lead.has_quote ? (
-                      <span className="text-emerald-300/70 text-xs">Yes</span>
-                    ) : (
-                      <span className="text-white/20 text-xs">No</span>
-                    )}
+                    {(() => {
+                      const stage = pipelineStages[lead.id];
+                      if (stage) {
+                        const pc = pipelineConfig[stage];
+                        return pc ? (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-medium ${pc.bg} ${pc.text}`}>
+                            {pc.label}
+                          </span>
+                        ) : (
+                          <span className="text-emerald-300/70 text-xs">Has Quote</span>
+                        );
+                      }
+                      if (lead.has_quote) return <span className="text-emerald-300/70 text-xs">Has Quote</span>;
+                      return <span className="text-white/20 text-xs">No Quote</span>;
+                    })()}
                   </td>
                   <td className="px-5 py-3.5 text-white/25 text-xs">
                     {new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}

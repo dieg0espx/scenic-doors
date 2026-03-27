@@ -1,5 +1,5 @@
 import { UserPlus, Users, FileText, CalendarPlus, AlertTriangle } from "lucide-react";
-import { getLeadsForUser, getLeadMetricsForUser } from "@/lib/actions/leads";
+import { getLeadsForUser, getLeadMetricsForUser, getLeadPipelineStages } from "@/lib/actions/leads";
 import { getFollowUpsDueToday } from "@/lib/actions/follow-ups";
 import { getCurrentAdminUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
@@ -18,6 +18,10 @@ export default async function LeadsPage() {
     getLeadMetricsForUser(currentUser.id, currentUser.role),
     getFollowUpsDueToday().catch(() => []),
   ]);
+
+  // Fetch pipeline stages for leads that have quotes
+  const leadIds = leads.filter((l) => l.has_quote).map((l) => l.id);
+  const pipelineStages = await getLeadPipelineStages(leadIds);
 
   // Compute "needs attention" set:
   // - leads with follow-ups due today
@@ -91,7 +95,7 @@ export default async function LeadsPage() {
         })}
       </div>
 
-      <LeadsList leads={leads} needsAttentionIds={needsAttentionIds} isAdmin={isAdmin} />
+      <LeadsList leads={leads} needsAttentionIds={needsAttentionIds} isAdmin={isAdmin} pipelineStages={pipelineStages} />
     </div>
   );
 }

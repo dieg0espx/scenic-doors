@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Check, Loader2, Eye, ChevronUp } from "lucide-react";
 import { PRODUCTS } from "@/lib/quote-wizard/product-data";
+import { RATES_PER_SQFT, PRODUCT_CONFIGS, calculateSquareFeet } from "@/lib/quote-wizard/pricing";
 import type { WizardState, WizardAction } from "@/lib/quote-wizard/types";
 import { createQuote, notifyNewQuote, sendEstimateConfirmation, assignQuote } from "@/lib/actions/quotes";
 import { updateLead } from "@/lib/actions/leads";
@@ -30,54 +31,45 @@ interface ProductPanelInfo {
   note?: string;
 }
 
-// Approximate pricing per panel count — calculated using sq ft model with typical dimensions.
-// Multi-Slide: $105/sqft, ~40"/panel, 96"H | Ultra Slim: $130/sqft, ~36"/panel, 108"H
-// Bi-Fold: $110/sqft, ~32"/panel, 84"H | Slide-Stack: $121.79/sqft, ~34"/panel, 96"H
-// Awning: $95/sqft, 48"x36"
-const PANEL_INFO: Record<string, ProductPanelInfo> = {
-  "multi-slide-pocket": {
-    panelOptions: [
-      { panels: 2, approxPrice: 5600 },
-      { panels: 3, approxPrice: 8400 },
-      { panels: 4, approxPrice: 11200 },
-      { panels: 5, approxPrice: 14000 },
-      { panels: 6, approxPrice: 16800 },
-    ],
-  },
-  "ultra-slim": {
-    panelOptions: [
-      { panels: 2, approxPrice: 7000 },
-      { panels: 3, approxPrice: 10500 },
-      { panels: 4, approxPrice: 14000 },
-      { panels: 5, approxPrice: 17600 },
-      { panels: 6, approxPrice: 21100 },
-    ],
-  },
-  "bi-fold": {
-    panelOptions: [
-      { panels: 2, approxPrice: 4100 },
-      { panels: 3, approxPrice: 6200 },
-      { panels: 4, approxPrice: 8200 },
-      { panels: 5, approxPrice: 10300 },
-      { panels: 6, approxPrice: 12300 },
-    ],
-  },
-  "slide-stack": {
-    panelOptions: [
-      { panels: 2, approxPrice: 5500 },
-      { panels: 3, approxPrice: 8200 },
-      { panels: 4, approxPrice: 10900 },
-      { panels: 5, approxPrice: 13600 },
-      { panels: 6, approxPrice: 16400 },
-    ],
-  },
-  "awning-window": {
-    panelOptions: [
-      { panels: 1, approxPrice: 1140 },
-    ],
-    note: "Single-panel window system",
-  },
+// Typical per-panel widths and heights used for approximate pricing.
+// These match what a customer would commonly configure in the full calculator.
+const TYPICAL_DIMS: Record<string, { panelWidth: number; height: number }> = {
+  "multi-slide-pocket": { panelWidth: 40, height: 96 },
+  "ultra-slim":         { panelWidth: 36, height: 108 },
+  "bi-fold":            { panelWidth: 32, height: 84 },
+  "slide-stack":        { panelWidth: 34, height: 96 },
+  "awning-window":      { panelWidth: 48, height: 36 },
 };
+
+// Dynamically compute approximate prices using the same formula as the full calculator.
+function buildPanelInfo(): Record<string, ProductPanelInfo> {
+  const info: Record<string, ProductPanelInfo> = {};
+  for (const slug of Object.keys(TYPICAL_DIMS)) {
+    const dims = TYPICAL_DIMS[slug];
+    const rate = RATES_PER_SQFT[slug] ?? 0;
+    const offset = PRODUCT_CONFIGS[slug]?.usableOpeningOffset ?? 0;
+
+    if (slug === "awning-window") {
+      const sqft = calculateSquareFeet(dims.panelWidth, dims.height);
+      info[slug] = {
+        panelOptions: [{ panels: 1, approxPrice: Math.round(sqft * rate / 100) * 100 }],
+        note: "Single-panel window system",
+      };
+      continue;
+    }
+
+    const panelOptions: PanelPricing[] = [];
+    for (let n = 2; n <= 6; n++) {
+      const totalWidth = n * dims.panelWidth + offset;
+      const sqft = calculateSquareFeet(totalWidth, dims.height);
+      panelOptions.push({ panels: n, approxPrice: Math.round(sqft * rate / 100) * 100 });
+    }
+    info[slug] = { panelOptions };
+  }
+  return info;
+}
+
+const PANEL_INFO = buildPanelInfo();
 
 /* ── Compact animation map ──────────────────────────── */
 
@@ -263,7 +255,7 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
                   <h3 className="font-heading font-bold text-ocean-900 text-sm sm:text-base mb-1 sm:mb-1.5 truncate">
                     {product.name}
                   </h3>
-                  <ul className="space-y-0.5 sm:space-y-1 mb-2 sm:mb-3">
+                  <ul className="space-y-0.5 sm:space-y-1 mb-1.5 sm:mb-2">
                     {product.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-1.5 text-[11px] sm:text-xs text-ocean-500">
                         <Check className="w-3 h-3 text-primary-500 mt-0.5 shrink-0" />
@@ -271,6 +263,33 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
                       </li>
                     ))}
                   </ul>
+
+                  {/* Price preview — always visible */}
+                  {info && (
+                    <div className="mb-2 sm:mb-3">
+                      {info.panelOptions.length > 1 ? (
+                        <p className="text-[11px] sm:text-xs text-ocean-500">
+                          <span className="font-semibold text-ocean-700">
+                            From ${(info.panelOptions[0].approxPrice / 1000).toFixed(1)}k
+                          </span>
+                          <span className="mx-1 text-ocean-300">&mdash;</span>
+                          <span className="font-semibold text-ocean-700">
+                            ${(info.panelOptions[info.panelOptions.length - 1].approxPrice / 1000).toFixed(1)}k
+                          </span>
+                          <span className="text-ocean-400 ml-1">
+                            ({info.panelOptions[0].panels}&ndash;{info.panelOptions[info.panelOptions.length - 1].panels} panels)
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="text-[11px] sm:text-xs">
+                          <span className="font-semibold text-ocean-700">
+                            ~${(info.panelOptions[0]?.approxPrice || 0).toLocaleString()}
+                          </span>
+                          {info.note && <span className="text-ocean-400 ml-1">&middot; {info.note}</span>}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Action row */}
                   <div className="flex items-center gap-2">
@@ -308,16 +327,9 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
                 </div>
               </div>
 
-              {/* Expanded detail section — animation + panel pricing */}
+              {/* Expanded detail section — pricing table + animation */}
               {isExpanded && (
                 <div className="border-t border-ocean-100" onClick={(e) => e.stopPropagation()}>
-                  {/* Animation */}
-                  {hasAnimation && (
-                    <div className="border-b border-ocean-100">
-                      {getCompactAnimation(product.slug)}
-                    </div>
-                  )}
-
                   {/* Panel pricing table */}
                   {info && info.panelOptions.length > 1 ? (
                     <div className="p-3.5 sm:p-5">
@@ -356,6 +368,13 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
                       </p>
                     </div>
                   ) : null}
+
+                  {/* Animation */}
+                  {hasAnimation && (
+                    <div className="border-t border-ocean-100">
+                      {getCompactAnimation(product.slug)}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
