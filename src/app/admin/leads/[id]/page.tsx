@@ -21,6 +21,7 @@ import type { QuotePipeline } from "@/lib/actions/leads";
 import { getQuotesByLeadId } from "@/lib/actions/quotes";
 import { getFollowUpsByLeadId } from "@/lib/actions/follow-ups";
 import { getAdminUsers } from "@/lib/actions/admin-users";
+import { getAppointmentByLeadId } from "@/lib/actions/appointments";
 import { getCurrentAdminUser } from "@/lib/auth";
 import LeadDetailClient from "@/components/admin/LeadDetailClient";
 import LeadShareCard from "@/components/admin/LeadShareCard";
@@ -59,11 +60,12 @@ export default async function LeadDetailPage({
 
   const isAdmin = currentUser.role === "admin";
 
-  const [lead, quotes, followUps, allUsers] = await Promise.all([
+  const [lead, quotes, followUps, allUsers, appointment] = await Promise.all([
     getLeadById(id),
     getQuotesByLeadId(id).catch(() => []),
     getFollowUpsByLeadId(id).catch(() => []),
     isAdmin ? getAdminUsers() : Promise.resolve([]),
+    getAppointmentByLeadId(id).catch(() => null),
   ]);
 
   if (!lead) redirect("/admin/leads");
@@ -222,6 +224,58 @@ export default async function LeadDetailPage({
               </div>
             </div>
           </div>
+
+          {/* Appointment */}
+          {appointment && (
+            <div className="rounded-2xl border border-sky-500/15 bg-sky-500/[0.04]">
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-sky-500/10 bg-sky-500/[0.02] rounded-t-2xl">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-sky-400" />
+                </div>
+                <h2 className="text-base font-semibold text-white">Scheduled Appointment</h2>
+                <Link
+                  href="/admin/calendar"
+                  className="ml-auto text-xs text-sky-400 hover:text-sky-300 font-medium"
+                >
+                  View Calendar
+                </Link>
+              </div>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-sky-500/10 flex flex-col items-center justify-center">
+                    <span className="text-sky-400 text-xs font-bold">
+                      {new Date(appointment.scheduled_at).toLocaleDateString("en-US", { month: "short" })}
+                    </span>
+                    <span className="text-white font-bold text-lg leading-none">
+                      {new Date(appointment.scheduled_at).getDate()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">
+                      {new Date(appointment.scheduled_at).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                    <p className="text-sky-400 font-semibold text-sm">
+                      {new Date(appointment.scheduled_at).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </p>
+                    <p className="text-white/30 text-xs mt-0.5">
+                      {appointment.duration_minutes} min &middot; Booked by {appointment.booked_by}
+                    </p>
+                  </div>
+                </div>
+                {appointment.notes && (
+                  <p className="text-white/40 text-xs mt-3 bg-white/[0.02] rounded-lg px-3 py-2">{appointment.notes}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Pipeline Progress */}
           {pipelines.length > 0 && (

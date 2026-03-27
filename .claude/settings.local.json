@@ -53,7 +53,8 @@
       "WebFetch(domain:elines.coscoshipping.com)",
       "Bash(find /c/Users/52999/Desktop/scenic-doors -type f \\\\\\(-name *.sql -o -name *migration* -o -name *schema* \\\\\\))",
       "Bash(wc:*)",
-      "Bash(find /c/Users/52999/Desktop/scenic-doors/src/components -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))"
+      "Bash(find /c/Users/52999/Desktop/scenic-doors/src/components -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))",
+      "Bash(xargs cat:*)"
     ]
   }
 }

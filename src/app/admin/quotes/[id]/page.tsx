@@ -37,6 +37,7 @@ import { getQuoteNotes } from "@/lib/actions/quote-notes";
 import { getQuoteTasks } from "@/lib/actions/quote-tasks";
 import { getAdminUsers } from "@/lib/actions/admin-users";
 import { getPaymentsByQuoteId } from "@/lib/actions/payments";
+import { getAppointmentByQuoteId } from "@/lib/actions/appointments";
 import { getCurrentAdminUser } from "@/lib/auth";
 import QuoteDetailClient from "./QuoteDetailClient";
 import AdminPortalManager from "@/components/admin/AdminPortalManager";
@@ -84,7 +85,7 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [quote, emails, drawing, allDrawings, photos, followUps, documents, notes, tasks, allAdminUsers, currentAdminUser, payments] = await Promise.all([
+  const [quote, emails, drawing, allDrawings, photos, followUps, documents, notes, tasks, allAdminUsers, currentAdminUser, payments, appointment] = await Promise.all([
     getQuoteDetail(id),
     getEmailHistory(id),
     getApprovalDrawing(id).catch(() => null),
@@ -97,6 +98,7 @@ export default async function QuoteDetailPage({
     getAdminUsers(),
     getCurrentAdminUser(),
     getPaymentsByQuoteId(id).catch(() => []),
+    getAppointmentByQuoteId(id).catch(() => null),
   ]);
 
   if (!quote) redirect("/admin/quotes");
@@ -390,6 +392,58 @@ export default async function QuoteDetailPage({
               </div>
             </div>
           </div>
+
+          {/* Appointment */}
+          {appointment && (
+            <div className="rounded-2xl border border-sky-500/15 bg-sky-500/[0.04]">
+              <div className="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-sky-500/10 bg-sky-500/[0.02] rounded-t-2xl">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
+                  <Calendar className="w-4 h-4 text-sky-400" />
+                </div>
+                <h2 className="text-base font-semibold text-white">Scheduled Appointment</h2>
+                <Link
+                  href="/admin/calendar"
+                  className="ml-auto text-xs text-sky-400 hover:text-sky-300 font-medium"
+                >
+                  View Calendar
+                </Link>
+              </div>
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-sky-500/10 flex flex-col items-center justify-center">
+                    <span className="text-sky-400 text-xs font-bold">
+                      {new Date(appointment.scheduled_at).toLocaleDateString("en-US", { month: "short" })}
+                    </span>
+                    <span className="text-white font-bold text-lg leading-none">
+                      {new Date(appointment.scheduled_at).getDate()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">
+                      {new Date(appointment.scheduled_at).toLocaleDateString("en-US", {
+                        weekday: "long",
+                        month: "long",
+                        day: "numeric",
+                      })}
+                    </p>
+                    <p className="text-sky-400 font-semibold text-sm">
+                      {new Date(appointment.scheduled_at).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </p>
+                    <p className="text-white/30 text-xs mt-0.5">
+                      {appointment.duration_minutes} min &middot; Booked by {appointment.booked_by}
+                    </p>
+                  </div>
+                </div>
+                {appointment.notes && (
+                  <p className="text-white/40 text-xs mt-3 bg-white/[0.02] rounded-lg px-3 py-2">{appointment.notes}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Door Specifications */}
           <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">

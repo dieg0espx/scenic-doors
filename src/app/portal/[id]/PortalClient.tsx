@@ -9,6 +9,7 @@ import {
   CreditCard,
   Truck,
   Wrench,
+  CalendarDays,
   Loader2,
   XCircle,
 } from "lucide-react";
@@ -18,6 +19,8 @@ import { getOrderTracking } from "@/lib/actions/order-tracking";
 import { getQuotePhotos } from "@/lib/actions/quote-photos";
 import { getPaymentsByQuoteId } from "@/lib/actions/payments";
 import { getInstallationQuoteByQuoteId } from "@/lib/actions/installation-quotes";
+import { getAppointmentByQuoteId } from "@/lib/actions/appointments";
+import type { Appointment } from "@/lib/actions/appointments";
 import type { InstallationQuote } from "@/lib/actions/installation-quotes";
 import type { ApprovalDrawing, OrderTracking, QuotePhoto } from "@/lib/types";
 import PortalQuoteView from "@/components/portal/PortalQuoteView";
@@ -26,6 +29,7 @@ import PortalApprovalDrawing from "@/components/portal/PortalApprovalDrawing";
 import PortalPayments from "@/components/portal/PortalPayments";
 import PortalTracking from "@/components/portal/PortalTracking";
 import PortalInstallation from "@/components/portal/PortalInstallation";
+import PortalAppointment from "@/components/portal/PortalAppointment";
 
 interface QuoteData {
   id: string;
@@ -60,6 +64,7 @@ interface QuoteData {
 
 const BASE_TABS = [
   { id: "quote", label: "Quote", icon: FileText },
+  { id: "appointment", label: "Appointment", icon: CalendarDays },
   { id: "photos", label: "Photos", icon: Camera },
   { id: "approval", label: "Approval Drawing", icon: ClipboardCheck },
   { id: "payments", label: "Payments", icon: CreditCard },
@@ -76,18 +81,20 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [payments, setPayments] = useState<any[]>([]);
   const [installationQuote, setInstallationQuote] = useState<InstallationQuote | null>(null);
+  const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [activeTab, setActiveTab] = useState("quote");
 
   useEffect(() => {
     async function load() {
       try {
-        const [q, ds, t, p, pay, iq] = await Promise.all([
+        const [q, ds, t, p, pay, iq, appt] = await Promise.all([
           getQuoteById(quoteId),
           getApprovalDrawings(quoteId).catch(() => [] as ApprovalDrawing[]),
           getOrderTracking(quoteId).catch(() => null),
           getQuotePhotos(quoteId).catch(() => []),
           getPaymentsByQuoteId(quoteId).catch(() => []),
           getInstallationQuoteByQuoteId(quoteId).catch(() => null),
+          getAppointmentByQuoteId(quoteId).catch(() => null),
         ]);
         setQuote(q);
         setDrawings(ds);
@@ -95,12 +102,15 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
         setPhotos(p);
         setPayments(pay);
         setInstallationQuote(iq);
+        setAppointment(appt);
 
-        // Auto-switch to installation tab if linked from email
+        // Auto-switch to tab if linked from email
         if (typeof window !== "undefined") {
           const urlTab = new URLSearchParams(window.location.search).get("tab");
           if (urlTab === "installation" && iq && iq.status !== "draft") {
             setActiveTab("installation");
+          } else if (urlTab === "appointment") {
+            setActiveTab("appointment");
           }
         }
 
@@ -179,6 +189,12 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
               if (tab.id === "installation") {
                 return installationQuote && installationQuote.status !== "draft";
               }
+              // Hide appointment tab after the drawing is signed
+              if (tab.id === "appointment") {
+                const stage = quote?.portal_stage || "quote_sent";
+                const postSignStages = ["approval_signed", "deposit_1_pending", "manufacturing", "deposit_2_pending", "shipping", "delivered"];
+                return !postSignStages.includes(stage);
+              }
               return true;
             }).map((tab) => {
               const isActive = activeTab === tab.id;
@@ -205,6 +221,19 @@ export default function PortalClient({ quoteId }: { quoteId: string }) {
       <main className="max-w-5xl mx-auto px-4 py-4 sm:py-8">
         {activeTab === "quote" && (
           <PortalQuoteView quote={quote} photos={photos} drawings={drawings} />
+        )}
+        {activeTab === "appointment" && quote && (
+          <PortalAppointment
+            quoteId={quoteId}
+            leadId={null}
+            clientName={quote.client_name}
+            clientEmail={quote.client_email}
+            clientPhone={null}
+            appointment={appointment}
+            onUpdate={() => {
+              getAppointmentByQuoteId(quoteId).then(setAppointment).catch(() => {});
+            }}
+          />
         )}
         {activeTab === "photos" && (
           <PortalPhotos quoteId={quoteId} photos={photos} setPhotos={setPhotos} />

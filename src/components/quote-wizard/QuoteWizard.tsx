@@ -173,7 +173,7 @@ export default function QuoteWizard({ referralCode }: { referralCode?: string })
         case 3:
           return <StepPriceExplorer state={state} dispatch={dispatch} />;
         case 4:
-          return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="browse" />;
+          return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="browse" quoteId={state.quoteId} leadId={state.leadId} />;
         default:
           return null;
       }
@@ -188,7 +188,7 @@ export default function QuoteWizard({ referralCode }: { referralCode?: string })
         case 5:
           return <StepQuoteSummary state={state} dispatch={dispatch} />;
         case 6:
-          return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="medium" />;
+          return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="medium" quoteId={state.quoteId} leadId={state.leadId} />;
         default:
           return null;
       }
@@ -209,7 +209,7 @@ export default function QuoteWizard({ referralCode }: { referralCode?: string })
       case 5:
         return <StepQuoteSummary state={state} dispatch={dispatch} />;
       case 6:
-        return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="full" />;
+        return <StepConfirmation contact={state.contact} dispatch={dispatch} intentLevel="full" quoteId={state.quoteId} leadId={state.leadId} />;
       default:
         return null;
     }
