@@ -789,8 +789,9 @@ export async function updateLineItemPrices(
   const afterDiscount = subtotal - discountAmount;
   const delivery = Number(quote.delivery_cost || 0);
   const installation = Number(quote.installation_cost || 0);
-  const tax = Number(quote.tax || 0);
-  const grandTotal = afterDiscount + delivery + installation + tax;
+  const taxableAmount = afterDiscount + delivery + installation;
+  const tax = Math.round(taxableAmount * 0.08 * 100) / 100;
+  const grandTotal = taxableAmount + tax;
 
   const { error } = await supabase
     .from("quotes")
@@ -799,6 +800,7 @@ export async function updateLineItemPrices(
       subtotal: Math.round(subtotal * 100) / 100,
       discount_percent: discountPercent > 0 ? discountPercent : null,
       discount_amount: discountPercent > 0 ? Math.round(discountAmount * 100) / 100 : null,
+      tax: Math.round(tax * 100) / 100,
       grand_total: Math.round(grandTotal * 100) / 100,
       cost: Math.round(grandTotal * 100) / 100,
       last_activity_at: new Date().toISOString(),
@@ -806,9 +808,7 @@ export async function updateLineItemPrices(
     .eq("id", quoteId);
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/admin/quotes/${quoteId}`);
-  revalidatePath(`/admin/orders`);
-  revalidatePath("/admin/quotes");
+  revalidatePath("/admin", "layout");
 }
 
 export async function updateQuote(
