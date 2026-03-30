@@ -511,32 +511,43 @@ export default async function QuoteDetailPage({
               </div>
 
               {/* Per-item pricing breakdown */}
-              {Array.isArray(quote.items) && quote.items.some((item: Record<string, unknown>) => {
-                const bd = calculateItemBreakdown(item as Parameters<typeof calculateItemBreakdown>[0]);
-                return bd.ratePerSqFt > 0;
-              }) && (
+              {Array.isArray(quote.items) && quote.items.length > 0 && (
                 <div className="mb-5 pb-5 border-b border-white/[0.06] space-y-3">
                   {quote.items.map((item: Record<string, unknown>, idx: number) => {
                     const bd = calculateItemBreakdown(item as Parameters<typeof calculateItemBreakdown>[0]);
-                    if (!bd.ratePerSqFt) return null;
+                    const actualPrice = Number(item.unit_price || item.total || 0);
+                    const formulaPrice = bd.productPrice;
+                    const isOverridden = actualPrice > 0 && Math.abs(actualPrice - formulaPrice) > 0.01;
                     return (
                       <div key={(item.id as string) || idx}>
                         <p className="text-white/50 text-xs font-semibold mb-1.5">{item.name as string}</p>
                         <div className="space-y-1 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-white/30">Base Price ({bd.squareFeet.toFixed(1)} sq ft × ${bd.ratePerSqFt}/sq ft)</span>
-                            <span className="text-white/50">${bd.baseProductPrice.toLocaleString()}</span>
-                          </div>
-                          {bd.totalGlassModifier !== 0 && (
-                            <div className="flex justify-between">
-                              <span className="text-white/30">Glass Modifier{bd.panelCount > 1 ? ` (× ${bd.panelCount} panels)` : ""}</span>
-                              <span className="text-white/50">{bd.totalGlassModifier < 0 ? "−" : "+"}${Math.abs(bd.totalGlassModifier).toLocaleString()}</span>
-                            </div>
+                          {bd.ratePerSqFt > 0 && (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-white/30">Base Price ({bd.squareFeet.toFixed(1)} sq ft × ${bd.ratePerSqFt}/sq ft)</span>
+                                <span className="text-white/50">${bd.baseProductPrice.toLocaleString()}</span>
+                              </div>
+                              {bd.totalGlassModifier !== 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-white/30">Glass Modifier{bd.panelCount > 1 ? ` (× ${bd.panelCount} panels)` : ""}</span>
+                                  <span className="text-white/50">{bd.totalGlassModifier < 0 ? "−" : "+"}${Math.abs(bd.totalGlassModifier).toLocaleString()}</span>
+                                </div>
+                              )}
+                            </>
                           )}
                           <div className="flex justify-between">
                             <span className="text-white/40 font-medium">Product Price</span>
-                            <span className="text-white/70 font-medium">${bd.productPrice.toLocaleString()}</span>
+                            <span className="text-white/70 font-medium">
+                              ${actualPrice > 0 ? actualPrice.toLocaleString("en-US", { minimumFractionDigits: 2 }) : bd.productPrice.toLocaleString()}
+                            </span>
                           </div>
+                          {isOverridden && bd.ratePerSqFt > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-amber-400/50">Formula price</span>
+                              <span className="text-white/20 line-through">${formulaPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
