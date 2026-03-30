@@ -418,7 +418,7 @@ export default function CalendarPageClient({
                         className={`w-full text-left px-2 py-2 sm:py-1.5 rounded-lg ${aSc.bg} hover:opacity-80 active:scale-[0.97] transition-all cursor-pointer`}
                       >
                         <p className={`text-[10px] font-semibold ${aSc.text}`}>
-                          {aTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                          {aTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" })}
                         </p>
                         <p className="text-[11px] text-white/70 truncate">{appt.client_name}</p>
                       </button>
@@ -503,7 +503,7 @@ export default function CalendarPageClient({
                           className={`w-full text-left px-1.5 py-1 rounded-md ${aSc.bg} hover:opacity-80 active:scale-[0.97] transition-all cursor-pointer`}
                         >
                           <p className={`text-[10px] font-semibold ${aSc.text} truncate`}>
-                            {aTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+                            {aTime.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" })}
                             {" "}{appt.client_name}
                           </p>
                         </button>
