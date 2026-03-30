@@ -5,8 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 
 const featuredProject = {
   title: "Malibu Estate",
-  type: "Folding Glass Wall",
-  image: "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_2000/scenic_doors_HDR_2_enszw2",
+  video: "https://res.cloudinary.com/dku1gnuat/video/upload/v1774890633/scenic_homepage_hero1_zckjof.mp4",
 };
 
 export default function FeaturedProjects() {
@@ -48,21 +47,32 @@ function FeaturedProjectCard({
   aspectRatio: string;
 }) {
   return (
-    <div className={`relative ${aspectRatio} overflow-hidden group cursor-pointer`}>
-      <img
-        src={project.image}
-        alt={project.title}
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+    <div className={`relative ${aspectRatio} overflow-hidden group cursor-pointer rounded-lg`}>
+      {/* Video Background */}
+      <video
+        src={project.video}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="w-full h-full object-cover"
       />
 
-      {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-        <h3 className="font-heading text-3xl md:text-4xl lg:text-5xl text-white drop-shadow-lg">{project.title}</h3>
+      {/* Gradient Overlay for Text Readability */}
+      <div className="absolute inset-0 bg-gradient-to-t from-ocean-900/90 via-ocean-900/20 to-transparent" />
+
+      {/* Styled Text Overlay */}
+      <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 lg:p-16">
+        <div className="backdrop-blur-sm bg-white/10 inline-block px-6 py-3 rounded-lg border border-white/20">
+          <h3 className="font-heading text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-white font-bold tracking-tight">
+            {project.title}
+          </h3>
+        </div>
       </div>
 
       {/* Arrow */}
-      <div className="absolute top-4 right-4 w-10 h-10 bg-white/0 group-hover:bg-white flex items-center justify-center transition-colors duration-300">
-        <ArrowUpRight className="w-5 h-5 text-white group-hover:text-ocean-900 transition-colors" />
+      <div className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-white border border-white/20 flex items-center justify-center transition-all duration-300">
+        <ArrowUpRight className="w-6 h-6 text-white group-hover:text-ocean-900 transition-colors" />
       </div>
     </div>
   );
