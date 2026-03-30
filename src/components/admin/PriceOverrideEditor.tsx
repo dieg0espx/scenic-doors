@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Pencil, Check, X, Loader2 } from "lucide-react";
 import { overrideQuotePrice } from "@/lib/actions/quotes";
 
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export default function PriceOverrideEditor({ quoteId, currentTotal, locked, compact }: Props) {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(currentTotal.toFixed(2));
   const [saving, setSaving] = useState(false);
@@ -48,6 +50,7 @@ export default function PriceOverrideEditor({ quoteId, currentTotal, locked, com
     try {
       await overrideQuotePrice(quoteId, Math.round(num * 100) / 100);
       setEditing(false);
+      router.refresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update price");
     } finally {
