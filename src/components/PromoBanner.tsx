@@ -18,7 +18,7 @@ const DOOR_LABELS: Record<string, string> = {
   "slide-stack": "Slide-&-Stack",
 };
 
-export default function PromoBanner() {
+export default function PromoBanner({ onVisibilityChange }: { onVisibilityChange?: (visible: boolean) => void } = {}) {
   const [discounts, setDiscounts] = useState<ActiveDiscount[]>([]);
   const [dismissed, setDismissed] = useState(false);
 
@@ -28,10 +28,15 @@ export default function PromoBanner() {
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
           setDiscounts(data);
+          onVisibilityChange?.(true);
         }
       })
       .catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (dismissed) onVisibilityChange?.(false);
+  }, [dismissed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (dismissed || discounts.length === 0) return null;
 
