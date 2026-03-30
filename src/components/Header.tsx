@@ -38,6 +38,7 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [hasPromo, setHasPromo] = useState(false);
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -56,8 +57,8 @@ export default function Header() {
           : "bg-transparent"
       }`}
     >
-      <PromoBanner />
-      <div className={`section-container py-6`}>
+      <PromoBanner onVisibilityChange={setHasPromo} />
+      <div className={`section-container ${hasPromo ? "py-6" : "py-6 mt-2"}`}>
         <nav className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="relative z-10">
