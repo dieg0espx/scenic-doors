@@ -5,7 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 
 const featuredProject = {
   title: "Malibu Estate",
-  video: "https://res.cloudinary.com/dku1gnuat/video/upload/v1774890633/scenic_homepage_hero1_zckjof.mp4",
+  video: "https://res.cloudinary.com/dku1gnuat/video/upload/v1774891082/HERO_1_lv39mo.mp4",
 };
 
 export default function FeaturedProjects() {
