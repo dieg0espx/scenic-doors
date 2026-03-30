@@ -486,6 +486,59 @@ const PivotDoorAnimation = ({ compact }: { compact?: boolean } = {}) => {
           }} />
         </div>
 
+        {/* Slider */}
+        <div style={{ marginBottom: '20px' }}>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value={openAmount}
+            onChange={(e) => setOpenAmount(Number(e.target.value))}
+            disabled={isAnimating}
+            style={{
+              width: '100%',
+              height: '8px',
+              borderRadius: '4px',
+              outline: 'none',
+              background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${openAmount}%, #E4E4E7 ${openAmount}%, #E4E4E7 100%)`,
+              WebkitAppearance: 'none',
+              cursor: isAnimating ? 'not-allowed' : 'pointer',
+              opacity: isAnimating ? 0.5 : 1,
+            }}
+            className="door-slider"
+          />
+          <style dangerouslySetInnerHTML={{ __html: `
+            .door-slider::-webkit-slider-thumb {
+              -webkit-appearance: none;
+              appearance: none;
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+              background: #3B82F6;
+              cursor: pointer;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+            .door-slider::-moz-range-thumb {
+              width: 20px;
+              height: 20px;
+              border-radius: 50%;
+              background: #3B82F6;
+              cursor: pointer;
+              border: none;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+            .door-slider:disabled::-webkit-slider-thumb {
+              cursor: not-allowed;
+              background: #9CA3AF;
+            }
+            .door-slider:disabled::-moz-range-thumb {
+              cursor: not-allowed;
+              background: #9CA3AF;
+            }
+          `}} />
+        </div>
+
         {/* Button */}
         <button
           onClick={animateDoor}
