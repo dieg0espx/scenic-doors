@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 
 const featuredProject = {
@@ -47,7 +48,7 @@ function FeaturedProjectCard({
   aspectRatio: string;
 }) {
   return (
-    <div className={`relative ${aspectRatio} overflow-hidden group cursor-pointer rounded-lg`}>
+    <Link href="/gallery" className={`relative ${aspectRatio} overflow-hidden group cursor-pointer rounded-lg block`}>
       {/* Video Background */}
       <video
         src={project.video}
@@ -74,7 +75,7 @@ function FeaturedProjectCard({
       <div className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-white border border-white/20 flex items-center justify-center transition-all duration-300">
         <ArrowUpRight className="w-6 h-6 text-white group-hover:text-ocean-900 transition-colors" />
       </div>
-    </div>
+    </Link>
   );
 }
 
