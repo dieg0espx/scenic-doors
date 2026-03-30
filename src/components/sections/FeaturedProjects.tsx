@@ -58,11 +58,8 @@ function FeaturedProjectCard({
       <div className="absolute inset-0 bg-ocean-900/60" />
 
       {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-4">
-        <span className="inline-block bg-primary-500 text-white text-xs font-medium px-3 py-1 mb-2">
-          {project.type}
-        </span>
-        <h3 className="font-heading text-xl md:text-2xl text-white drop-shadow-lg">{project.title}</h3>
+      <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+        <h3 className="font-heading text-3xl md:text-4xl lg:text-5xl text-white drop-shadow-lg">{project.title}</h3>
       </div>
 
       {/* Arrow */}
