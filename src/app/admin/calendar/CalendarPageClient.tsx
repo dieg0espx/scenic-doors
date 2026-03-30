@@ -675,8 +675,8 @@ function AppointmentDetailModal({
                 {time.toLocaleDateString("en-US", { weekday: "long" })}
               </p>
               <p className="text-blue-400 font-semibold text-base">
-                {time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
-                <span className="text-white/30 font-normal text-xs ml-1.5">{appointment.duration_minutes} min</span>
+                {time.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" })}
+                <span className="text-white/30 font-normal text-xs ml-1.5">{appointment.duration_minutes} min · EST</span>
               </p>
             </div>
           </div>
