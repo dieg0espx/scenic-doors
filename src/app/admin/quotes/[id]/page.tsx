@@ -46,6 +46,7 @@ import PortalLinkBar from "@/components/admin/PortalLinkBar";
 import QuoteShareCard from "@/components/admin/QuoteShareCard";
 import SendDepositButton from "@/components/SendDepositButton";
 import PriceOverrideEditor from "@/components/admin/PriceOverrideEditor";
+import LineItemsEditor from "@/components/admin/LineItemsEditor";
 import { calculateItemBreakdown, PRODUCT_CONFIGS } from "@/lib/quote-wizard/pricing";
 
 export const dynamic = "force-dynamic";
@@ -470,48 +471,12 @@ export default async function QuoteDetailPage({
 
           {/* Line Items */}
           {Array.isArray(quote.items) && quote.items.length > 0 && (
-            <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015]">
-              <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] rounded-t-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center">
-                    <Hash className="w-4 h-4 text-sky-400" />
-                  </div>
-                  <h2 className="text-base font-semibold text-white">Line Items</h2>
-                </div>
-                <span className="text-white/25 text-xs">{itemsCount} item{itemsCount !== 1 ? "s" : ""}</span>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-white/[0.02]">
-                      <th className="text-left px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Item</th>
-                      <th className="text-right px-2 sm:px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Qty</th>
-                      <th className="text-right px-2 sm:px-4 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold hidden sm:table-cell">Price</th>
-                      <th className="text-right px-3 sm:px-5 py-3 text-[11px] uppercase tracking-wider text-white/30 font-semibold">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
-                    {quote.items.map((item: { id?: string; name: string; quantity: number; unit_price: number; total: number; description?: string }, idx: number) => (
-                      <tr key={item.id || idx} className="hover:bg-white/[0.01] transition-colors">
-                        <td className="px-3 sm:px-5 py-3 text-white/70">
-                          <span className="line-clamp-2 sm:line-clamp-none">{item.name}</span>
-                          {item.description && (
-                            <p className="text-white/25 text-xs mt-0.5 hidden sm:block">{item.description}</p>
-                          )}
-                        </td>
-                        <td className="px-2 sm:px-4 py-3 text-right text-white/50">{item.quantity}</td>
-                        <td className="px-2 sm:px-4 py-3 text-right text-white/50 hidden sm:table-cell">
-                          ${Number(item.unit_price).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                        </td>
-                        <td className="px-3 sm:px-5 py-3 text-right text-white font-medium">
-                          ${Number(item.total).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <LineItemsEditor
+              quoteId={quote.id}
+              items={quote.items as { id?: string; name: string; description?: string; quantity: number; unit_price: number; total: number; [key: string]: unknown }[]}
+              currentDiscount={Number((quote as Record<string, unknown>).discount_percent ?? 0)}
+              locked={hasAdvancePayment}
+            />
           )}
 
           {/* Notes */}
@@ -585,6 +550,12 @@ export default async function QuoteDetailPage({
                   <div className="flex justify-between text-sm">
                     <span className="text-white/40">Subtotal</span>
                     <span className="text-white/60">${Number(quote.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                {Number((quote as Record<string, unknown>).discount_percent) > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-white/40">Discount ({Number((quote as Record<string, unknown>).discount_percent)}%)</span>
+                    <span className="text-red-400/70">-${Number((quote as Record<string, unknown>).discount_amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
                   </div>
                 )}
                 {Number(quote.installation_cost) > 0 && (

@@ -53,6 +53,8 @@ interface QuoteData {
   delivery_cost: number;
   tax: number;
   grand_total: number;
+  discount_percent?: number | null;
+  discount_amount?: number | null;
 }
 
 interface PortalQuoteViewProps {
@@ -306,6 +308,12 @@ export default function PortalQuoteView({ quote, photos, drawing: legacyDrawing,
             <div className="flex justify-between text-ocean-600">
               <span>Subtotal</span>
               <span>${Number(quote.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+            </div>
+          )}
+          {Number(quote.discount_percent) > 0 && (
+            <div className="flex justify-between text-ocean-600">
+              <span>Discount ({Number(quote.discount_percent)}%)</span>
+              <span className="text-red-500">-${Number(quote.discount_amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
             </div>
           )}
           <div className="flex justify-between text-ocean-600">

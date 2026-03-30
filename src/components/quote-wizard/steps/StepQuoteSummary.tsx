@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -14,6 +14,7 @@ import {
   Package,
   Check,
   X,
+  Tag,
 } from "lucide-react";
 import type { ConfiguredItem, WizardState, WizardAction } from "@/lib/quote-wizard/types";
 import { calculateQuoteTotals, DELIVERY_REGULAR, DELIVERY_WHITE_GLOVE, calculateSquareFeet, PRODUCT_CONFIGS, calculateItemBreakdown, GLASS_MODIFIERS } from "@/lib/quote-wizard/pricing";
@@ -357,9 +358,35 @@ function ItemCard({
 
 /* ── Main Component ───────────────────────────────────── */
 
+interface ActivePromo {
+  id: string;
+  name: string;
+  percentage: number;
+  door_types: string[] | null;
+}
+
 export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryProps) {
   const { items, services, contact, leadId, isSubmitting } = state;
   const totals = calculateQuoteTotals(items, services);
+
+  // Fetch active global discounts
+  const [promos, setPromos] = useState<ActivePromo[]>([]);
+  useEffect(() => {
+    fetch("/api/active-discounts")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setPromos(data); })
+      .catch(() => {});
+  }, []);
+
+  // Find the best matching discount for the items in this quote
+  const doorSlugs = [...new Set(items.map((i) => i.doorTypeSlug))];
+  const matchingPromo = promos.find((p) =>
+    p.door_types === null || doorSlugs.some((slug) => p.door_types!.includes(slug))
+  ) || null;
+
+  const promoDiscountPercent = matchingPromo ? matchingPromo.percentage : 0;
+  const promoDiscountAmount = Math.round(totals.subtotal * (promoDiscountPercent / 100) * 100) / 100;
+  const adjustedGrandTotal = Math.round((totals.grandTotal - promoDiscountAmount) * 100) / 100;
 
   async function handleSubmit() {
     dispatch({ type: "SET_SUBMITTING", payload: true });
@@ -432,7 +459,7 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
         color: isMedium ? (state.generalPreferences.colorPreference || "TBD") : firstItem.exteriorFinish,
         glass_type: isMedium ? (state.generalPreferences.glassPreference || "TBD") : firstItem.glassType,
         size: isMedium ? (state.generalPreferences.approximateSize || "TBD") : `${firstItem.width}" x ${firstItem.height}"`,
-        cost: isMedium ? firstItem.ratePerSqFt : totals.grandTotal,
+        cost: isMedium ? firstItem.ratePerSqFt : adjustedGrandTotal,
         customer_type: contact.customerType,
         customer_phone: contact.phone,
         customer_zip: contact.zip,
@@ -443,7 +470,12 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
         installation_cost: isMedium ? 0 : totals.installationCost,
         delivery_cost: isMedium ? 0 : totals.deliveryCost,
         tax: isMedium ? 0 : totals.tax,
-        grand_total: isMedium ? firstItem.ratePerSqFt : totals.grandTotal,
+        grand_total: isMedium ? firstItem.ratePerSqFt : adjustedGrandTotal,
+        ...(promoDiscountPercent > 0 && !isMedium ? {
+          discount_percent: promoDiscountPercent,
+          discount_amount: promoDiscountAmount,
+          discount_name: matchingPromo?.name,
+        } : {}),
         delivery_type: services.deliveryType === "white_glove" ? "white_glove" : "delivery",
         intent_level: state.intentLevel || "full",
         notes: mediumNotes,
@@ -727,6 +759,15 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
                 <span>All Items Subtotal</span>
                 <span className="font-medium">${totals.subtotal.toLocaleString()}</span>
               </div>
+              {matchingPromo && promoDiscountAmount > 0 && (
+                <div className="flex justify-between text-emerald-600">
+                  <span className="flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5" />
+                    {matchingPromo.name} ({matchingPromo.percentage}% off)
+                  </span>
+                  <span className="font-medium">-${promoDiscountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                </div>
+              )}
               <div className="flex justify-between text-ocean-600">
                 <span>Installation</span>
                 <span className="font-medium text-amber-600">TBD</span>
@@ -742,7 +783,7 @@ export default function StepQuoteSummary({ state, dispatch }: StepQuoteSummaryPr
               <div className="flex justify-between pt-3 border-t border-ocean-200 text-base sm:text-lg font-bold text-ocean-900">
                 <span>Grand Total</span>
                 <span className="text-primary-600">
-                  ${totals.grandTotal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  ${adjustedGrandTotal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
                 </span>
               </div>
             </div>

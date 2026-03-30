@@ -206,9 +206,9 @@ export function calculateSquareFeet(width: number, height: number): number {
   return (width * height) / 144;
 }
 
-export function calculateItemTotal(item: ConfiguredItem): number {
+export function calculateItemTotal(item: ConfiguredItem, ratesOverride?: Record<string, number>): number {
   const sqft = calculateSquareFeet(item.width, item.height);
-  const rate = RATES_PER_SQFT[item.doorTypeSlug] ?? 0;
+  const rate = item.ratePerSqFt || ((ratesOverride ?? RATES_PER_SQFT)[item.doorTypeSlug] ?? 0);
   const glassPerUnit = GLASS_MODIFIERS[item.glassType] ?? 0;
   const glassMod = glassPerUnit * item.panelCount;
   return round2(sqft * rate + glassMod);

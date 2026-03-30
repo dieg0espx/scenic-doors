@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Check, ArrowRight, X, Eye } from "lucide-react";
 import { PRODUCTS } from "@/lib/quote-wizard/product-data";
@@ -30,6 +30,18 @@ interface StepProductSelectionProps {
 
 export default function StepProductSelection({ dispatch }: StepProductSelectionProps) {
   const [previewSlug, setPreviewSlug] = useState<string | null>(null);
+  const [dynamicRates, setDynamicRates] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    fetch("/api/pricing-rates")
+      .then((r) => r.json())
+      .then((data) => { if (data && typeof data === "object") setDynamicRates(data); })
+      .catch(() => {});
+  }, []);
+
+  function getRate(product: { slug: string; ratePerSqFt: number }) {
+    return dynamicRates[product.slug] ?? product.ratePerSqFt;
+  }
 
   function handleSelect(slug: string, name: string, ratePerSqFt: number) {
     dispatch({
@@ -71,7 +83,7 @@ export default function StepProductSelection({ dispatch }: StepProductSelectionP
                 onClick={() => {
                   const product = PRODUCTS.find((p) => p.slug === previewSlug);
                   if (product) {
-                    handleSelect(product.slug, product.name, product.ratePerSqFt);
+                    handleSelect(product.slug, product.name, getRate(product));
                   }
                 }}
                 className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 text-white font-bold py-3.5 px-6 rounded-xl transition-all text-base cursor-pointer shadow-lg shadow-primary-600/25"
@@ -131,7 +143,7 @@ export default function StepProductSelection({ dispatch }: StepProductSelectionP
                   </button>
                 )}
                 <button
-                  onClick={() => handleSelect(product.slug, product.name, product.ratePerSqFt)}
+                  onClick={() => handleSelect(product.slug, product.name, getRate(product))}
                   className="w-full flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-500 text-white font-bold py-2.5 sm:py-3 px-4 rounded-xl transition-all text-sm sm:text-base cursor-pointer shadow-md shadow-primary-600/20 hover:shadow-lg hover:shadow-primary-500/25 active:scale-[0.98]"
                 >
                   Select This Door

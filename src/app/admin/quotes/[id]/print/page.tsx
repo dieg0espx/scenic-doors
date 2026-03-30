@@ -165,6 +165,12 @@ export default async function QuotePrintPage({
                   <td className="txt-right">${Number(quote.subtotal).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
                 </tr>
               )}
+              {Number(quote.discount_percent) > 0 && (
+                <tr>
+                  <td>Discount ({Number(quote.discount_percent)}%)</td>
+                  <td className="txt-right" style={{ color: "#dc2626" }}>-${Number(quote.discount_amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
+                </tr>
+              )}
               <tr>
                 <td>Installation</td>
                 {Number(quote.installation_cost) > 0 ? (

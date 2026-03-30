@@ -52,6 +52,8 @@ interface InvoiceData {
     delivery_cost?: number;
     tax?: number;
     grand_total?: number;
+    discount_percent?: number;
+    discount_amount?: number;
   };
 }
 
@@ -245,8 +247,25 @@ export async function generateInvoicePdf(payment: InvoiceData) {
     y += 5.5;
   }
 
+  const discountPercent = Number(payment.quotes.discount_percent || 0);
+  const discountAmount = Number(payment.quotes.discount_amount || 0);
+
   if (hasBreakdown) {
     drawSummaryLine("Subtotal", subtotal);
+
+    if (discountPercent > 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(220, 38, 38);
+      doc.text(`Discount (${discountPercent}%)`, labelX, y, { align: "right" });
+      doc.text(
+        `-$${discountAmount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`,
+        valueX,
+        y,
+        { align: "right" }
+      );
+      y += 5.5;
+    }
 
     if (installCost > 0) {
       drawSummaryLine("Installation", installCost);

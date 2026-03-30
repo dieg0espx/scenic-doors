@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ChevronDown, Phone } from "lucide-react";
+import PromoBanner from "@/components/PromoBanner";
 
 const doorTypes = [
   {
@@ -37,7 +38,6 @@ export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -50,13 +50,14 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 py-3 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isHeaderWhite
           ? "bg-white backdrop-blur-md shadow-lg"
           : "bg-transparent"
       }`}
     >
-      <div className="section-container">
+      <PromoBanner />
+      <div className={`section-container py-6`}>
         <nav className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="relative z-10">

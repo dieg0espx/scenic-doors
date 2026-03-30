@@ -259,6 +259,7 @@ function DoorItemCard({
   canRemove,
   inputClass,
   totalItems,
+  dynamicRates,
 }: {
   item: ConfiguredItem;
   index: number;
@@ -268,6 +269,7 @@ function DoorItemCard({
   canRemove: boolean;
   inputClass: string;
   totalItems: number;
+  dynamicRates?: Record<string, number>;
 }) {
   const [expanded, setExpanded] = useState(true);
   const config = item.doorTypeSlug ? PRODUCT_CONFIGS[item.doorTypeSlug] : null;
@@ -296,7 +298,7 @@ function DoorItemCard({
     const updates: Partial<ConfiguredItem> = {
       doorType: product.name,
       doorTypeSlug: slug,
-      ratePerSqFt: product.ratePerSqFt,
+      ratePerSqFt: dynamicRates?.[slug] ?? product.ratePerSqFt,
       squareFeet: 0,
       systemType: newConfig?.hasSystemType ? "slider" : "",
       width: 0,
@@ -671,6 +673,15 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
   const [assignedTo, setAssignedTo] = useState(initialData?.assigned_to || "");
   const [leadStatus, setLeadStatus] = useState(initialData?.lead_status || "new");
   const [followUpDate, setFollowUpDate] = useState(initialData?.follow_up_date || "");
+
+  // Dynamic pricing rates from DB
+  const [dynamicRates, setDynamicRates] = useState<Record<string, number>>({});
+  useEffect(() => {
+    fetch("/api/pricing-rates")
+      .then((r) => r.json())
+      .then((data) => { if (data && typeof data === "object") setDynamicRates(data); })
+      .catch(() => {});
+  }, []);
 
   // Door items — hydrate from initialData when editing
   const [items, setItems] = useState<ConfiguredItem[]>(() => {
@@ -1236,6 +1247,7 @@ export default function QuoteForm({ initialData, clients = [], adminUsers = [], 
             canRemove={items.length > 1}
             inputClass={inputClass}
             totalItems={items.length}
+            dynamicRates={dynamicRates}
           />
         ))}
       </div>

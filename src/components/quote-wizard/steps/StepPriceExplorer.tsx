@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Check, Loader2, Eye, ChevronUp } from "lucide-react";
 import { PRODUCTS } from "@/lib/quote-wizard/product-data";
@@ -42,11 +42,12 @@ const TYPICAL_DIMS: Record<string, { panelWidth: number; height: number }> = {
 };
 
 // Dynamically compute approximate prices using the same formula as the full calculator.
-function buildPanelInfo(): Record<string, ProductPanelInfo> {
+function buildPanelInfo(ratesOverride?: Record<string, number>): Record<string, ProductPanelInfo> {
+  const rates = ratesOverride ?? RATES_PER_SQFT;
   const info: Record<string, ProductPanelInfo> = {};
   for (const slug of Object.keys(TYPICAL_DIMS)) {
     const dims = TYPICAL_DIMS[slug];
-    const rate = RATES_PER_SQFT[slug] ?? 0;
+    const rate = rates[slug] ?? RATES_PER_SQFT[slug] ?? 0;
     const offset = PRODUCT_CONFIGS[slug]?.usableOpeningOffset ?? 0;
 
     if (slug === "awning-window") {
@@ -69,8 +70,6 @@ function buildPanelInfo(): Record<string, ProductPanelInfo> {
   return info;
 }
 
-const PANEL_INFO = buildPanelInfo();
-
 /* ── Compact animation map ──────────────────────────── */
 
 function getCompactAnimation(slug: string): React.ReactNode | null {
@@ -92,6 +91,16 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
   const { browseInterests, contact, leadId, isSubmitting } = state;
   const [note, setNote] = useState("");
   const [expandedSlug, setExpandedSlug] = useState<string | null>(null);
+  const [dynamicRates, setDynamicRates] = useState<Record<string, number> | null>(null);
+
+  useEffect(() => {
+    fetch("/api/pricing-rates")
+      .then((r) => r.json())
+      .then((data) => { if (data && typeof data === "object") setDynamicRates(data); })
+      .catch(() => {});
+  }, []);
+
+  const PANEL_INFO = buildPanelInfo(dynamicRates ?? undefined);
 
   function toggleInterest(slug: string) {
     const updated = browseInterests.includes(slug)
@@ -106,15 +115,16 @@ export default function StepPriceExplorer({ state, dispatch }: StepPriceExplorer
 
     try {
       const interestedProducts = PRODUCTS.filter((p) => browseInterests.includes(p.slug));
-      const totalCost = interestedProducts.reduce((sum, p) => sum + p.ratePerSqFt, 0);
+      const getRate = (p: { slug: string; ratePerSqFt: number }) => dynamicRates?.[p.slug] ?? p.ratePerSqFt;
+      const totalCost = interestedProducts.reduce((sum, p) => sum + getRate(p), 0);
 
       const quoteItems = interestedProducts.map((p) => ({
         id: p.slug,
         name: p.name,
         description: `Price inquiry — ${p.features.join(", ")}`,
         quantity: 1,
-        unit_price: p.ratePerSqFt,
-        total: p.ratePerSqFt,
+        unit_price: getRate(p),
+        total: getRate(p),
       }));
 
       // Check if referral code maps to a specific user

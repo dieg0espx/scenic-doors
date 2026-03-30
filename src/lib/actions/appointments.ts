@@ -162,7 +162,7 @@ export async function getAvailableSlots(dateStr: string): Promise<TimeSlot[]> {
   // 2. Generate all possible slots
   const [openH, openM] = setting.open_time.split(":").map(Number);
   const [closeH, closeM] = setting.close_time.split(":").map(Number);
-  const interval = setting.slot_duration_minutes || 20;
+  const interval = setting.slot_duration_minutes || 15;
 
   const openMinutes = openH * 60 + openM;
   const closeMinutes = closeH * 60 + closeM;
@@ -252,7 +252,7 @@ export async function createAppointment(data: {
       clientName: data.client_name,
       clientEmail: data.client_email,
       scheduledAt: data.scheduled_at,
-      durationMinutes: 20,
+      durationMinutes: 15,
       portalUrl,
     }).catch(() => {
       // Don't block on email failure

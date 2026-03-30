@@ -129,14 +129,14 @@ export default function StepConfiguration({ item, dispatch }: StepConfigurationP
     const panels = config.hasPanelCount ? item.panelCount : 1;
     const glassMod = GLASS_MODIFIERS[item.glassType] ?? 0;
     const sqft = calculateSquareFeet(item.width, item.height);
-    const rate = RATES_PER_SQFT[item.doorTypeSlug] ?? 0;
+    const rate = item.ratePerSqFt || (RATES_PER_SQFT[item.doorTypeSlug] ?? 0);
     const updatedItem: ConfiguredItem = {
       ...item,
       panelCount: panels,
       glassPriceModifier: glassMod,
       ratePerSqFt: rate,
       squareFeet: sqft,
-      itemTotal: calculateItemTotal({ ...item, panelCount: panels, glassPriceModifier: glassMod }),
+      itemTotal: calculateItemTotal({ ...item, panelCount: panels, glassPriceModifier: glassMod, ratePerSqFt: rate }),
     };
     const validationErrors = validateConfiguration(updatedItem);
     if (Object.keys(validationErrors).length > 0) {

@@ -11,7 +11,6 @@ import Process from "@/components/sections/Process";
 import Testimonials from "@/components/sections/Testimonials";
 import ServiceAreas from "@/components/sections/ServiceAreas";
 import CTABanner from "@/components/sections/CTABanner";
-
 export default function Home() {
   return (
     <>

@@ -41,6 +41,9 @@ export async function createQuote(formData: {
   created_by?: string;
   shared_with?: string[];
   intent_level?: string;
+  discount_percent?: number;
+  discount_amount?: number;
+  discount_name?: string;
 }) {
   const supabase = createServiceClient();
 
@@ -118,6 +121,11 @@ export async function createQuote(formData: {
       created_by: formData.created_by || null,
       shared_with: formData.shared_with || [],
       intent_level: formData.intent_level || "full",
+      ...(formData.discount_percent ? {
+        discount_percent: formData.discount_percent,
+        discount_amount: formData.discount_amount,
+        discount_name: formData.discount_name,
+      } : {}),
     })
     .select()
     .single();
@@ -758,6 +766,49 @@ export async function overrideQuotePrice(
   revalidatePath(`/admin/quotes/${quoteId}`);
   revalidatePath("/admin/quotes");
   revalidatePath("/admin/orders");
+}
+
+export async function updateLineItemPrices(
+  quoteId: string,
+  updatedItems: { id?: string; name: string; description?: string; quantity: number; unit_price: number; total: number; [key: string]: unknown }[],
+  discountPercent: number
+) {
+  const supabase = await createClient();
+
+  // Fetch current quote to get existing fields
+  const { data: quote, error: fetchError } = await supabase
+    .from("quotes")
+    .select("subtotal, delivery_cost, tax, installation_cost")
+    .eq("id", quoteId)
+    .single();
+  if (fetchError) throw new Error(fetchError.message);
+
+  // Recalculate subtotal from items
+  const subtotal = updatedItems.reduce((sum, item) => sum + Number(item.total), 0);
+  const discountAmount = subtotal * (discountPercent / 100);
+  const afterDiscount = subtotal - discountAmount;
+  const delivery = Number(quote.delivery_cost || 0);
+  const installation = Number(quote.installation_cost || 0);
+  const tax = Number(quote.tax || 0);
+  const grandTotal = afterDiscount + delivery + installation + tax;
+
+  const { error } = await supabase
+    .from("quotes")
+    .update({
+      items: updatedItems,
+      subtotal: Math.round(subtotal * 100) / 100,
+      discount_percent: discountPercent > 0 ? discountPercent : null,
+      discount_amount: discountPercent > 0 ? Math.round(discountAmount * 100) / 100 : null,
+      grand_total: Math.round(grandTotal * 100) / 100,
+      cost: Math.round(grandTotal * 100) / 100,
+      last_activity_at: new Date().toISOString(),
+    })
+    .eq("id", quoteId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath(`/admin/quotes/${quoteId}`);
+  revalidatePath(`/admin/orders`);
+  revalidatePath("/admin/quotes");
 }
 
 export async function updateQuote(

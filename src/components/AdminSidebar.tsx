@@ -19,6 +19,7 @@ import {
   Shield,
   CircleUser,
   CalendarDays,
+  Tag,
 } from "lucide-react";
 
 const baseNavItems = [
@@ -27,6 +28,7 @@ const baseNavItems = [
   { label: "Leads", href: "/admin/leads", icon: UserPlus },
   { label: "Orders", href: "/admin/orders", icon: Package },
   { label: "Calendar", href: "/admin/calendar", icon: CalendarDays },
+  { label: "Discounts", href: "/admin/discounts", icon: Tag, adminOnly: true },
   { label: "Marketing", href: "/admin/marketing", icon: BarChart3, adminOnly: true },
   { label: "Users", href: "/admin/users", icon: Users, adminOnly: true },
   { label: "Notifications", href: "/admin/notifications", icon: Bell, adminOnly: true },
@@ -70,14 +72,14 @@ export default function AdminSidebar({
 
   const navContent = (
     <>
-      <div className="px-5 py-6 flex items-center justify-between">
+      <div className="px-5 py-4 flex items-center justify-between">
         <Link href="/admin" className="flex items-center gap-3">
           <Image
             src="/images/scenic-doors-dark-logo.avif"
             alt="Scenic Doors"
             width={140}
             height={38}
-            className="h-8 w-auto brightness-0 invert"
+            className="h-7 w-auto brightness-0 invert"
           />
         </Link>
         <button
@@ -89,26 +91,26 @@ export default function AdminSidebar({
       </div>
 
       {/* User info + role badge */}
-      <div className="px-5 mb-3 space-y-2">
+      <div className="px-5 mb-2 flex items-center gap-2.5">
         <p className="text-sm font-medium text-white/70 truncate">{currentUser.name}</p>
         {isAdmin ? (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/[0.08] border border-amber-500/15">
-            <Shield className="w-3.5 h-3.5 text-amber-400/70" />
-            <span className="text-[11px] font-medium text-amber-400/70 uppercase tracking-wider">Admin</span>
-          </div>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/[0.08] border border-amber-500/15">
+            <Shield className="w-3 h-3 text-amber-400/70" />
+            <span className="text-[10px] font-medium text-amber-400/70 uppercase tracking-wider">Admin</span>
+          </span>
         ) : (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-500/[0.08] border border-teal-500/15">
-            <CircleUser className="w-3.5 h-3.5 text-teal-400/70" />
-            <span className="text-[11px] font-medium text-teal-400/70 uppercase tracking-wider">Sales Rep</span>
-          </div>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-teal-500/[0.08] border border-teal-500/15">
+            <CircleUser className="w-3 h-3 text-teal-400/70" />
+            <span className="text-[10px] font-medium text-teal-400/70 uppercase tracking-wider">Sales</span>
+          </span>
         )}
       </div>
 
-      <div className="px-4 mb-2">
+      <div className="px-4 mb-1">
         <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-1 space-y-0.5">
         {navItems.map(({ label, href, icon: Icon }) => {
           const isActive =
             href === "/admin"
@@ -119,35 +121,29 @@ export default function AdminSidebar({
             <Link
               key={href}
               href={href}
-              className={`flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-xl text-sm md:text-[13px] font-medium transition-all duration-200 ${
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-200 ${
                 isActive
-                  ? "bg-gradient-to-r from-amber-500/15 to-amber-500/5 text-amber-400 shadow-sm"
+                  ? "bg-gradient-to-r from-amber-500/15 to-amber-500/5 text-amber-400"
                   : "text-white/45 hover:text-white/80 hover:bg-white/[0.04]"
               }`}
             >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                isActive ? "bg-amber-500/15" : "bg-white/[0.04]"
-              }`}>
-                <Icon className="w-[18px] h-[18px]" />
-              </div>
+              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-amber-400" : ""}`} />
               {label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-4 mb-2">
+      <div className="px-4 mb-1">
         <div className="h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
-      <div className="px-3 py-4">
+      <div className="px-3 py-3">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-3 py-3 md:py-2.5 rounded-xl text-sm md:text-[13px] font-medium text-white/35 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-200 cursor-pointer"
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-[13px] font-medium text-white/35 hover:text-red-400 hover:bg-red-500/[0.06] transition-all duration-200 cursor-pointer"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/[0.04] flex items-center justify-center">
-            <LogOut className="w-[18px] h-[18px]" />
-          </div>
+          <LogOut className="w-4 h-4 shrink-0" />
           Sign Out
         </button>
       </div>

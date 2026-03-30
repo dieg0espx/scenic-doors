@@ -93,7 +93,7 @@ export default function PortalAppointment({
                 client_email: clientEmail,
                 client_phone: clientPhone || null,
                 scheduled_at: scheduledAt,
-                duration_minutes: 20,
+                duration_minutes: 15,
                 status: "scheduled",
                 notes: null,
                 booked_by: "client",
