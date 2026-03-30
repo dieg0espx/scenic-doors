@@ -184,6 +184,8 @@ export default function AppointmentScheduler({
   // Success state
   if (booked) {
     const d = new Date(bookedTime);
+    const estTime = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: "America/New_York" });
+    const estDate = d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "America/New_York" });
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -194,11 +196,9 @@ export default function AppointmentScheduler({
           <CheckCircle2 className="w-8 h-8 text-green-500" />
         </div>
         <h3 className="text-lg font-bold text-ocean-900 mb-1">Appointment Booked!</h3>
-        <p className="text-ocean-500 text-sm mb-1">
-          {d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-        </p>
+        <p className="text-ocean-500 text-sm mb-1">{estDate}</p>
         <p className="text-primary-600 font-semibold">
-          {d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+          {estTime} <span className="text-ocean-400 font-normal text-sm">EST</span>
         </p>
         {onCancel && (
           <button
@@ -345,6 +345,7 @@ export default function AppointmentScheduler({
             <div>
               <h4 className="text-sm font-semibold text-ocean-900 mb-3">
                 {selectedDate.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" })}
+                <span className="text-ocean-400 font-normal text-xs ml-1.5">(EST)</span>
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-[280px] overflow-y-auto pr-1 -mr-1">
                 <AnimatePresence mode="wait">

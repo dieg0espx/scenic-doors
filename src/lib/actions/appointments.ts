@@ -172,10 +172,9 @@ export async function getAvailableSlots(dateStr: string): Promise<TimeSlot[]> {
     const h = Math.floor(m / 60);
     const min = m % 60;
     const time = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-    // Build ISO datetime
-    const dt = new Date(requestedDate);
-    dt.setHours(h, min, 0, 0);
-    allSlots.push({ time, datetime: dt.toISOString() });
+    // Build datetime in US Eastern Time (EST/EDT)
+    const datetime = `${dateStr}T${time}:00-05:00`;
+    allSlots.push({ time, datetime });
   }
 
   // 3. Get booked appointments for this date

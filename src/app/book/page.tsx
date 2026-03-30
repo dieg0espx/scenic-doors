@@ -86,13 +86,16 @@ export default function BookAppointmentPage() {
                       month: "long",
                       day: "numeric",
                       year: "numeric",
+                      timeZone: "America/New_York",
                     }) +
                     " at " +
                     d.toLocaleTimeString("en-US", {
                       hour: "numeric",
                       minute: "2-digit",
                       hour12: true,
-                    })
+                      timeZone: "America/New_York",
+                    }) +
+                    " EST"
                   );
                   setBooked(true);
                 }}
