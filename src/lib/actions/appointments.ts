@@ -167,13 +167,27 @@ export async function getAvailableSlots(dateStr: string): Promise<TimeSlot[]> {
   const openMinutes = openH * 60 + openM;
   const closeMinutes = closeH * 60 + closeM;
 
+  // Determine EST (-05:00) vs EDT (-04:00) for the requested date
+  function getEasternOffset(date: string, hour: number): string {
+    const tempDate = new Date(`${date}T${String(hour).padStart(2, "0")}:00:00Z`);
+    const eastern = tempDate.toLocaleString("en-US", { timeZone: "America/New_York", hour12: false, hour: "2-digit" });
+    const utcHour = tempDate.getUTCHours();
+    const etHour = parseInt(eastern);
+    let diff = etHour - utcHour;
+    if (diff > 12) diff -= 24;
+    if (diff < -12) diff += 24;
+    const absDiff = Math.abs(diff);
+    const sign = diff >= 0 ? "+" : "-";
+    return `${sign}${String(absDiff).padStart(2, "0")}:00`;
+  }
+
   const allSlots: TimeSlot[] = [];
   for (let m = openMinutes; m + interval <= closeMinutes; m += interval) {
     const h = Math.floor(m / 60);
     const min = m % 60;
     const time = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-    // Build datetime in US Eastern Time (EST/EDT)
-    const datetime = `${dateStr}T${time}:00-05:00`;
+    const offset = getEasternOffset(dateStr, h);
+    const datetime = `${dateStr}T${time}:00${offset}`;
     allSlots.push({ time, datetime });
   }
 
