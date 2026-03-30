@@ -233,6 +233,7 @@ export async function createAppointment(data: {
       client_email: data.client_email || null,
       client_phone: data.client_phone || null,
       scheduled_at: data.scheduled_at,
+      duration_minutes: 15,
       notes: data.notes || null,
       booked_by: data.booked_by || "client",
       created_by: data.created_by || null,
