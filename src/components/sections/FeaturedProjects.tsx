@@ -35,7 +35,7 @@ export default function FeaturedProjects() {
           className="mb-8"
         >
           <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900">
-            Project Malibu
+            Scenic Doors Projects
           </h2>
         </motion.div>
 
