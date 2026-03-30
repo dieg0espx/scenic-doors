@@ -55,6 +55,14 @@ export default function DoorTypeAnimation({ doorType, compact = true, panelCount
       );
     case "bifold":
       return (
+        <BifoldDoorAnimation
+          compact={compact}
+          panelCountOverride={panelCount}
+          panelLayoutOverride={panelLayout}
+        />
+      );
+    case "slidestack":
+      return (
         <SlideStackDoorAnimation
           compact={compact}
           panelCountOverride={panelCount}
@@ -66,14 +74,6 @@ export default function DoorTypeAnimation({ doorType, compact = true, panelCount
                 : undefined
               : undefined
           }
-        />
-      );
-    case "slidestack":
-      return (
-        <BifoldDoorAnimation
-          compact={compact}
-          panelCountOverride={panelCount}
-          panelLayoutOverride={panelLayout}
         />
       );
     default:
