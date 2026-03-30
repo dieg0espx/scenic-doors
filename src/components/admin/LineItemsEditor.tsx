@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Hash, Pencil, Check, X, Loader2, Percent } from "lucide-react";
 import { updateLineItemPrices } from "@/lib/actions/quotes";
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export default function LineItemsEditor({ quoteId, items, currentDiscount, locked }: Props) {
+  const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [editItems, setEditItems] = useState<LineItem[]>([]);
   const [discount, setDiscount] = useState(currentDiscount);
@@ -64,6 +66,7 @@ export default function LineItemsEditor({ quoteId, items, currentDiscount, locke
     try {
       await updateLineItemPrices(quoteId, editItems, discount);
       setEditing(false);
+      router.refresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update prices");
     } finally {
