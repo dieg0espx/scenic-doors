@@ -113,7 +113,7 @@ export async function createLead(formData: {
   try {
     const emails = await getNotificationEmailsByType("lead");
     if (emails.length > 0) {
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       await sendInternalNotificationEmail(
         {
           heading: "New Lead",
@@ -139,7 +139,7 @@ export async function createLead(formData: {
 
   // Slack notification
   try {
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
     await sendSlackNotification({
       heading: "New Lead",
       message: `A new lead has been created and is ready for follow-up.`,

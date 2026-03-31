@@ -400,7 +400,7 @@ export async function updateQuoteStatus(
       const emails = await getNotificationEmailsByType(type);
       if (emails.length === 0) return;
 
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       const total = Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
 
       await sendInternalNotificationEmail(
@@ -436,7 +436,7 @@ export async function updateQuoteStatus(
         .eq("id", id)
         .single();
       if (sq) {
-        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
         const slackTotal = Number(sq.grand_total || sq.cost).toLocaleString("en-US", { minimumFractionDigits: 2 });
         await sendSlackNotification({
           heading: status === "pending_approval"
@@ -483,7 +483,7 @@ export async function approveQuote(id: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin/quotes");
 
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+  const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
 
   // Send approval email to client
   try {
