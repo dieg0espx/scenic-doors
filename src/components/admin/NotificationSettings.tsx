@@ -185,6 +185,7 @@ export default function NotificationSettingsComponent({ settings, users }: Props
     red: { border: "border-red-500/15", bg: "bg-red-500/[0.04]", tagBg: "bg-red-500/15", tagText: "text-red-300" },
     blue: { border: "border-blue-500/15", bg: "bg-blue-500/[0.04]", tagBg: "bg-blue-500/15", tagText: "text-blue-300" },
     amber: { border: "border-amber-500/15", bg: "bg-amber-500/[0.04]", tagBg: "bg-amber-500/15", tagText: "text-amber-300" },
+    cyan: { border: "border-cyan-500/15", bg: "bg-cyan-500/[0.04]", tagBg: "bg-cyan-500/15", tagText: "text-cyan-300" },
   };
 
   return (
