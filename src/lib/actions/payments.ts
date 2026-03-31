@@ -263,7 +263,7 @@ export async function submitPaymentConfirmation(
       if (notifyEmails.length > 0) {
         const typeLabel = payment.payment_type === "advance_50" ? "50% Advance" : payment.payment_type === "installation" ? "Installation" : "50% Balance";
         const formattedAmt = Number(payment.amount).toLocaleString("en-US", { minimumFractionDigits: 2 });
-        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
         await sendInternalNotificationEmail(
           {
             heading: `Payment Received — ${invoiceNumber}`,
@@ -302,7 +302,7 @@ export async function submitPaymentConfirmation(
       const invoiceNum = `INV-${sq.quote_number.replace("QT-", "")}${isAdv ? "-A" : "-B"}`;
       const typeLabel = isAdv ? "50% Advance" : "50% Balance";
       const formattedAmt = Number(sp.amount).toLocaleString("en-US", { minimumFractionDigits: 2 });
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       await sendSlackNotification({
         heading: `Payment Received — ${invoiceNum}`,
         message: `*${sq.client_name}* has completed a payment.`,

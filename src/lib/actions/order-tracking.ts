@@ -152,7 +152,7 @@ export async function updateOrderStage(
         delivered: "Delivered",
       };
 
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       await sendInternalNotificationEmail(
         {
           heading: `Order Stage: ${stageLabels[stage] || stage}`,
@@ -279,7 +279,7 @@ export async function updateTrackingInfo(
         .single();
 
       if (quote?.client_email) {
-        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
         await sendShippingNotificationEmail({
           clientName: quote.client_name || "Customer",
           clientEmail: quote.client_email,

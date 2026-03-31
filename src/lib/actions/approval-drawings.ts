@@ -253,7 +253,7 @@ export async function sendApprovalDrawing(id: string, quoteId: string): Promise<
       .single();
 
     if (quote?.client_email) {
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       const portalUrl = `${origin}/portal/${quoteId}`;
       const subject = `Approval Drawing Ready — Quote ${quote.quote_number} | Scenic Doors`;
 
@@ -300,7 +300,7 @@ export async function requestApprovalDrawing(quoteId: string): Promise<void> {
     if (quote) {
       const emails = await getNotificationEmailsByType("new_quote");
       if (emails.length > 0) {
-        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
         const total = Number(quote.grand_total || quote.cost || 0).toLocaleString("en-US", { minimumFractionDigits: 2 });
         await sendInternalNotificationEmail(
           {
@@ -335,7 +335,7 @@ export async function requestApprovalDrawing(quoteId: string): Promise<void> {
       .eq("id", quoteId)
       .single();
     if (sq) {
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       const total = Number(sq.grand_total || sq.cost || 0).toLocaleString("en-US", { minimumFractionDigits: 2 });
       await sendSlackNotification({
         heading: `Approval Drawing Requested — ${sq.quote_number}`,
@@ -413,7 +413,7 @@ export async function signApprovalDrawing(
   try {
     const emails = await getNotificationEmailsByType("approval_signed");
     if (emails.length > 0) {
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       await sendInternalNotificationEmail(
         {
           heading: "Approval Drawing Signed — Ready for Deposit",
@@ -437,7 +437,7 @@ export async function signApprovalDrawing(
 
   // Slack notification
   try {
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
     await sendSlackNotification({
       heading: "Approval Drawing Signed — Ready for Deposit",
       message: `*${customerName}* has signed the approval drawing. Send the first deposit invoice to create the order.`,

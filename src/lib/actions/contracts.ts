@@ -49,7 +49,7 @@ export async function createContract({
         .eq("id", quoteId)
         .single();
 
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       const total = quote ? Number(quote.grand_total || quote.cost).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "—";
 
       await sendInternalNotificationEmail(

@@ -206,7 +206,7 @@ export async function startManufacturing(orderId: string): Promise<void> {
   // Send email to client
   if (quote?.client_email) {
     try {
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       await sendManufacturingStartedEmail({
         clientName: quote.client_name,
         clientEmail: quote.client_email,
@@ -280,7 +280,7 @@ export async function completeManufacturing(orderId: string): Promise<void> {
   // Send manufacturing completed email to client
   if (quote?.client_email) {
     try {
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       await sendManufacturingCompletedEmail({
         clientName: quote.client_name,
         clientEmail: quote.client_email,
@@ -304,7 +304,7 @@ export async function completeManufacturing(orderId: string): Promise<void> {
   // Auto-send balance invoice
   if (quote) {
     try {
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       const totalCost = Number(quote.grand_total ?? quote.cost ?? 0);
 
       // Get the advance payment amount to calculate the real remaining balance
@@ -397,7 +397,7 @@ export async function markAsDelivered(orderId: string): Promise<void> {
   // Send thank-you email to client
   if (quote?.client_email) {
     try {
-      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.com";
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
       await sendDeliveryThankYouEmail({
         clientName: quote.client_name,
         clientEmail: quote.client_email,
