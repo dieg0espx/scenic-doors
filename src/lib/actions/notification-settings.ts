@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { NotificationSettings } from "@/lib/types";
 
@@ -49,7 +49,7 @@ export async function getNotificationSettings(): Promise<NotificationSettings[]>
 }
 
 export async function getNotificationEmailsByType(type: string): Promise<string[]> {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("notification_settings")
     .select("emails")
