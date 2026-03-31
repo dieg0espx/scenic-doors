@@ -2,7 +2,8 @@
 
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { sendAppointmentConfirmationEmail } from "@/lib/email";
+import { sendAppointmentConfirmationEmail, sendInternalNotificationEmail } from "@/lib/email";
+import { getNotificationEmailsByType } from "@/lib/actions/notification-settings";
 
 // ── Types ──
 
@@ -259,7 +260,7 @@ export async function createAppointment(data: {
   // Send confirmation email to client
   if (data.client_email) {
     const portalUrl = data.quote_id
-      ? `${process.env.NEXT_PUBLIC_SITE_URL || ""}/portal/${data.quote_id}?tab=appointment`
+      ? `${process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co"}/portal/${data.quote_id}?tab=appointment`
       : undefined;
 
     sendAppointmentConfirmationEmail({
@@ -271,6 +272,50 @@ export async function createAppointment(data: {
     }).catch(() => {
       // Don't block on email failure
     });
+  }
+
+  // Send internal notification to admins
+  try {
+    const emails = await getNotificationEmailsByType("appointment_booked");
+    if (emails.length > 0) {
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || "https://scenicdoors.co";
+      const scheduledDate = new Date(data.scheduled_at);
+      const formattedDate = scheduledDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        timeZone: "America/New_York",
+      });
+      const formattedTime = scheduledDate.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "America/New_York",
+      });
+
+      await sendInternalNotificationEmail(
+        {
+          heading: "New Appointment Booked",
+          headingColor: "#0891b2",
+          headingBg: "#ecfeff",
+          headingBorder: "#cffafe",
+          message: `A new appointment has been booked${data.booked_by === "admin" ? " by an admin" : " by a client"}.`,
+          details: [
+            { label: "Client", value: data.client_name },
+            ...(data.client_email ? [{ label: "Email", value: data.client_email }] : []),
+            ...(data.client_phone ? [{ label: "Phone", value: data.client_phone }] : []),
+            { label: "Date", value: formattedDate },
+            { label: "Time", value: `${formattedTime} EST` },
+            ...(data.quote_id ? [{ label: "Quote", value: "Linked to quote" }] : []),
+          ],
+          adminUrl: `${origin}/admin/calendar`,
+          ctaLabel: "View Calendar",
+        },
+        emails
+      );
+    }
+  } catch (err) {
+    console.error("[Appointment notification error]", err);
   }
 
   revalidatePath("/admin/calendar");
