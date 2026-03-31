@@ -222,8 +222,8 @@ export async function startManufacturing(orderId: string): Promise<void> {
         subject: `Your Doors Are Now in Manufacturing — ${order.order_number}`,
         type: "manufacturing_started",
       });
-    } catch {
-      // Don't fail if email fails
+    } catch (err) {
+      console.error("[Manufacturing started email error]", err);
     }
   }
 
@@ -296,8 +296,8 @@ export async function completeManufacturing(orderId: string): Promise<void> {
         subject: `Manufacturing Complete — ${order.order_number} | Scenic Doors`,
         type: "manufacturing_completed",
       });
-    } catch {
-      // Don't fail if email fails
+    } catch (err) {
+      console.error("[Manufacturing completed email error]", err);
     }
   }
 
@@ -334,8 +334,8 @@ export async function completeManufacturing(orderId: string): Promise<void> {
         subject: `Balance Invoice — ${order.order_number} | Scenic Doors`,
         type: "balance_invoice",
       });
-    } catch {
-      // Don't fail if balance invoice fails
+    } catch (err) {
+      console.error("[Balance invoice error]", err);
     }
   }
 
@@ -412,8 +412,8 @@ export async function markAsDelivered(orderId: string): Promise<void> {
         subject: `Your Order Has Been Delivered — ${order.order_number} | Scenic Doors`,
         type: "delivery_thank_you",
       });
-    } catch {
-      // Don't fail if email fails
+    } catch (err) {
+      console.error("[Delivery thank-you email error]", err);
     }
   }
 

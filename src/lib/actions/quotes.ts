@@ -135,8 +135,8 @@ export async function createQuote(formData: {
   // Auto-schedule follow-up emails (3 follow-ups at 4-day intervals)
   try {
     await scheduleFollowUps(formData.lead_id || null, data.id);
-  } catch {
-    // Don't fail quote creation if follow-up scheduling fails
+  } catch (err) {
+    console.error("[Follow-up scheduling error]", err);
   }
 
   revalidatePath("/admin/quotes");
@@ -424,8 +424,8 @@ export async function updateQuoteStatus(
         },
         emails
       );
-    } catch {
-      // Don't fail the status update if notification fails
+    } catch (err) {
+      console.error("[Quote status notification error]", err);
     }
 
     // Slack notification
@@ -455,8 +455,8 @@ export async function updateQuoteStatus(
           adminUrl: `${origin}/admin/quotes/${id}`,
         });
       }
-    } catch {
-      // Don't fail status update if Slack fails
+    } catch (err) {
+      console.error("[Slack notification error]", err);
     }
   }
 }
@@ -500,8 +500,8 @@ export async function approveQuote(id: string) {
       subject: `Quote ${quote.quote_number} Approved — Sign Your Contract`,
       type: "approval",
     });
-  } catch {
-    // Don't fail the approval if email fails
+  } catch (err) {
+    console.error("[Quote approval email error]", err);
   }
 
   // Notify admin team via quote_accepted notification type
@@ -528,8 +528,8 @@ export async function approveQuote(id: string) {
         emails
       );
     }
-  } catch {
-    // Don't fail the approval if notification fails
+  } catch (err) {
+    console.error("[Quote approval notification error]", err);
   }
 
   // Slack notification for approval
@@ -547,8 +547,8 @@ export async function approveQuote(id: string) {
       ],
       adminUrl: `${origin}/admin/quotes/${id}`,
     });
-  } catch {
-    // Don't fail approval if Slack fails
+  } catch (err) {
+    console.error("[Slack notification error]", err);
   }
 }
 
@@ -689,8 +689,8 @@ export async function notifyNewQuote(quoteId: string, origin: string) {
         ],
         adminUrl: `${origin}/admin/quotes/${quoteId}`,
       });
-    } catch {
-      // Don't fail if Slack notification fails
+    } catch (err) {
+      console.error("[Slack notification error]", err);
     }
     return;
   }
@@ -743,8 +743,8 @@ export async function notifyNewQuote(quoteId: string, origin: string) {
       ],
       adminUrl: `${origin}/admin/quotes/${quoteId}`,
     });
-  } catch {
-    // Don't fail if Slack notification fails
+  } catch (err) {
+    console.error("[Slack notification error]", err);
   }
 }
 
@@ -904,8 +904,8 @@ export async function updateQuote(
             .eq("id", drawing.id);
         }
       }
-    } catch {
-      // Don't fail the quote update if drawing sync fails
+    } catch (err) {
+      console.error("[Approval drawing sync error]", err);
     }
   }
 

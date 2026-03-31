@@ -171,8 +171,8 @@ export async function updateOrderStage(
         emails
       );
     }
-  } catch {
-    // Don't fail the stage update if notification fails
+  } catch (err) {
+    console.error("[Order stage change notification error]", err);
   }
 }
 
@@ -298,8 +298,8 @@ export async function updateTrackingInfo(
           type: "shipping_notification",
         });
       }
-    } catch {
-      // Don't fail the tracking update if email fails
+    } catch (err) {
+      console.error("[Shipping notification email error]", err);
     }
   }
 }

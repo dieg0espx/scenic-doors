@@ -70,8 +70,8 @@ export async function createContract({
         emails
       );
     }
-  } catch {
-    // Don't fail the contract creation if notification fails
+  } catch (err) {
+    console.error("[Contract notification error]", err);
   }
 
   return data;

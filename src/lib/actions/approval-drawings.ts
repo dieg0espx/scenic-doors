@@ -271,8 +271,8 @@ export async function sendApprovalDrawing(id: string, quoteId: string): Promise<
         type: "approval_drawing_sent",
       });
     }
-  } catch {
-    // Don't fail the send if email notification fails
+  } catch (err) {
+    console.error("[Approval drawing email error]", err);
   }
 
   revalidatePath(`/admin/quotes/${quoteId}`);
@@ -323,8 +323,8 @@ export async function requestApprovalDrawing(quoteId: string): Promise<void> {
         );
       }
     }
-  } catch {
-    // Don't fail the request if notification fails
+  } catch (err) {
+    console.error("[Approval drawing request notification error]", err);
   }
 
   // Slack notification
@@ -350,8 +350,8 @@ export async function requestApprovalDrawing(quoteId: string): Promise<void> {
         adminUrl: `${origin}/admin/quotes/${quoteId}`,
       });
     }
-  } catch {
-    // Don't fail request if Slack fails
+  } catch (err) {
+    console.error("[Slack notification error]", err);
   }
 
   revalidatePath(`/admin/quotes/${quoteId}`);
@@ -431,8 +431,8 @@ export async function signApprovalDrawing(
         emails
       );
     }
-  } catch {
-    // Don't fail the signing if notification fails
+  } catch (err) {
+    console.error("[Approval drawing signed notification error]", err);
   }
 
   // Slack notification
@@ -449,8 +449,8 @@ export async function signApprovalDrawing(
       ],
       adminUrl: `${origin}/admin/quotes/${drawing.quote_id}`,
     });
-  } catch {
-    // Don't fail signing if Slack fails
+  } catch (err) {
+    console.error("[Slack notification error]", err);
   }
 
   revalidatePath(`/admin/quotes/${drawing.quote_id}`);
