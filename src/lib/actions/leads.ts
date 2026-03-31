@@ -133,8 +133,8 @@ export async function createLead(formData: {
         emails
       );
     }
-  } catch {
-    // Don't fail lead creation if notification fails
+  } catch (err) {
+    console.error("[Lead notification email error]", err);
   }
 
   // Slack notification
@@ -153,8 +153,8 @@ export async function createLead(formData: {
       ],
       adminUrl: `${origin}/admin/leads`,
     });
-  } catch {
-    // Don't fail lead creation if Slack notification fails
+  } catch (err) {
+    console.error("[Lead Slack notification error]", err);
   }
 
   return data;

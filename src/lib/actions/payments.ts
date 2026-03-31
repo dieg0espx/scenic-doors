@@ -285,8 +285,8 @@ export async function submitPaymentConfirmation(
         );
       }
     }
-  } catch {
-    // Don't fail the payment if email/order-update/notification fails
+  } catch (err) {
+    console.error("[Payment notification error]", err);
   }
 
   // Slack notification
@@ -318,8 +318,8 @@ export async function submitPaymentConfirmation(
         adminUrl: `${origin}/admin/quotes/${sp.quote_id}`,
       });
     }
-  } catch {
-    // Don't fail payment if Slack fails
+  } catch (err) {
+    console.error("[Slack notification error]", err);
   }
 
   // Fetch quote_id for portal revalidation
