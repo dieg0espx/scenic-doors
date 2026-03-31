@@ -54,9 +54,23 @@ export async function getNotificationEmailsByType(type: string): Promise<string[
     .from("notification_settings")
     .select("emails")
     .eq("type", type)
-    .single();
+    .maybeSingle();
 
-  if (error || !data) return [];
+  if (error) {
+    console.error(`[Notification settings fetch error] type=${type}`, error.message);
+    return [];
+  }
+
+  if (!data) {
+    // Row doesn't exist — create it so the admin can configure it later
+    console.log(`[Notification settings] No row for type="${type}", creating one`);
+    await supabase
+      .from("notification_settings")
+      .upsert({ type, emails: [] }, { onConflict: "type" });
+    return [];
+  }
+
+  console.log(`[Notification settings] type="${type}" emails=`, data.emails);
   return data.emails ?? [];
 }
 
