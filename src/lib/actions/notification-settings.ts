@@ -14,6 +14,7 @@ const ALL_NOTIFICATION_TYPES = [
   "approval_signed",
   "order_stage_change",
   "contract_signed",
+  "appointment_booked",
 ];
 
 export async function getNotificationSettings(): Promise<NotificationSettings[]> {

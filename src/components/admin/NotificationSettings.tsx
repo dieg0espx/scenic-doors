@@ -56,6 +56,11 @@ const typeLabels: Record<string, { label: string; description: string; color: st
     description: "Receive email notifications when a client signs a contract",
     color: "blue",
   },
+  appointment_booked: {
+    label: "Appointment Booked",
+    description: "Receive email notifications when someone books an appointment from the calendar or /book page",
+    color: "cyan",
+  },
 };
 
 const knownTypes = new Set(Object.keys(typeLabels));
