@@ -51,16 +51,14 @@ export default function Header() {
 
   return (
     <header
-      className={`fixed left-0 right-0 z-50 transition-all duration-500 ${
-        hasPromo ? "top-0" : "top-3"
-      } ${
+      className={`fixed left-0 right-0 z-50 transition-all duration-500 top-0 ${
         isHeaderWhite
           ? "bg-white backdrop-blur-md shadow-lg"
           : "bg-transparent"
       }`}
     >
       <PromoBanner onVisibilityChange={setHasPromo} />
-      <div className={`section-container py-6`}>
+      <div className={`section-container !py-4`}>
         <nav className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="relative z-10">

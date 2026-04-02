@@ -19,7 +19,7 @@ const featuredProject = {
 
 export default function FeaturedProjects() {
   return (
-    <section className="py-16 md:py-20 bg-ocean-900">
+    <section className="pt-16 md:pt-20 pb-16 md:pb-20 bg-ocean-900">
       <div className="section-container">
         {/* Header */}
         <motion.div

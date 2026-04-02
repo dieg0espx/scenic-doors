@@ -100,7 +100,7 @@ export default function ServiceAreas() {
                   onMouseEnter={() => setHoveredRegion(area.region)}
                   onMouseLeave={() => setHoveredRegion(null)}
                 >
-                  <div className="flex items-start gap-3 p-4 bg-primary-50 hover:bg-primary-100 transition-colors cursor-pointer">
+                  <div className="flex items-start gap-3 p-4 bg-primary-50 hover:bg-primary-100 transition-colors cursor-pointer h-full">
                     <MapPin className="w-5 h-5 text-primary-500 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-ocean-900 group-hover:text-primary-600 transition-colors">
