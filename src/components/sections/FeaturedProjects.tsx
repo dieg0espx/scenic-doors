@@ -3,15 +3,23 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { useEffect } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 
 const featuredProject = {
   title: "Malibu Estate",
-  video: "https://res.cloudinary.com/dku1gnuat/video/upload/v1774891082/HERO_1_lv39mo.mp4",
+  images: [
+    "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_1_pcxtx1",
+    "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_2_r3o9y7",
+    "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_10_dkakay",
+    "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/scenic_doors_HDR_19_m133fq",
+    "https://res.cloudinary.com/dku1gnuat/image/upload/f_auto,q_auto,w_1200/DJI_20240325132923_0276_D_qf99nm",
+  ],
 };
 
 export default function FeaturedProjects() {
   return (
-    <section className="py-16 md:py-20 bg-primary-50">
+    <section className="py-16 md:py-20 bg-ocean-900">
       <div className="section-container">
         {/* Header */}
         <motion.div
@@ -21,7 +29,7 @@ export default function FeaturedProjects() {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-ocean-900">
+          <h2 className="font-heading text-3xl md:text-4xl lg:text-5xl text-white">
             Scenic Doors Projects
           </h2>
         </motion.div>
@@ -33,7 +41,7 @@ export default function FeaturedProjects() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <FeaturedProjectCard project={featuredProject} aspectRatio="aspect-[16/9]" />
+          <FeaturedProjectCard project={featuredProject} />
         </motion.div>
       </div>
     </section>
@@ -42,40 +50,67 @@ export default function FeaturedProjects() {
 
 function FeaturedProjectCard({
   project,
-  aspectRatio,
 }: {
   project: typeof featuredProject;
-  aspectRatio: string;
 }) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    align: "start",
+    slidesToScroll: 1,
+  });
+
+  // Auto-scroll functionality
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    const interval = setInterval(() => {
+      emblaApi.scrollNext();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [emblaApi]);
+
   return (
-    <Link href="/gallery" className={`relative ${aspectRatio} overflow-hidden group cursor-pointer rounded-lg block`}>
-      {/* Video Background */}
-      <video
-        src={project.video}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="w-full h-full object-cover"
-      />
+    <Link href="/gallery" className="block group cursor-pointer">
+      <div className="relative overflow-hidden">
+        {/* Carousel */}
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex">
+            {project.images.map((image, index) => (
+              <div
+                key={index}
+                className="flex-[0_0_100%] md:flex-[0_0_calc(100%/3)] min-w-0 px-2 group/item"
+              >
+                <div className="relative aspect-[3/4] overflow-hidden">
+                  <img
+                    src={image}
+                    alt={`${project.title} - Image ${index + 1}`}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover/item:scale-105"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-      {/* Gradient Overlay for Text Readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-ocean-900/90 via-ocean-900/20 to-transparent" />
-
-      {/* Styled Text Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12 lg:p-16">
-        <div className="backdrop-blur-sm bg-white/10 inline-block px-6 py-3 rounded-lg border border-white/20">
-          <h3 className="font-heading text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-white font-bold tracking-tight">
-            {project.title}
-          </h3>
+        {/* Arrow - Simplified */}
+        <div className="absolute top-4 right-4 w-12 h-12 bg-primary-500/90 backdrop-blur-sm group-hover:bg-primary-400 flex items-center justify-center transition-all duration-300 z-20">
+          <ArrowUpRight className="w-6 h-6 text-white transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
         </div>
       </div>
 
-      {/* Arrow */}
-      <div className="absolute top-6 right-6 w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm group-hover:bg-white border border-white/20 flex items-center justify-center transition-all duration-300">
-        <ArrowUpRight className="w-6 h-6 text-white group-hover:text-ocean-900 transition-colors" />
+      {/* Badge Below Carousel */}
+      <div className="mt-6 flex items-center gap-3">
+        <div className="bg-primary-500 px-6 py-3 border-2 border-primary-400 inline-block">
+          <h3 className="font-heading text-xl md:text-2xl lg:text-3xl text-white font-bold tracking-tight">
+            {project.title}
+          </h3>
+        </div>
+        <div className="flex items-center gap-2 text-primary-400 group-hover:text-primary-300 transition-colors">
+          <span className="text-sm font-medium">View Gallery</span>
+          <ArrowUpRight className="w-4 h-4" />
+        </div>
       </div>
     </Link>
   );
 }
-

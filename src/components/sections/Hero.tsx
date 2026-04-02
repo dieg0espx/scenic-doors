@@ -50,16 +50,6 @@ export default function Hero() {
             "Bringing the Outdoors In"
           </motion.p>
 
-          {/* Description */}
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="text-lg md:text-xl text-white/80 max-w-lg mb-10 leading-relaxed"
-          >
-            Engineered for coastal beauty, energy efficiency, and effortless indoor-outdoor living.
-          </motion.p>
-
           {/* CTA Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
