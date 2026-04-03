@@ -29,7 +29,7 @@ const doors = [
     shortTitle: "Slide & Stack",
     description:
       "The ultimate in flexibility. Slide panels stack to one or both sides, creating massive openings that blur the line between indoors and out.",
-    image: "/images/slide-stack.png",
+    image: "/images/Slide & Stack 2.png",
     href: "/doors/slide-stack",
   },
   {
@@ -38,7 +38,7 @@ const doors = [
     shortTitle: "Pivot",
     description:
       "Make a statement from the moment guests arrive. Our pivot doors combine engineering precision with bold architectural presence.",
-    image: "/images/pivot.png",
+    image: "/images/Pivot Door.png",
     href: "/doors/pivot",
   },
 ];
