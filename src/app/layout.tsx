@@ -23,6 +23,14 @@ export const metadata: Metadata = {
     "Southern California's premier luxury door installer. Factory-certified folding glass walls, multi-slide systems & pivot doors. Free quotes. 25+ years experience.",
   keywords:
     "folding doors, sliding glass doors, pivot doors, glass walls, LaCantina doors, door installation, Southern California doors, luxury doors",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", sizes: "96x96", type: "image/png" },
+    ],
+    apple: "/apple-icon.png",
+  },
+  manifest: "/site.webmanifest",
   openGraph: {
     title: "Scenic Doors | Premium Door Installation",
     description:
